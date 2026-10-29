@@ -53,8 +53,13 @@
 ### 🛡️ Remediation Plan & Data Broker Opt-Out (FootprintIQ Inspired)
 - Moves from diagnosis to solution:
   - **Direct Deactivation Links:** 1-click links to the exact account deletion pages of found platforms (GitHub, Reddit, Twitter, Medium, Steam, etc.).
-  - **Data Broker Opt-Out:** Direct removal guides for people-search directories (*Yasni, Das Örtliche, 11880, Radaris*).
+  - **Data Broker Opt-Out:** Direct removal guides for people-search directories (*Yasni, Das Telefonbuch, 11880, Radaris*).
   - **Art. 17 GDPR Erasure Request:** Ready-to-send legal notice exercising the *Right to be Forgotten* plus links to official search removal request tools.
+
+### 📬 Incogni-Style Mailing List & Marketing Opt-Out Hub
+- **1-Click RFC 2369 & Mailman Daemon Command:** Automatically generates `mailto:<list>-request@<domain>?subject=unsubscribe` links for instant de-registration from standard mailing lists without manual review.
+- **GDPR Art. 21 Direct Marketing Objection:** Generates legally binding opt-out and erasure notices (Art. 21(2) & Art. 17 GDPR) with 1-click `mailto:` dispatch from your local email client.
+- **Top Marketing Broker Directory:** Curated opt-out directory for major DACH and global marketing data brokers and aggregators (*Schober Information Group, microm, Acxiom, LiveRamp, Criteo, Experian*) with direct opt-out portals and privacy contact emails.
 
 ### 🌐 Bilingual Interface (English & German)
 - **English is default**, with a 1-click language switcher (`[ EN | DE ]`) in the navigation bar.

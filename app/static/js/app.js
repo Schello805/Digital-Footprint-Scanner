@@ -103,7 +103,23 @@ const translations = {
     risk_label_prefix: "RISK: ",
     link_legal_disclaimer: "⚖️ Legal Disclaimer & Terms of Use",
     modal_disclaimer_title: "Legal Notice, Ethical Use & Terms of Service",
-    btn_close_disclaimer: "Understood & Acknowledge"
+    btn_close_disclaimer: "Understood & Acknowledge",
+    tab_unsubscribe: "📬 Unsubscribe Hub (Incogni-Style)",
+    unsub_hub_title: "Mailing List & Marketing Opt-Out Hub",
+    unsub_hub_desc: "Unsubscribe from persistent mailing lists, spam distribution lists, and commercial direct marketing data brokers with 1-click RFC 2369 automation commands and legally binding Art. 21 & Art. 17 GDPR objection letters.",
+    unsub_form_title: "Target List & Mail Details",
+    unsub_form_subtitle: "Enter the mailing list address or sender you want to unsubscribe from.",
+    lbl_unsub_target: "Mailing List or Sender Address",
+    lbl_unsub_email: "Your Email Address (To Unsubscribe)",
+    lbl_unsub_name: "Your Name (Optional, for GDPR Letter)",
+    btn_gen_unsub: "Generate 1-Click Unsubscribe Package",
+    tip_rfc_title: "How RFC 2369 Unsubscribe Works:",
+    tip_rfc_desc: "Standard mailing lists (Mailman, Majordomo, Sympa) run automated server daemons. Sending an email with the subject unsubscribe to <list>-request@... removes you automatically without human intervention.",
+    unsub_actions_title: "1-Click Unsubscribe Actions",
+    lbl_letter_preview: "Formal GDPR Objection & Erasure Text (Pre-populated)",
+    btn_copy_letter: "Copy Letter",
+    brokers_catalog_title: "Direct Marketing & Broker Opt-Out Directory",
+    brokers_catalog_sub: "Opt-out directly from large consumer data aggregators and address brokers that fuel commercial cold-mailings and lead lists."
   },
   de: {
     app_title: "Digital Footprint Scanner",
@@ -196,7 +212,23 @@ const translations = {
     risk_label_prefix: "RISIKO: ",
     link_legal_disclaimer: "⚖️ Rechtlicher Hinweis & Nutzungsbedingungen",
     modal_disclaimer_title: "Rechtlicher Hinweis, Ethische Nutzung & Haftungsausschluss",
-    btn_close_disclaimer: "Verstanden & Schließen"
+    btn_close_disclaimer: "Verstanden & Schließen",
+    tab_unsubscribe: "📬 Austragen & Opt-Out (Incogni-Style)",
+    unsub_hub_title: "Mailinglisten & Werbe-Opt-Out Hub",
+    unsub_hub_desc: "Trage dich automatisiert aus lästigen Mailinglisten, Verteilern und Adresshändlern aus – mit 1-Klick RFC 2369 Auto-Befehlen und rechtlich bindenden Art. 21 & Art. 17 DSGVO Widerspruchsschreiben.",
+    unsub_form_title: "Ziel-Liste & Absenderdaten",
+    unsub_form_subtitle: "Gib die Adresse der Mailingliste oder des Werbeabsenders ein.",
+    lbl_unsub_target: "Mailingliste oder Absenderadresse",
+    lbl_unsub_email: "Deine E-Mail-Adresse (die ausgetragen werden soll)",
+    lbl_unsub_name: "Dein Name (Optional, für das DSGVO-Schreiben)",
+    btn_gen_unsub: "1-Klick Austragungspaket generieren",
+    tip_rfc_title: "So funktioniert RFC 2369 / Mailman Austragung:",
+    tip_rfc_desc: "Klassische Mailinglisten (Mailman, Majordomo, Sympa) besitzen Roboter. Eine Mail mit Betreff 'unsubscribe' an <liste>-request@... meldet dich vollautomatisch ab – ohne menschliches Zutun.",
+    unsub_actions_title: "1-Klick Austragungs-Aktionen",
+    lbl_letter_preview: "Offizielles DSGVO Widerspruchs- & Löschschreiben (Vorausgefüllt)",
+    btn_copy_letter: "Brief kopieren",
+    brokers_catalog_title: "Marketing- & Adresshändler-Verzeichnis",
+    brokers_catalog_sub: "Trage dich direkt bei den führenden Datenbrokern und Adresshändlern aus, die Kaltakquise und Werbelisten speisen."
   }
 };
 
@@ -353,6 +385,7 @@ function setLanguage(lang) {
   // Always keep GDPR letter localized
   updateGdprLetter(lastScanPayload ? lastScanPayload.name : '');
   updateDisclaimerContent();
+  fetchAndRenderMarketingBrokers();
 
   // Re-render report if already generated
   if (lastScanResult && lastScanPayload) {
@@ -649,6 +682,9 @@ function renderFullReport(res, payload) {
       <div class="flex flex-wrap gap-1.5 pt-0.5">
         ${ml.specialized_searches.map(s => `<a href="${s.url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${s.title} ↗</a>`).join('')}
       </div>
+      <button onclick="openUnsubscribeForEmail()" class="mt-2.5 w-full py-1.5 px-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800 rounded-lg text-[10px] font-semibold transition flex items-center justify-center space-x-1 cursor-pointer">
+        <span>📬 ${currentLang === 'de' ? 'Aus Verteilerlisten austragen (Incogni-Style) ↗' : 'Opt-out of Mailing Lists (Incogni-Style) ↗'}</span>
+      </button>
     `;
   } else {
     mlBox.textContent = currentLang === 'de' ? 'Keine E-Mail angegeben.' : 'No email provided.';
@@ -977,9 +1013,182 @@ async function saveSettings(e) {
   alert(currentLang === 'de' ? 'Einstellungen gespeichert!' : 'Settings saved successfully!');
 }
 
+// ==================== 7. UNSUBSCRIBE & OPT-OUT HUB (INCOGNI-STYLE) ====================
+function openUnsubscribeForEmail() {
+  if (lastScanPayload) {
+    const emailInput = document.getElementById('unsubUserEmail');
+    const nameInput = document.getElementById('unsubUserName');
+    if (emailInput && lastScanPayload.email) emailInput.value = lastScanPayload.email;
+    if (nameInput && lastScanPayload.name) nameInput.value = lastScanPayload.name;
+  }
+  switchTab('unsubscribe');
+  const targetInput = document.getElementById('unsubTargetInput');
+  if (targetInput) targetInput.focus();
+}
+
+async function handleGenerateUnsubscribe(e) {
+  e.preventDefault();
+  const targetInput = document.getElementById('unsubTargetInput');
+  const userEmailInput = document.getElementById('unsubUserEmail');
+  const userNameInput = document.getElementById('unsubUserName');
+  const submitBtn = document.getElementById('btnUnsubSubmit');
+
+  const listIdentifier = targetInput.value.trim();
+  const userEmail = userEmailInput.value.trim();
+  const userName = userNameInput.value.trim();
+
+  if (!listIdentifier || !userEmail) {
+    alert(currentLang === 'de' ? 'Bitte Mailingliste und E-Mail-Adresse angeben.' : 'Please provide both mailing list and email address.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.classList.add('opacity-75');
+
+  try {
+    const res = await fetch('/api/unsubscribe/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        list_identifier: listIdentifier,
+        user_email: userEmail,
+        user_name: userName,
+        lang: currentLang
+      })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      const d = json.data;
+      
+      document.getElementById('unsubTargetDisplay').textContent = `${d.target} • (${d.user_email})`;
+      const badge = document.getElementById('unsubStatusBadge');
+      badge.classList.remove('hidden');
+      badge.textContent = currentLang === 'de' ? 'BEREIT' : 'READY';
+
+      // 1. RFC Mailto Link
+      const btnRfc = document.getElementById('btnRfcMailto');
+      if (d.rfc_mailto) {
+        btnRfc.href = d.rfc_mailto;
+        btnRfc.classList.remove('pointer-events-none', 'opacity-50');
+      } else {
+        btnRfc.href = '#';
+        btnRfc.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      // 2. GDPR Mailto Link
+      const btnGdpr = document.getElementById('btnGdprMailto');
+      if (d.gdpr_mailto) {
+        btnGdpr.href = d.gdpr_mailto;
+        btnGdpr.classList.remove('pointer-events-none', 'opacity-50');
+      } else {
+        btnGdpr.href = '#';
+        btnGdpr.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      // 3. Web Options Link
+      const btnWeb = document.getElementById('btnWebPortal');
+      if (d.web_options_url) {
+        btnWeb.href = d.web_options_url;
+        btnWeb.classList.remove('pointer-events-none', 'opacity-50');
+      } else {
+        btnWeb.href = '#';
+        btnWeb.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      // 4. Letter Preview Textarea
+      const letterArea = document.getElementById('unsubLetterText');
+      letterArea.value = d.gdpr_body;
+    }
+  } catch (err) {
+    console.error('Failed to generate unsubscribe package:', err);
+    alert(currentLang === 'de' ? 'Fehler beim Generieren des Austragungs-Pakets.' : 'Failed to generate unsubscribe package.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('opacity-75');
+  }
+}
+
+function copyUnsubLetter() {
+  const letterArea = document.getElementById('unsubLetterText');
+  if (!letterArea || !letterArea.value) return;
+
+  navigator.clipboard.writeText(letterArea.value).then(() => {
+    const copyBtnText = document.getElementById('btnCopyUnsubLetterText');
+    const originalText = copyBtnText ? copyBtnText.textContent : '';
+    if (copyBtnText) copyBtnText.textContent = currentLang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
+    setTimeout(() => {
+      if (copyBtnText) copyBtnText.textContent = originalText;
+    }, 2000);
+  });
+}
+
+let cachedMarketingBrokers = null;
+
+async function fetchAndRenderMarketingBrokers() {
+  const container = document.getElementById('marketingBrokersList');
+  if (!container) return;
+
+  try {
+    if (!cachedMarketingBrokers) {
+      const res = await fetch('/api/unsubscribe/brokers');
+      const json = await res.json();
+      if (json.success && json.brokers) {
+        cachedMarketingBrokers = json.brokers;
+      }
+    }
+
+    if (!cachedMarketingBrokers || cachedMarketingBrokers.length === 0) return;
+
+    container.innerHTML = cachedMarketingBrokers.map(b => {
+      const desc = currentLang === 'de' ? b.desc_de : b.desc_en;
+      
+      const optOutBtn = b.opt_out_url ? `
+        <a href="${b.opt_out_url}" target="_blank" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-center font-medium transition text-[11px] block truncate">
+          ${currentLang === 'de' ? 'Opt-Out Portal ↗' : 'Opt-Out Portal ↗'}
+        </a>
+      ` : '';
+
+      const userEmailVal = (lastScanPayload ? lastScanPayload.email : '') || '';
+      const userNameVal = (lastScanPayload ? lastScanPayload.name : '') || (currentLang === 'de' ? 'Betroffene Person' : 'Concerned Individual');
+      
+      const mailtoSubj = encodeURIComponent(currentLang === 'de' ? `Widerspruch gem. Art. 21 DSGVO (${userEmailVal || 'Werbe-Opt-Out'})` : `GDPR Art. 21 Direct Marketing Opt-Out (${userEmailVal || 'Marketing Opt-Out'})`);
+      const mailtoBody = encodeURIComponent(currentLang === 'de' 
+        ? `Sehr geehrte Damen und Herren,\n\nhiermit widerspreche ich gemäß Art. 21 Abs. 2 DSGVO der Verarbeitung meiner personenbezogenen Daten für Werbe- und Marketingzwecke.\n\nBetroffene Daten / E-Mail: ${userEmailVal}\n\nBitte löschen Sie meine Daten unverzüglich aus Ihren Adressbeständen.\n\nMit freundlichen Grüßen,\n${userNameVal}`
+        : `To Whom It May Concern,\n\nPursuant to Article 21(2) of the GDPR, I hereby object to the processing of my personal data for direct marketing and data broker lists.\n\nAffected Email: ${userEmailVal}\n\nPlease delete my data from all distribution lists without undue delay.\n\nSincerely,\n${userNameVal}`
+      );
+
+      const mailtoBtn = b.privacy_email ? `
+        <a href="mailto:${b.privacy_email}?subject=${mailtoSubj}&body=${mailtoBody}" class="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-lg text-center font-medium transition text-[11px] block truncate">
+          ✉️ ${b.privacy_email}
+        </a>
+      ` : '';
+
+      return `
+        <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2.5 shadow-sm">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white text-xs">${b.name}</span>
+              <span class="text-[10px] text-indigo-400 bg-indigo-950 px-1.5 py-0.5 rounded border border-indigo-900">${b.category}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${desc}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            ${optOutBtn}
+            ${mailtoBtn}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Failed to load marketing brokers:', err);
+  }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   setLanguage(currentLang);
   updateGdprLetter();
   updateDisclaimerContent();
+  fetchAndRenderMarketingBrokers();
 });
