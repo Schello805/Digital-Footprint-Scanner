@@ -105,34 +105,7 @@ def generate_web_directories(
             "url": f"https://www.dasoertliche.de/?zvo_ok=0&bu_ok=0&form_name=search_nat&kw={urllib.parse.quote(clean_name)}{loc_param}"
         })
 
-    # 7. Yasni Personensuche
-    if clean_name:
-        dirs.append({
-            "site": "Yasni Personensuchmaschine",
-            "icon": "🔍",
-            "category": "Aggregierte Personenprofile",
-            "query": f"yasni.de/{clean_name}",
-            "desc": "Web-Aggregator für Personen, Bilder, Erwähnungen und Social-Media",
-            "url": f"https://www.yasni.de/{urllib.parse.quote(clean_name)}/person+information"
-        })
-
-    # 8. Google News (mit Kontext-Eingrenzung zur Vermeidung von Namensvettern)
-    if clean_name:
-        news_q = target_q
-        if employer.strip():
-            news_q += f' "{employer.strip()}"'
-        elif city.strip():
-            news_q += f' "{city.strip()}"'
-        dirs.append({
-            "site": "Google News",
-            "icon": "📰",
-            "category": "Presse & Medien",
-            "query": news_q,
-            "desc": "Live-Prüfung auf Pressemitteilungen, Medienberichte oder Namensvetter",
-            "url": f"https://news.google.com/search?q={urllib.parse.quote(news_q)}"
-        })
-
-    # 9. Eigene Website (nur wenn keine allgemeine Freemail-Domain)
+    # 7. Eigene Website (nur wenn keine allgemeine Freemail-Domain)
     if domain:
         clean_dom = domain.strip().lower()
         if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]

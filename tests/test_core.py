@@ -69,7 +69,7 @@ async def test_full_scan_pipeline():
     assert "found_profiles" in res
     assert "dorks" in res
     assert "web_directories" in res
-    assert len(res["web_directories"]) >= 8
+    assert len(res["web_directories"]) >= 6
     # Verify own website presence included
     dom_presence = next((p for p in res["found_profiles"] if "schellenberger.biz" in p.get("url", "")), None)
     assert dom_presence is not None
