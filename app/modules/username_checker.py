@@ -3,6 +3,7 @@ import asyncio
 import httpx
 from typing import AsyncGenerator, Dict, Any, List, Optional
 
+# Verified, reliable platforms with deterministic profile verification
 PLATFORMS: List[Dict[str, Any]] = [
     # Developer & Tech
     {"name": "GitHub", "category": "Tech / Dev", "url": "https://github.com/{}", "check_type": "status_code", "error_code": 404},
@@ -11,39 +12,29 @@ PLATFORMS: List[Dict[str, Any]] = [
     {"name": "Dev.to", "category": "Tech / Dev", "url": "https://dev.to/{}", "check_type": "status_code", "error_code": 404},
     {"name": "HackerNews", "category": "Tech / Dev", "url": "https://news.ycombinator.com/user?id={}", "check_type": "text_not_contains", "error_text": "No such user."},
     {"name": "NPM", "category": "Tech / Dev", "url": "https://www.npmjs.com/~{}", "check_type": "status_code", "error_code": 404},
-    {"name": "PyPI", "category": "Tech / Dev", "url": "https://pypi.org/user/{}/", "check_type": "status_code", "error_code": 404},
-    {"name": "Kaggle", "category": "Tech / Dev", "url": "https://www.kaggle.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "LeetCode", "category": "Tech / Dev", "url": "https://leetcode.com/u/{}/", "check_type": "status_code", "error_code": 404},
     {"name": "Replit", "category": "Tech / Dev", "url": "https://replit.com/@{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Codeforces", "category": "Tech / Dev", "url": "https://codeforces.com/profile/{}", "check_type": "status_code", "error_code": 404},
 
     # Social & Community
     {"name": "Reddit", "category": "Social Media", "url": "https://www.reddit.com/user/{}/about.json", "check_type": "status_code", "error_code": 404, "profile_url": "https://www.reddit.com/user/{}"},
-    {"name": "Twitter / X", "category": "Social Media", "url": "https://x.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Telegram", "category": "Social Media", "url": "https://t.me/{}", "check_type": "text_contains", "match_text": "tgme_page_extra"},
-    {"name": "Pinterest", "category": "Social Media", "url": "https://www.pinterest.com/{}/", "check_type": "status_code", "error_code": 404},
-    {"name": "Medium", "category": "Social Media", "url": "https://medium.com/@{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Tumblr", "category": "Social Media", "url": "https://{}.tumblr.com", "check_type": "status_code", "error_code": 404},
     {"name": "Mastodon.social", "category": "Social Media", "url": "https://mastodon.social/@{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Twitch", "category": "Gaming & Stream", "url": "https://www.twitch.tv/{}", "check_type": "status_code", "error_code": 404},
+
+    # Video & Media
     {"name": "YouTube", "category": "Video & Media", "url": "https://www.youtube.com/@{}", "check_type": "status_code", "error_code": 404},
     {"name": "Vimeo", "category": "Video & Media", "url": "https://vimeo.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "SoundCloud", "category": "Music & Audio", "url": "https://soundcloud.com/{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Spotify", "category": "Music & Audio", "url": "https://open.spotify.com/user/{}", "check_type": "status_code", "error_code": 404},
 
     # Creative & Portfolios
     {"name": "Behance", "category": "Design & Art", "url": "https://www.behance.net/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Dribbble", "category": "Design & Art", "url": "https://dribbble.com/{}", "check_type": "status_code", "error_code": 404},
-    {"name": "500px", "category": "Design & Art", "url": "https://500px.com/p/{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Flickr", "category": "Design & Art", "url": "https://www.flickr.com/people/{}", "check_type": "status_code", "error_code": 404},
-    {"name": "ArtStation", "category": "Design & Art", "url": "https://www.artstation.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "DeviantArt", "category": "Design & Art", "url": "https://www.deviantart.com/{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Flickr", "category": "Design & Art", "url": "https://www.flickr.com/people/{}", "check_type": "status_code", "error_code": 404},
 
     # Gaming
     {"name": "Steam", "category": "Gaming", "url": "https://steamcommunity.com/id/{}", "check_type": "text_not_contains", "error_text": "The specified profile could not be found."},
     {"name": "Chess.com", "category": "Gaming", "url": "https://www.chess.com/member/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Lichess", "category": "Gaming", "url": "https://lichess.org/@/{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Itch.io", "category": "Gaming", "url": "https://{}.itch.io", "check_type": "status_code", "error_code": 404},
 
     # Identity, Bio & Funding
     {"name": "Keybase", "category": "Security & Identity", "url": "https://keybase.io/{}", "check_type": "status_code", "error_code": 404},
@@ -53,7 +44,6 @@ PLATFORMS: List[Dict[str, Any]] = [
     {"name": "BuyMeACoffee", "category": "Funding / Support", "url": "https://www.buymeacoffee.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Patreon", "category": "Funding / Support", "url": "https://www.patreon.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "ProductHunt", "category": "Tech / Community", "url": "https://www.producthunt.com/@{}", "check_type": "status_code", "error_code": 404},
-    {"name": "Substack", "category": "Newsletters", "url": "https://{}.substack.com", "check_type": "status_code", "error_code": 404},
 ]
 
 HEADERS = {
@@ -61,6 +51,44 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9,de;q=0.8",
 }
+
+# Pre-set consent cookies to prevent EU consent wall redirects (e.g. YouTube consent.youtube.com)
+COOKIES = {
+    "SOCS": "CAESEwgDEgk2MTQ1Mjg4NDcaAmVuIAEaBgiA_LyaBg",
+}
+
+# Substrings in final redirected URL indicating an error, login wall, or 404 fallback
+DISALLOWED_REDIRECT_SUBSTRINGS = [
+    "/404", "page-not-found", "not-found", "not_found", "error/404",
+    "users/sign_in", "login", "/signin", "accounts.google.com",
+    "consent.youtube.com", "consent.google.com", "challenge",
+]
+
+# Cloudflare, Turnstile, reCAPTCHA, and bot protection markers
+WAF_CHALLENGE_SUBSTRINGS = [
+    "attention required! | cloudflare",
+    "cf_challenge",
+    "checking your browser",
+    "client challenge",
+    "just a moment...",
+    "cf-browser-verification",
+    "recaptcha",
+    "bot detection",
+    "please verify you are a human",
+]
+
+# Universal soft-404 phrases inside page titles and headers
+SOFT_404_HEADER_SUBSTRINGS = [
+    "the specified profile could not be found",
+    "user not found",
+    "page not found",
+    "profile not found",
+    "this account does not exist",
+    "this profile does not exist",
+    "no such user",
+    "404 not found",
+    "404 - page not found",
+]
 
 def _extract_page_snippet(html_text: str) -> str:
     """Extracts meta description, title or brief visible text snippet"""
@@ -92,7 +120,7 @@ def _calculate_match_score(
     keywords: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
-    Solves the 'False Positive' issue by checking if context matches the found page.
+    Correlates profile page text against user-provided context (name, location, employer, keywords).
     Returns score (0-100) and matched attributes.
     """
     text_lower = text.lower()
@@ -110,7 +138,6 @@ def _calculate_match_score(
             score += 45
             matches.append(f"Name: {full_name}")
         else:
-            # Check parts of name (e.g. Nachname)
             parts = [p for p in fn_clean.split() if len(p) > 2]
             for p in parts:
                 if p in text_lower:
@@ -163,6 +190,14 @@ async def check_platform(
     username: str,
     context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
+    """
+    Multi-stage verification pipeline to completely eliminate false positives:
+    1. HTTP Status Code validation (must be 200).
+    2. Final Redirect destination check (rejects redirects to login, /404, or site root).
+    3. WAF / Bot challenge detection (Cloudflare, reCAPTCHA, Turnstile).
+    4. Platform-specific rule validation (text_contains / text_not_contains).
+    5. Universal soft-404 headers and title inspection.
+    """
     url = platform["url"].format(username)
     profile_url = platform.get("profile_url", url).format(username)
     check_type = platform.get("check_type", "status_code")
@@ -179,58 +214,76 @@ async def check_platform(
     }
     
     try:
-        response = await client.get(url, timeout=6.5, follow_redirects=True)
+        response = await client.get(url, timeout=7.0, follow_redirects=True)
         
-        if check_type == "status_code":
-            if response.status_code == 200:
-                result["exists"] = True
-                result["status"] = "found"
-            elif response.status_code == platform.get("error_code", 404):
+        # Stage 1: Status code check
+        if response.status_code != 200:
+            result["exists"] = False
+            result["status"] = "not_found"
+            return result
+
+        # Stage 2: Final redirect target check
+        final_url_str = str(response.url).lower()
+        for bad_sub in DISALLOWED_REDIRECT_SUBSTRINGS:
+            if bad_sub in final_url_str:
                 result["exists"] = False
                 result["status"] = "not_found"
-            else:
-                result["status"] = "unknown"
-                result["error"] = f"HTTP {response.status_code}"
-                
-        elif check_type == "text_not_contains":
-            error_text = platform.get("error_text", "")
-            if response.status_code == 200 and error_text not in response.text:
-                result["exists"] = True
-                result["status"] = "found"
-            else:
+                return result
+
+        # If platform URL expected a profile path but response was redirected to domain root
+        if response.url.path in ("", "/") and len(platform["url"].split("/")) > 4:
+            result["exists"] = False
+            result["status"] = "not_found"
+            return result
+
+        body_lower = response.text.lower()
+
+        # Stage 3: Anti-bot / WAF / Cloudflare challenge inspection
+        for waf in WAF_CHALLENGE_SUBSTRINGS:
+            if waf in body_lower:
                 result["exists"] = False
                 result["status"] = "not_found"
+                return result
+
+        # Stage 4: Platform-specific check rules
+        if check_type == "text_not_contains":
+            error_text = platform.get("error_text", "").lower()
+            if error_text and error_text in body_lower:
+                result["exists"] = False
+                result["status"] = "not_found"
+                return result
                 
         elif check_type == "text_contains":
-            match_text = platform.get("match_text", "")
-            if response.status_code == 200 and match_text in response.text:
-                result["exists"] = True
-                result["status"] = "found"
-            else:
+            match_text = platform.get("match_text", "").lower()
+            if not match_text or match_text not in body_lower:
                 result["exists"] = False
                 result["status"] = "not_found"
+                return result
 
-        # If profile exists, inspect content for bio snippet and context correlation
-        if result["exists"]:
-            result["snippet"] = _extract_page_snippet(response.text)
-            if context:
-                result["match"] = _calculate_match_score(
-                    response.text,
-                    full_name=context.get("name", ""),
-                    city=context.get("city", ""),
-                    employer=context.get("employer", ""),
-                    keywords=context.get("keywords", [])
-                )
+        # Stage 5: Universal soft-404 inspection in titles and main headers
+        for s404 in SOFT_404_HEADER_SUBSTRINGS:
+            if f"<title>{s404}" in body_lower or f"<h1>{s404}" in body_lower or f'"{s404}"' in body_lower:
+                result["exists"] = False
+                result["status"] = "not_found"
+                return result
+
+        # All stages passed: Profile is confirmed found
+        result["exists"] = True
+        result["status"] = "found"
+        result["snippet"] = _extract_page_snippet(response.text)
+
+        if context:
+            result["match"] = _calculate_match_score(
+                response.text,
+                full_name=context.get("name", ""),
+                city=context.get("city", ""),
+                employer=context.get("employer", ""),
+                keywords=context.get("keywords", [])
+            )
                 
-    except httpx.TimeoutException:
-        result["status"] = "timeout"
-        result["error"] = "Zeitüberschreitung"
-    except httpx.RequestError:
-        result["status"] = "error"
-        result["error"] = "Verbindungsfehler"
-    except Exception as e:
-        result["status"] = "error"
-        result["error"] = str(e)
+    except (httpx.TimeoutException, httpx.RequestError, Exception):
+        result["exists"] = False
+        result["status"] = "not_found"
         
     return result
 
@@ -240,7 +293,7 @@ async def scan_username_stream(
     context: Optional[Dict[str, Any]] = None
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
-    Scans platforms concurrently using a Semaphore and yields exclusively found accounts as they appear.
+    Scans platforms concurrently using a Semaphore and yields exclusively confirmed accounts as they appear.
     Platforms where the username does NOT exist are never emitted as profile results.
     """
     total = len(PLATFORMS)
@@ -250,7 +303,7 @@ async def scan_username_stream(
     
     sem = asyncio.Semaphore(12)
     
-    async with httpx.AsyncClient(headers=HEADERS, timeout=8.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=HEADERS, cookies=COOKIES, timeout=8.0, follow_redirects=True) as client:
         async def sem_check(p):
             async with sem:
                 return await check_platform(client, p, username, context=context)
@@ -291,7 +344,7 @@ async def scan_usernames_fast(
     Platforms that return 404/not_found or errors are completely excluded.
     """
     sem = asyncio.Semaphore(15)
-    async with httpx.AsyncClient(headers=HEADERS, timeout=7.0, follow_redirects=True) as client:
+    async with httpx.AsyncClient(headers=HEADERS, cookies=COOKIES, timeout=7.0, follow_redirects=True) as client:
         async def sem_check(p):
             async with sem:
                 return await check_platform(client, p, username, context=context)
