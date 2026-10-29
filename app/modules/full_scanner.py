@@ -12,6 +12,13 @@ from app.modules.identity_auditor import audit_identity_profile
 from app.modules.cleanup_guide import get_remediation_guide
 from app.config import settings
 
+FREEMAIL_DOMAINS = {
+    "gmail.com", "googlemail.com", "web.de", "gmx.de", "gmx.net", "gmx.at", "gmx.ch",
+    "outlook.com", "outlook.de", "hotmail.com", "hotmail.de", "yahoo.com", "yahoo.de",
+    "icloud.com", "me.com", "mac.com", "t-online.de", "freenet.de", "posteo.de",
+    "proton.me", "protonmail.com", "mail.de", "arcor.de", "1und1.de", "live.com"
+}
+
 def generate_web_directories(
     name: str = "",
     username: str = "",
@@ -38,6 +45,7 @@ def generate_web_directories(
         "site": "Google Webindex",
         "icon": "🌐",
         "category": "Suchmaschinen-Index",
+        "query": target_q,
         "desc": f"Alle indexierten Webseiten und Fundstellen für {clean_name or target_q}",
         "url": f"https://www.google.com/search?q={urllib.parse.quote(target_q)}"
     })
@@ -47,6 +55,7 @@ def generate_web_directories(
         "site": "LinkedIn",
         "icon": "💼",
         "category": "Berufs- & Karriereprofil",
+        "query": f"site:linkedin.com/in/ {target_q}",
         "desc": "Öffentlich indexierte Profile, berufliche Stationen und Arbeitgeber",
         "url": f"https://www.google.com/search?q={urllib.parse.quote(f'site:linkedin.com/in/ {target_q}')}"
     })
@@ -56,6 +65,7 @@ def generate_web_directories(
         "site": "XING",
         "icon": "👥",
         "category": "Business-Netzwerk DACH",
+        "query": f"site:xing.com/profile/ {target_q}",
         "desc": "Öffentliche Profile im deutschsprachigen Wirtschaftsraum",
         "url": f"https://www.google.com/search?q={urllib.parse.quote(f'site:xing.com/profile/ {target_q}')}"
     })
@@ -66,6 +76,7 @@ def generate_web_directories(
             "site": "North Data",
             "icon": "🏢",
             "category": "Handelsregister & Wirtschaft",
+            "query": f"northdata.de?q={clean_name}",
             "desc": "Offizielle Firmendaten, Gesellschafter, Geschäftsführungen und Bilanzen",
             "url": f"https://www.northdata.de?q={urllib.parse.quote(clean_name)}"
         })
@@ -76,6 +87,7 @@ def generate_web_directories(
             "site": "Unternehmensregister / Bundesanzeiger",
             "icon": "🏛️",
             "category": "Amtliche Bekanntmachungen",
+            "query": f"(site:unternehmensregister.de OR site:bundesanzeiger.de) {target_q}",
             "desc": "Offizielle Bekanntmachungen, Gesellschafterlisten und Firmenverflechtungen",
             "url": f"https://www.google.com/search?q={urllib.parse.quote(f'(site:unternehmensregister.de OR site:bundesanzeiger.de) {target_q}')}"
         })
@@ -87,6 +99,7 @@ def generate_web_directories(
             "site": "Das Örtliche / Telefonbuch",
             "icon": "📖",
             "category": "Telefon- & Adressverzeichnis",
+            "query": f"{clean_name} {city.strip()}".strip(),
             "desc": "Öffentlich geführte Telefonnummern, Anschriften und Festnetzdaten",
             "url": f"https://www.dasoertliche.de/?zvo_ok=0&bu_ok=0&form_name=search_nat&kw={urllib.parse.quote(clean_name)}{loc_param}"
         })
@@ -97,6 +110,7 @@ def generate_web_directories(
             "site": "Yasni Personensuchmaschine",
             "icon": "🔍",
             "category": "Aggregierte Personenprofile",
+            "query": f"yasni.de/{clean_name}",
             "desc": "Web-Aggregator für Personen, Bilder, Erwähnungen und Social-Media",
             "url": f"https://www.yasni.de/{urllib.parse.quote(clean_name)}/person+information"
         })
@@ -107,23 +121,26 @@ def generate_web_directories(
             "site": "Google News",
             "icon": "📰",
             "category": "Presse & Medien",
+            "query": target_q,
             "desc": "Pressemitteilungen, redaktionelle Berichte und Veröffentlichungen",
             "url": f"https://news.google.com/search?q={urllib.parse.quote(target_q)}"
         })
 
-    # 9. Eigene Website (falls Domain angegeben)
+    # 9. Eigene Website (nur wenn keine allgemeine Freemail-Domain)
     if domain:
         clean_dom = domain.strip().lower()
         if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]
         if clean_dom.startswith("https://"): clean_dom = clean_dom[8:]
         clean_dom = clean_dom.split("/")[0]
-        dirs.insert(1, {
-            "site": f"Eigene Website ({clean_dom})",
-            "icon": "🌐",
-            "category": "Persönlicher Web-Auftritt",
-            "desc": f"Direkte Domain https://{clean_dom}",
-            "url": f"https://{clean_dom}"
-        })
+        if clean_dom and clean_dom not in FREEMAIL_DOMAINS:
+            dirs.insert(1, {
+                "site": f"Eigene Website ({clean_dom})",
+                "icon": "🌐",
+                "category": "Persönlicher Web-Auftritt",
+                "query": f"https://{clean_dom}",
+                "desc": f"Direkte Domain https://{clean_dom}",
+                "url": f"https://{clean_dom}"
+            })
 
     return dirs
 
@@ -248,26 +265,27 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return 2
     found_profiles.sort(key=sort_key)
 
-    # Insert own website/domain as active verified web presence if provided
+    # Insert own website/domain as active verified web presence if provided and not freemail
     if domain:
         clean_dom = domain.strip().lower()
         if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]
         if clean_dom.startswith("https://"): clean_dom = clean_dom[8:]
         clean_dom = clean_dom.split("/")[0]
-        dom_url = f"https://{clean_dom}"
-        found_profiles.insert(0, {
-            "platform": f"Website ({clean_dom})",
-            "category": "Eigene Web-Präsenz",
-            "url": dom_url,
-            "exists": True,
-            "status": "found",
-            "snippet": f"Offizielle Domain / Web-Auftritt ({name or clean_dom})",
-            "match": {
-                "score": 100,
-                "matches": ["Eigene Domain / DNS"],
-                "confidence": "high"
-            }
-        })
+        if clean_dom and clean_dom not in FREEMAIL_DOMAINS:
+            dom_url = f"https://{clean_dom}"
+            found_profiles.insert(0, {
+                "platform": f"Website ({clean_dom})",
+                "category": "Eigene Web-Präsenz",
+                "url": dom_url,
+                "exists": True,
+                "status": "found",
+                "snippet": f"Offizielle Domain / Web-Auftritt ({name or clean_dom})",
+                "match": {
+                    "score": 100,
+                    "matches": ["Eigene Domain / DNS"],
+                    "confidence": "high"
+                }
+            })
 
     # Phone Recon (fast sync)
     phone_res = analyze_phone_number(phone) if phone else None

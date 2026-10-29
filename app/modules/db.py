@@ -335,8 +335,16 @@ def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
 
         # Infer prefill details from Google / GitHub data
         domain = ""
+        freemail_providers = {
+            "gmail.com", "googlemail.com", "web.de", "gmx.de", "gmx.net", "gmx.at", "gmx.ch",
+            "outlook.com", "outlook.de", "hotmail.com", "hotmail.de", "yahoo.com", "yahoo.de",
+            "icloud.com", "me.com", "mac.com", "t-online.de", "freenet.de", "posteo.de",
+            "proton.me", "protonmail.com", "mail.de", "arcor.de", "1und1.de", "live.com"
+        }
         if "@" in email:
-            domain = email.split("@")[1].strip()
+            candidate_domain = email.split("@")[1].strip().lower()
+            if candidate_domain not in freemail_providers:
+                domain = candidate_domain
         username = oauth_dict.get("login") or (email.split("@")[0].strip() if "@" in email else "")
         city = oauth_dict.get("location") or ""
         employer = oauth_dict.get("company") or ""

@@ -637,6 +637,135 @@ async function runFullScan(e) {
   }
 }
 
+let currentWebDirectories = [];
+let activeWebDirCategory = 'all';
+
+function renderWebDirectories(dirs = []) {
+  currentWebDirectories = dirs;
+  activeWebDirCategory = 'all';
+  const searchInput = document.getElementById('webDirSearchInput');
+  if (searchInput) searchInput.value = '';
+
+  // Extract unique categories
+  const categories = ['all'];
+  dirs.forEach(d => {
+    if (d.category && !categories.includes(d.category)) {
+      categories.push(d.category);
+    }
+  });
+
+  const pillsContainer = document.getElementById('webDirCategoryPills');
+  if (pillsContainer) {
+    pillsContainer.innerHTML = categories.map(cat => {
+      const isAll = cat === 'all';
+      const label = isAll ? (currentLang === 'de' ? 'Alle' : 'All') : cat;
+      const count = isAll ? dirs.length : dirs.filter(d => d.category === cat).length;
+      return `
+        <button type="button" onclick="setWebDirCategory('${cat}')" id="pill-webdir-${cat.replace(/\s+/g, '-')}" 
+          class="webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${isAll ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-900 border border-slate-700 text-slate-400 hover:text-white'}">
+          <span>${label}</span>
+          <span class="text-[10px] opacity-75 font-mono">(${count})</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  filterWebDirectories();
+}
+
+function setWebDirCategory(cat) {
+  activeWebDirCategory = cat;
+  document.querySelectorAll('.webdir-pill').forEach(btn => {
+    btn.className = 'webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 bg-slate-900 border border-slate-700 text-slate-400 hover:text-white';
+  });
+  const activeBtn = document.getElementById(`pill-webdir-${cat.replace(/\s+/g, '-')}`);
+  if (activeBtn) {
+    activeBtn.className = 'webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 bg-indigo-600 text-white shadow-sm';
+  }
+  filterWebDirectories();
+}
+
+function getWebDirCategoryBadge(cat) {
+  const c = (cat || '').toLowerCase();
+  if (c.includes('suchmaschinen') || c.includes('search')) {
+    return 'bg-cyan-950 text-cyan-300 border border-cyan-800';
+  } else if (c.includes('beruf') || c.includes('karriere') || c.includes('business')) {
+    return 'bg-blue-950 text-blue-300 border border-blue-800';
+  } else if (c.includes('handelsregister') || c.includes('wirtschaft')) {
+    return 'bg-amber-950 text-amber-300 border border-amber-800';
+  } else if (c.includes('amtlich') || c.includes('bekanntmachung')) {
+    return 'bg-orange-950 text-orange-300 border border-orange-800';
+  } else if (c.includes('telefon') || c.includes('adresse')) {
+    return 'bg-emerald-950 text-emerald-300 border border-emerald-800';
+  } else if (c.includes('person') || c.includes('profil')) {
+    return 'bg-yellow-950 text-yellow-300 border border-yellow-800';
+  } else if (c.includes('presse') || c.includes('medien')) {
+    return 'bg-purple-950 text-purple-300 border border-purple-800';
+  }
+  return 'bg-slate-900 text-slate-300 border border-slate-700';
+}
+
+function filterWebDirectories() {
+  const container = document.getElementById('sbWebDirectoriesList');
+  const countBadge = document.getElementById('sbWebDirsFilterCount');
+  if (!container) return;
+
+  const searchInput = document.getElementById('webDirSearchInput');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const filtered = currentWebDirectories.filter(d => {
+    const matchCat = activeWebDirCategory === 'all' || d.category === activeWebDirCategory;
+    if (!matchCat) return false;
+    if (!query) return true;
+    const haystack = `${d.site} ${d.category} ${d.desc} ${d.query || ''}`.toLowerCase();
+    return haystack.includes(query);
+  });
+
+  if (countBadge) {
+    countBadge.textContent = currentLang === 'de' 
+      ? `${filtered.length} von ${currentWebDirectories.length} Einträgen`
+      : `${filtered.length} of ${currentWebDirectories.length} entries`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center text-slate-500 font-mono text-xs space-y-1">
+        <span class="text-xl block">🔍</span>
+        <div>${currentLang === 'de' ? 'Keine Webseiten für diesen Filter gefunden.' : 'No websites match this filter.'}</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(d => {
+    const badgeClass = getWebDirCategoryBadge(d.category);
+    const queryTag = d.query ? `<div class="text-[11px] text-slate-400 font-mono flex items-center space-x-1.5"><span class="text-slate-500">${currentLang === 'de' ? 'Suchfokus:' : 'Query:'}</span><span class="text-indigo-400 bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-900/40">${d.query}</span></div>` : '';
+    const openBtnText = currentLang === 'de' ? 'Webseite öffnen' : 'Open Website';
+
+    return `
+      <div class="p-3.5 sm:p-4 hover:bg-slate-900/60 transition flex flex-col md:flex-row md:items-center justify-between gap-3 group">
+        <div class="space-y-1.5 flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-base sm:text-lg">${d.icon || '🌐'}</span>
+            <span class="font-bold text-white text-sm tracking-tight">${d.site}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold font-mono uppercase tracking-wider ${badgeClass}">
+              ${d.category}
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 leading-normal">${d.desc}</p>
+          ${queryTag}
+        </div>
+        <div class="shrink-0 flex items-center self-end md:self-center">
+          <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer">
+            <span>${openBtnText}</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderFullReport(res, payload) {
   const data = res;
   const s = data.summary;
@@ -822,36 +951,8 @@ function renderFullReport(res, payload) {
     });
   }
 
-  // 3b. Öffentliche Webseiten & Verzeichnisse Grid
-  const dirsGrid = document.getElementById('sbWebDirectoriesGrid');
-  if (dirsGrid) {
-    if (webDirs.length === 0) {
-      dirsGrid.innerHTML = `<div class="col-span-full text-slate-500 text-center py-3 text-xs">${currentLang === 'de' ? 'Gib einen Namen oder Handle ein, um Webseiten-Fundstellen zu durchsuchen.' : 'Provide a name or handle to generate web directory search links.'}</div>`;
-    } else {
-      dirsGrid.innerHTML = webDirs.map(d => `
-        <div class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-600/60 rounded-xl flex flex-col justify-between gap-2.5 transition group shadow-sm">
-          <div>
-            <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="font-bold text-white text-xs flex items-center space-x-1.5 truncate">
-                <span>${d.icon || '🌐'}</span>
-                <span class="truncate">${d.site}</span>
-              </span>
-              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 shrink-0">
-                ${d.category}
-              </span>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-snug line-clamp-2">${d.desc}</p>
-          </div>
-          <div class="pt-2 border-t border-slate-900 flex justify-end">
-            <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 hover:text-white rounded-lg text-[10px] font-semibold transition flex items-center space-x-1 cursor-pointer">
-              <span>${currentLang === 'de' ? 'Webseite öffnen' : 'Open Website'}</span>
-              <span>↗</span>
-            </a>
-          </div>
-        </div>
-      `).join('');
-    }
-  }
+  // 3b. Filterbare Liste öffentlicher Webseiten & Verzeichnisse
+  renderWebDirectories(webDirs);
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
   const threatsBox = document.getElementById('sbThreatsContainer');

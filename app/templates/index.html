@@ -545,17 +545,42 @@
               </div>
             </div>
 
-            <!-- Teil 2b: Öffentliche Webseiten & Verzeichnisse (Wo dein Name im Netz geführt wird) -->
-            <div id="sbWebDirectoriesSection" class="pt-3 border-t border-slate-800/80 space-y-2.5">
-              <div class="flex items-center justify-between">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
-                  <span>🌐</span>
-                  <span>Öffentliche Webseiten & Suchmaschinen-Einträge für deine Person:</span>
+            <!-- Teil 2b: Filterbare Liste öffentlicher Webseiten & Verzeichnisse -->
+            <div id="sbWebDirectoriesSection" class="pt-4 border-t border-slate-800 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h5 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-1.5">
+                    <span>🌐</span>
+                    <span>Öffentliche Webseiten & Verzeichnisse mit deiner Nennung</span>
+                  </h5>
+                  <p class="text-[11px] text-slate-400 mt-0.5">
+                    Filterbare Liste aller Live-Fundstellen und Personenregister mit 1-Klick Direktlink.
+                  </p>
                 </div>
-                <span class="text-[10px] text-slate-500 font-mono">1-Klick Live-Prüfung</span>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-mono text-indigo-400 font-bold bg-indigo-950/80 border border-indigo-800 px-2.5 py-1 rounded-lg" id="sbWebDirsFilterCount">
+                    0 Einträge
+                  </span>
+                </div>
               </div>
-              <div id="sbWebDirectoriesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                <!-- Dynamically injected directory cards -->
+
+              <!-- Filter-Leiste (Suche + Kategorie-Pills) -->
+              <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs">🔍</span>
+                    <input type="text" id="webDirSearchInput" oninput="filterWebDirectories()" placeholder="Nach Webseite, Kategorie oder Stichwort filtern..."
+                      class="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs outline-none focus:border-indigo-500 transition font-mono" />
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5" id="webDirCategoryPills">
+                    <!-- Injected dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filterbare Liste (Vollbreite Zeilen mit optimaler Lesbarkeit) -->
+              <div class="overflow-hidden border border-slate-800 rounded-xl bg-slate-950 divide-y divide-slate-800/80" id="sbWebDirectoriesList">
+                <!-- Dynamically injected rows -->
               </div>
             </div>
 
