@@ -122,7 +122,6 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     # Aggregated Summary Stats (All strictly verified facts)
     high_matches = len([p for p in found_profiles if p.get("match", {}).get("confidence") in ["high", "medium"]])
     summary = {
-        "profiles_checked": len(username_results),
         "profiles_found": len(found_profiles),
         "high_confidence_matches": high_matches,
         "unverified_handles": len(found_profiles) - high_matches,

@@ -240,8 +240,8 @@ async def scan_username_stream(
     context: Optional[Dict[str, Any]] = None
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
-    Scans platforms concurrently using a Semaphore and yields results in real-time as they complete.
-    Also correlates with personal context to eliminate false positives.
+    Scans platforms concurrently using a Semaphore and yields exclusively found accounts as they appear.
+    Platforms where the username does NOT exist are never emitted as profile results.
     """
     total = len(PLATFORMS)
     checked = 0
@@ -260,26 +260,35 @@ async def scan_username_stream(
         for future in asyncio.as_completed(tasks):
             res = await future
             checked += 1
-            if res["exists"]:
+            if res.get("exists") is True:
                 found_count += 1
                 if res.get("match", {}).get("confidence") in ["high", "medium"]:
                     high_match_count += 1
             
-            res["progress"] = {
-                "checked": checked,
-                "total": total,
-                "found": found_count,
-                "high_match_count": high_match_count,
-                "percent": round((checked / total) * 100, 1)
-            }
-            yield res
+                res["progress"] = {
+                    "found": found_count,
+                    "high_match_count": high_match_count,
+                    "percent": round((checked / total) * 100, 1)
+                }
+                yield res
+            else:
+                # Emit progress ping only, never the un-found platform
+                yield {
+                    "event": "progress",
+                    "progress": {
+                        "found": found_count,
+                        "high_match_count": high_match_count,
+                        "percent": round((checked / total) * 100, 1)
+                    }
+                }
 
 async def scan_usernames_fast(
     username: str,
     context: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """
-    Scans all platforms concurrently and returns list of completed checks.
+    Scans all platforms concurrently and returns exclusively verified found accounts.
+    Platforms that return 404/not_found or errors are completely excluded.
     """
     sem = asyncio.Semaphore(15)
     async with httpx.AsyncClient(headers=HEADERS, timeout=7.0, follow_redirects=True) as client:
@@ -289,5 +298,5 @@ async def scan_usernames_fast(
         
         tasks = [asyncio.create_task(sem_check(p)) for p in PLATFORMS]
         results = await asyncio.gather(*tasks, return_exceptions=False)
-        return results
+        return [r for r in results if isinstance(r, dict) and r.get("exists") is True]
 

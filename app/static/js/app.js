@@ -36,7 +36,7 @@ const translations = {
     lbl_employer: "Company / Employer",
     lbl_phone: "Phone / Mobile",
     lbl_domain: "Domain (Mail Security)",
-    cockpit_footer_note: "Concurrently queries k-Anonymity hashes, 40+ platforms, mail spoofing & dorks.",
+    cockpit_footer_note: "Concurrently queries k-Anonymity hashes, verified social platforms, mail spoofing & dorks.",
     btn_start_fullscan: "🚀 Start Full Scan (Audit Everything)",
     dossier_created_title: "Complete Intelligence Dossier Generated",
     btn_print_dossier: "📄 Print DIN A4 Dossier / PDF",
@@ -84,7 +84,8 @@ const translations = {
     th_property: "Property",
     th_value: "Value",
     user_recon_title: "Single Username Recon (Sherlock)",
-    user_recon_desc: "Search for a single username handle across 40+ platforms.",
+    user_recon_desc: "Search for registered profiles and active online accounts under this handle.",
+    lbl_profiles_found: "Discovered Profiles:",
     btn_start_scan: "Start Scan",
     dom_title: "Domain & Mail Security Audit",
     btn_scan_domain: "Scan Domain",
@@ -171,7 +172,7 @@ const translations = {
     lbl_employer: "Firma / Arbeitgeber",
     lbl_phone: "Telefon / Handy",
     lbl_domain: "Eigene Domain (Mail-Security)",
-    cockpit_footer_note: "Prüft k-Anonymity Hashes, 40+ Social-Netzwerke, Mail-Spoofing & Dorks gleichzeitig.",
+    cockpit_footer_note: "Prüft k-Anonymity Hashes, verifizierte Plattform-Accounts, Mail-Spoofing & Dorks gleichzeitig.",
     btn_start_fullscan: "🚀 Vollscan starten (Alles prüfen)",
     dossier_created_title: "Vollständiges Personen-Dossier erstellt",
     btn_print_dossier: "📄 Als DIN A4 Steckbrief drucken / PDF",
@@ -219,7 +220,8 @@ const translations = {
     th_property: "Eigenschaft",
     th_value: "Wert",
     user_recon_title: "Einzelne Username-Suche (Sherlock)",
-    user_recon_desc: "Prüfe gezielt einen einzelnen Benutzernamen über 40+ Plattformen.",
+    user_recon_desc: "Ermittle registrierte Profile und aktive Benutzerkonten unter diesem Benutzernamen.",
+    lbl_profiles_found: "Gefundene Profile:",
     btn_start_scan: "Scan starten",
     dom_title: "Domain- & Mail-Security-Audit",
     btn_scan_domain: "Domain scannen",
@@ -872,6 +874,9 @@ function startUsernameScan(e) {
   currentResults = [];
   document.getElementById('usernameResultsGrid').innerHTML = '';
   document.getElementById('usernameProgressSection').classList.remove('hidden');
+  document.getElementById('scanFoundCount').textContent = '0';
+  const statusText = document.getElementById('scanStatusText');
+  if (statusText) statusText.textContent = currentLang === 'de' ? 'Prüfung läuft...' : 'Scanning in progress...';
 
   const btn = document.getElementById('usernameScanBtn');
   btn.disabled = true;
@@ -885,24 +890,39 @@ function startUsernameScan(e) {
     if (data.event === 'done') {
       btn.disabled = false;
       btn.textContent = translations[currentLang].btn_start_scan;
+      if (statusText) statusText.textContent = currentLang === 'de' ? 'Abgeschlossen' : 'Completed';
+      document.getElementById('scanProgressBar').style.width = '100%';
       usernameEventSource.close();
+
+      const grid = document.getElementById('usernameResultsGrid');
+      if (currentResults.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center text-slate-400 text-xs shadow-inner">
+            <span class="text-2xl block mb-2">🔍</span>
+            <span class="font-bold text-slate-300 block mb-1">${currentLang === 'de' ? 'Keine Accounts gefunden' : 'No accounts found'}</span>
+            <span>${currentLang === 'de' ? 'Unter diesem Benutzernamen wurden keine aktiven Benutzerkonten identifiziert.' : 'No active accounts were identified under this handle.'}</span>
+          </div>
+        `;
+      }
       return;
     }
-    currentResults.push(data);
+
     if (data.progress) {
       document.getElementById('scanProgressBar').style.width = `${data.progress.percent}%`;
-      document.getElementById('scanCount').textContent = `${data.progress.checked}/${data.progress.total}`;
       document.getElementById('scanFoundCount').textContent = data.progress.found;
+      if (statusText) statusText.textContent = `${data.progress.percent}%`;
     }
+
     if (data.exists) {
+      currentResults.push(data);
       const card = document.createElement('div');
-      card.className = 'p-3 bg-slate-900 rounded-xl border border-emerald-500/50 flex justify-between items-center';
+      card.className = 'p-3.5 bg-slate-900 rounded-xl border border-emerald-500/50 flex justify-between items-center shadow-sm';
       card.innerHTML = `
         <div>
           <span class="font-bold text-white text-xs block">${data.platform}</span>
           <span class="text-[10px] text-slate-400">${data.category}</span>
         </div>
-        <a href="${data.url}" target="_blank" class="text-xs text-cyan-400 hover:underline">${currentLang === 'de' ? 'Öffnen ↗' : 'Open ↗'}</a>
+        <a href="${data.url}" target="_blank" class="text-xs text-cyan-400 hover:underline font-semibold">${currentLang === 'de' ? 'Profil öffnen ↗' : 'Open profile ↗'}</a>
       `;
       document.getElementById('usernameResultsGrid').appendChild(card);
     }
