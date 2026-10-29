@@ -115,6 +115,7 @@ RestartSec=3
 Environment=PYTHONUNBUFFERED=1
 Environment=HOST=0.0.0.0
 Environment=PORT=8000
+EnvironmentFile=-$INSTALL_DIR/.env
 
 [Install]
 WantedBy=multi-user.target

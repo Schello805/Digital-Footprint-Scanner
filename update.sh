@@ -100,6 +100,13 @@ fi
 
 # 4. Restart Service
 echo -e "\n${CYAN}➜ 4. Starte Dienst neu...${NC}"
+if [ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]; then
+    if ! grep -q "EnvironmentFile" "/etc/systemd/system/${SERVICE_NAME}.service"; then
+        $SUDO_CMD sed -i '/\[Service\]/a EnvironmentFile=-'"$INSTALL_DIR"'/.env' "/etc/systemd/system/${SERVICE_NAME}.service" 2>/dev/null || true
+        $SUDO_CMD systemctl daemon-reload 2>/dev/null || true
+    fi
+fi
+
 if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
     $SUDO_CMD systemctl restart "$SERVICE_NAME"
     echo -e "${GREEN}✓ Systemd-Dienst '${SERVICE_NAME}' erfolgreich neu gestartet.${NC}"
