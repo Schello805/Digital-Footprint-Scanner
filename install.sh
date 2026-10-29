@@ -113,6 +113,8 @@ ExecStart=$INSTALL_DIR/venv/bin/python run.py
 Restart=always
 RestartSec=3
 Environment=PYTHONUNBUFFERED=1
+Environment=HOST=0.0.0.0
+Environment=PORT=8000
 
 [Install]
 WantedBy=multi-user.target
@@ -123,6 +125,14 @@ EOF"
     $SUDO_CMD systemctl restart "$SERVICE_NAME"
     
     echo -e "${GREEN}✓ Systemd-Dienst '${SERVICE_NAME}' gestartet und für Autostart registriert.${NC}"
+
+    # Check and allow UFW firewall if active
+    if command -v ufw >/dev/null 2>&1; then
+        if $SUDO_CMD ufw status | grep -q "Status: active"; then
+            $SUDO_CMD ufw allow 8000/tcp comment 'Digital Footprint Scanner' >/dev/null 2>&1 || true
+            echo -e "${GREEN}✓ Firewall-Port 8000/tcp in UFW freigeschaltet.${NC}"
+        fi
+    fi
 else
     echo -e "\n${YELLOW}⚠️ Kein systemd erkannt. Starte Server im Hintergrund...${NC}"
     nohup ./venv/bin/python run.py > app.log 2>&1 &
