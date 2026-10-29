@@ -2223,6 +2223,10 @@ async function checkAuthStatus() {
         }
       }
 
+      const btnCockpit = document.getElementById('btnHeaderCockpit');
+      if (btnCockpit) btnCockpit.classList.remove('hidden');
+
+      closeAuthModal();
       await refreshUserScans();
     } else {
       currentUser = null;
@@ -2236,13 +2240,44 @@ async function checkAuthStatus() {
 
       const btnSettings = document.getElementById('btnHeaderSettings');
       if (btnSettings) btnSettings.classList.add('hidden');
+
+      const btnCockpit = document.getElementById('btnHeaderCockpit');
+      if (btnCockpit) btnCockpit.classList.add('hidden');
+
+      closeAuthModal();
     }
   } catch (err) {
     console.warn('Auth status check failed:', err);
   }
 }
 
+function handleHeaderLoginClick() {
+  const gateContainer = document.getElementById('authGateContainer');
+  // If gate screen is visible, seamlessly activate login tab without popup
+  if (gateContainer && !gateContainer.classList.contains('hidden')) {
+    setGateAuthMode('login');
+    const emailInput = document.getElementById('gateEmail');
+    if (emailInput) {
+      emailInput.focus();
+      emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+  openAuthModal();
+}
+
 function openAuthModal() {
+  const gateContainer = document.getElementById('authGateContainer');
+  // Prevent duplicate floating modal over the landing gate
+  if (gateContainer && !gateContainer.classList.contains('hidden')) {
+    setGateAuthMode('login');
+    const emailInput = document.getElementById('gateEmail');
+    if (emailInput) {
+      emailInput.focus();
+      emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
   const modal = document.getElementById('authModal');
   if (modal) {
     modal.classList.remove('hidden');
