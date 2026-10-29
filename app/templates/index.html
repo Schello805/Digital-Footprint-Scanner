@@ -551,57 +551,7 @@
               </div>
             </div>
 
-            <!-- Teil 2b: Externe Register- & Suchabfragen -->
-            <div id="sbWebDirectoriesSection" class="pt-3 border-t border-slate-800 space-y-2">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h5 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-1.5">
-                    <span>🔍</span>
-                    <span>1-Klick Register- & Dork-Suchabfragen (Manuelle Live-Prüfung):</span>
-                  </h5>
-                  <p class="text-[11px] text-slate-400 mt-0.5">
-                    Externe Abfragen (Google, North Data, Handelsregister, Telefonbuch). Da diese Server-Crawler mit CAPTCHAs blockieren, öffnest du sie hier direkt im Browser. Zeigt eine Seite keine Treffer, bist du dort nicht erfasst (sauber).
-                  </p>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="text-[10px] font-mono text-indigo-400 font-bold bg-indigo-950/80 border border-indigo-800 px-2 py-0.5 rounded-md" id="sbWebDirsFilterCount">
-                    0 Einträge
-                  </span>
-                </div>
-              </div>
-
-              <!-- Filter-Toolbar (Kompakte Suche + Kategorie-Pills) -->
-              <div class="p-2 bg-slate-950 border border-slate-800 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="relative flex-1 max-w-sm">
-                  <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-500 text-[11px]">🔍</span>
-                  <input type="text" id="webDirSearchInput" oninput="filterWebDirectories()" placeholder="Filter nach Webseite, Query..."
-                    class="w-full pl-7 pr-2.5 py-1 bg-slate-900 border border-slate-700 rounded-md text-white text-[11px] outline-none focus:border-indigo-500 transition font-mono placeholder:text-slate-500" />
-                </div>
-                <div class="flex flex-wrap items-center gap-1" id="webDirCategoryPills">
-                  <!-- Injected dynamically -->
-                </div>
-              </div>
-
-              <!-- Filterbare Tabelle (Identische Typografie & Zeilenhöhe wie Tabelle 2a oben) -->
-              <div class="overflow-x-auto border border-slate-800 rounded-lg">
-                <table class="w-full text-left text-xs">
-                  <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono text-[11px]">
-                    <tr>
-                      <th class="py-2 px-3">Webseite / Register</th>
-                      <th class="py-2 px-3">Kategorie</th>
-                      <th class="py-2 px-3">Suchfokus (Query)</th>
-                      <th class="py-2 px-3">Beschreibung</th>
-                      <th class="py-2 px-3 text-right">Direktlink</th>
-                    </tr>
-                  </thead>
-                  <tbody id="sbWebDirectoriesList" class="divide-y divide-slate-800 font-mono text-slate-300 text-[11px]">
-                    <!-- Injected dynamically -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Teil 2c: Visuelle Mediathek & Profilbilder-Wolke -->
+            <!-- Teil 2b: Visuelle Mediathek & Profilbilder-Wolke -->
             <div id="sbMediaCloudSection" class="pt-3 border-t border-slate-800 space-y-3">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>

@@ -14,11 +14,16 @@ PLATFORMS: List[Dict[str, Any]] = [
     {"name": "NPM", "category": "Tech / Dev", "url": "https://www.npmjs.com/~{}", "check_type": "status_code", "error_code": 404},
     {"name": "LeetCode", "category": "Tech / Dev", "url": "https://leetcode.com/u/{}/", "check_type": "status_code", "error_code": 404},
     {"name": "Replit", "category": "Tech / Dev", "url": "https://replit.com/@{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Codeberg", "category": "Tech / Dev", "url": "https://codeberg.org/{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Devpost", "category": "Tech / Dev", "url": "https://devpost.com/{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Kaggle", "category": "Data / AI", "url": "https://www.kaggle.com/{}", "check_type": "status_code", "error_code": 404},
 
     # Social & Community
     {"name": "Reddit", "category": "Social Media", "url": "https://www.reddit.com/user/{}/about.json", "check_type": "status_code", "error_code": 404, "profile_url": "https://www.reddit.com/user/{}"},
     {"name": "Telegram", "category": "Social Media", "url": "https://t.me/{}", "check_type": "text_contains", "match_text": "tgme_page_extra"},
     {"name": "Mastodon.social", "category": "Social Media", "url": "https://mastodon.social/@{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Bluesky", "category": "Social Media", "url": "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={}.bsky.social", "check_type": "status_code", "error_code": 400, "profile_url": "https://bsky.app/profile/{}.bsky.social"},
+    {"name": "Substack", "category": "Publishing / Blog", "url": "https://{}.substack.com", "check_type": "status_code", "error_code": 404},
 
     # Video & Media
     {"name": "YouTube", "category": "Video & Media", "url": "https://www.youtube.com/@{}", "check_type": "status_code", "error_code": 404},

@@ -1098,14 +1098,14 @@ function renderFullReport(res, payload) {
   const verifiedCount = s.high_confidence_matches || 0;
 
   document.getElementById('sbProfilesCountText').textContent = currentLang === 'de' 
-    ? `${fullScanProfiles.length} Accounts & ${webDirs.length} Web-Fundstellen`
-    : `${fullScanProfiles.length} Accounts & ${webDirs.length} Web Matches`;
+    ? `${fullScanProfiles.length} ${fullScanProfiles.length === 1 ? 'bestätigter Account' : 'bestätigte Accounts'}`
+    : `${fullScanProfiles.length} ${fullScanProfiles.length === 1 ? 'verified account' : 'verified accounts'}`;
 
   const tbody = document.getElementById('sbProfilesTableBody');
   tbody.innerHTML = '';
 
   if (fullScanProfiles.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">${currentLang === 'de' ? 'Keine registrierten Accounts unter diesem Benutzernamen identifiziert. Siehe die Webseiten-Fundstellen unten.' : 'No registered accounts identified under this handle. See web directory entries below.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 font-mono text-xs">${currentLang === 'de' ? 'Keine öffentlichen Accounts unter diesem Benutzernamen / Namen gefunden (Ausgezeichneter digitaler Datenschutz).' : 'No public accounts identified for this username / name (High digital privacy).'}</td></tr>`;
   } else {
     fullScanProfiles.forEach(p => {
       const isHigh = p.match && (p.match.confidence === 'high' || p.match.confidence === 'medium');
@@ -1137,10 +1137,7 @@ function renderFullReport(res, payload) {
     });
   }
 
-  // 3b. Filterbare Liste öffentlicher Webseiten & Verzeichnisse
-  renderWebDirectories(webDirs);
-
-  // 3c. Visuelle Mediathek & Bild-Wolke (Word-Cloud skaliert mit Häufigkeit)
+  // 3. Visuelle Mediathek & Bild-Wolke (Word-Cloud skaliert mit Häufigkeit)
   renderMediaCloud(data.discovered_images || []);
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
