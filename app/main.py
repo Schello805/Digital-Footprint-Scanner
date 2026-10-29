@@ -68,13 +68,17 @@ class FullScanRequest(BaseModel):
 
 @app.post("/api/scan/full")
 async def full_scan(req: FullScanRequest, request: Request):
-    result = await execute_full_scan(req.dict())
     user = get_current_user(request)
-    if user:
-        from app.modules.db import save_user_scan
-        scan_id = save_user_scan(user["id"], req.dict(), result)
-        result["saved_scan_id"] = scan_id
-        result["user_email"] = user["email"]
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Zugriff verweigert: Bitte registriere dich oder melde dich an, um deinen digitalen Fußabdruck zu scannen."
+        )
+    result = await execute_full_scan(req.dict())
+    from app.modules.db import save_user_scan
+    scan_id = save_user_scan(user["id"], req.dict(), result)
+    result["saved_scan_id"] = scan_id
+    result["user_email"] = user["email"]
     return result
 
 # --- 1. Username Scanner with Context & Bio Matching (SSE Stream) ---

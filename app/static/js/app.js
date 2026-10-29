@@ -19,6 +19,9 @@ const translations = {
     fullscan_cockpit: "🚀 Full Scan Cockpit",
     api_keys: "⚙️ API Keys",
     tab_fullscan: "🚀 Full Scan (All-in-One)",
+    tab_scans: "📁 My Scans",
+    gate_title: "Digital Footprint Scanner",
+    gate_desc: "Create a free account to scan your digital footprint. All results and reports remain saved in your profile.",
     tab_exif: "📸 EXIF Photo Inspector",
     tab_username: "👤 Username Recon",
     tab_domain: "🌐 Domain & DNS Security",
@@ -162,6 +165,9 @@ const translations = {
     fullscan_cockpit: "🚀 Vollscan Cockpit",
     api_keys: "⚙️ API-Keys",
     tab_fullscan: "🚀 Vollscan (Alles auf einmal)",
+    tab_scans: "📁 Meine Scans",
+    gate_title: "Digital Footprint Scanner",
+    gate_desc: "Kostenlos registrieren, um deinen digitalen Fußabdruck zu scannen. Alle Funde und Berichte bleiben dauerhaft in deinem Profil gesichert.",
     tab_exif: "📸 EXIF-Foto-Inspektor",
     tab_username: "👤 Einzelner Username-Check",
     tab_domain: "🌐 Domain & DNS-Security",
@@ -510,6 +516,10 @@ function switchTab(tabId) {
     }
   }
 
+  if (tabId === 'scans') {
+    refreshUserScans();
+  }
+
   if (tabId === 'exif' && leafletMap) {
     setTimeout(() => leafletMap.invalidateSize(), 200);
   }
@@ -586,14 +596,26 @@ async function runFullScan(e) {
     clearTimeout(t1);
     clearTimeout(t2);
 
+    if (res.status === 401) {
+      alert(currentLang === 'de' 
+        ? 'Zugriff verweigert: Bitte erstelle zuerst ein kostenloses Konto oder melde dich an.' 
+        : 'Access denied: Please register or log in first to scan.');
+      await checkAuthStatus();
+      return;
+    }
+
     if (json.success) {
       lastScanResult = json;
       progressBar.style.width = '100%';
       progressStep.textContent = currentLang === 'de' ? '✓ Vollscan abgeschlossen! DIN A4 Steckbrief erstellt.' : '✓ Full scan complete! Dossier generated.';
       setTimeout(() => progressBox.classList.add('hidden'), 800);
       renderFullReport(json, payload);
+
+      const savedNotice = document.getElementById('scanSavedNotification');
+      if (savedNotice) savedNotice.classList.remove('hidden');
+
       if (currentUser) {
-        checkAuthStatus();
+        await refreshUserScans();
       }
     } else {
       alert('Error: ' + (json.error || 'Full scan failed'));
@@ -1953,6 +1975,76 @@ function copyInstallCommand(btn) {
 // ==================== 8. MULTI-USER AUTHENTICATION & PERSONAL SCANS ARCHIVE ====================
 let currentUser = null;
 let currentAuthMode = 'login'; // 'login' or 'register'
+let currentGateAuthMode = 'register'; // Landing page default is registration
+
+function setGateAuthMode(mode) {
+  currentGateAuthMode = mode;
+  const btnReg = document.getElementById('btnGateModeRegister');
+  const btnLog = document.getElementById('btnGateModeLogin');
+  const submitText = document.getElementById('gateSubmitText');
+  const pwdHelp = document.getElementById('gatePwdHelpText');
+  const errBanner = document.getElementById('gateAuthError');
+  if (errBanner) errBanner.classList.add('hidden');
+
+  if (mode === 'register') {
+    if (btnReg) btnReg.className = 'py-2.5 rounded-lg bg-indigo-600 text-white transition cursor-pointer shadow';
+    if (btnLog) btnLog.className = 'py-2.5 rounded-lg text-slate-400 hover:text-white transition cursor-pointer';
+    if (submitText) submitText.textContent = currentLang === 'de' ? '🚀 Jetzt kostenlos registrieren & Scan starten' : '🚀 Create Free Account & Start Scan';
+    if (pwdHelp) pwdHelp.textContent = currentLang === 'de' ? 'Mind. 8 Zeichen' : 'Min. 8 characters';
+  } else {
+    if (btnLog) btnLog.className = 'py-2.5 rounded-lg bg-indigo-600 text-white transition cursor-pointer shadow';
+    if (btnReg) btnReg.className = 'py-2.5 rounded-lg text-slate-400 hover:text-white transition cursor-pointer';
+    if (submitText) submitText.textContent = currentLang === 'de' ? '🔑 Anmelden & Scans öffnen' : '🔑 Sign In & Open Scans';
+    if (pwdHelp) pwdHelp.textContent = '';
+  }
+}
+
+async function handleGateAuthSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById('gateAuthEmail');
+  const pwdInput = document.getElementById('gateAuthPassword');
+  const errBanner = document.getElementById('gateAuthError');
+  const spinner = document.getElementById('gateSpinner');
+  const submitBtn = document.getElementById('btnGateAuthSubmit');
+
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = pwdInput ? pwdInput.value : '';
+
+  if (!email || !password) return;
+
+  if (errBanner) errBanner.classList.add('hidden');
+  if (spinner) spinner.classList.remove('hidden');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const endpoint = currentGateAuthMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      if (pwdInput) pwdInput.value = '';
+      await checkAuthStatus();
+    } else {
+      if (errBanner) {
+        errBanner.textContent = json.error || (currentLang === 'de' ? 'Fehler bei der Authentifizierung' : 'Authentication failed');
+        errBanner.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    if (errBanner) {
+      errBanner.textContent = currentLang === 'de' ? 'Verbindungsfehler zum Server' : 'Connection error to server';
+      errBanner.classList.remove('hidden');
+    }
+  } finally {
+    if (spinner) spinner.classList.add('hidden');
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
 
 async function checkAuthStatus() {
   try {
@@ -1961,26 +2053,27 @@ async function checkAuthStatus() {
     const loginBtn = document.getElementById('btnHeaderLogin');
     const userDropdown = document.getElementById('headerUserDropdown');
     const emailText = document.getElementById('headerUserEmailText');
-    const scansBadge = document.getElementById('headerUserScansBadge');
+    const gateContainer = document.getElementById('authGateContainer');
+    const navContainer = document.getElementById('appNavContainer');
+    const mainContainer = document.getElementById('appMainContainer');
 
     if (json.success && json.authenticated && json.user) {
       currentUser = json.user;
+      if (gateContainer) gateContainer.classList.add('hidden');
+      if (navContainer) navContainer.classList.remove('hidden');
+      if (mainContainer) mainContainer.classList.remove('hidden');
+
       if (loginBtn) loginBtn.classList.add('hidden');
       if (userDropdown) userDropdown.classList.remove('hidden');
       if (emailText) emailText.textContent = currentUser.email;
 
-      // Update scans count in badge
-      try {
-        const sRes = await fetch('/api/user/scans');
-        const sJson = await sRes.json();
-        if (sJson.success && scansBadge) {
-          scansBadge.textContent = (sJson.scans || []).length;
-        }
-      } catch (e) {
-        // quiet
-      }
+      await refreshUserScans();
     } else {
       currentUser = null;
+      if (gateContainer) gateContainer.classList.remove('hidden');
+      if (navContainer) navContainer.classList.add('hidden');
+      if (mainContainer) mainContainer.classList.add('hidden');
+
       if (loginBtn) loginBtn.classList.remove('hidden');
       if (userDropdown) userDropdown.classList.add('hidden');
     }
@@ -2098,36 +2191,46 @@ function closeUserScansModal() {
 
 async function refreshUserScans() {
   const container = document.getElementById('userScansListContainer');
-  if (!container) return;
+  const tabContainer = document.getElementById('userScansTabListContainer');
+  if (!container && !tabContainer) return;
 
-  container.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>`;
+  if (container) container.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>`;
+  if (tabContainer) tabContainer.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>`;
 
   try {
     const res = await fetch('/api/user/scans');
     const json = await res.json();
 
-    if (!json.success || !json.scans || json.scans.length === 0) {
-      container.innerHTML = `
-        <div class="p-8 text-center bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-          <span class="text-3xl block">📂</span>
-          <div class="font-bold text-white text-sm">${currentLang === 'de' ? 'Noch keine Scans gespeichert' : 'No saved scans yet'}</div>
-          <p class="text-slate-400 text-xs">${currentLang === 'de' ? 'Führe einen Vollscan durch – deine Berichte und Dossiers werden hier automatisch für dich archiviert.' : 'Execute a full scan – your intelligence reports will be archived here automatically.'}</p>
-          <div class="pt-2">
-            <button onclick="closeUserScansModal(); switchTab('fullscan');" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
+    const scans = (json.success && json.scans) ? json.scans : [];
+    const count = scans.length;
+
+    const badgeHeader = document.getElementById('headerUserScansBadge');
+    const badgeNav = document.getElementById('tabNavScansBadge');
+    const badgeCount = document.getElementById('tabScansCountBadge');
+
+    if (badgeHeader) badgeHeader.textContent = count;
+    if (badgeNav) badgeNav.textContent = count;
+    if (badgeCount) badgeCount.textContent = `${count} ${currentLang === 'de' ? 'archiviert' : 'archived'}`;
+
+    if (count === 0) {
+      const emptyHtml = `
+        <div class="p-10 text-center bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+          <span class="text-4xl block">📂</span>
+          <div class="font-bold text-white text-base">${currentLang === 'de' ? 'Noch keine Scans gespeichert' : 'No saved scans yet'}</div>
+          <p class="text-slate-400 text-xs max-w-md mx-auto">${currentLang === 'de' ? 'Führe deinen ersten Vollscan durch – deine Berichte und Dossiers werden hier automatisch für dich archiviert.' : 'Execute your first full scan – your intelligence reports will be archived here automatically.'}</p>
+          <div class="pt-3">
+            <button onclick="closeUserScansModal(); switchTab('fullscan');" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow cursor-pointer">
               ${currentLang === 'de' ? '🚀 Zum Vollscan Cockpit' : '🚀 To Full Scan Cockpit'}
             </button>
           </div>
         </div>
       `;
-      const badge = document.getElementById('headerUserScansBadge');
-      if (badge) badge.textContent = '0';
+      if (container) container.innerHTML = emptyHtml;
+      if (tabContainer) tabContainer.innerHTML = emptyHtml;
       return;
     }
 
-    const badge = document.getElementById('headerUserScansBadge');
-    if (badge) badge.textContent = json.scans.length;
-
-    container.innerHTML = json.scans.map(s => {
+    const itemsHtml = scans.map(s => {
       const targetLabel = s.target_name || (s.target_handle ? `@${s.target_handle}` : (s.target_email || 'Unbekanntes Ziel'));
       const handleSub = s.target_handle ? `@${s.target_handle}` : (s.target_email || '-');
       const dateStr = s.created_at ? s.created_at.replace('T', ' ').slice(0, 16) : '-';
@@ -2165,14 +2268,48 @@ async function refreshUserScans() {
       `;
     }).join('');
 
+    if (container) container.innerHTML = itemsHtml;
+    if (tabContainer) tabContainer.innerHTML = itemsHtml;
+
   } catch (err) {
-    container.innerHTML = `<div class="p-6 text-center text-rose-400 text-xs">Fehler beim Laden der Scans: ${err.message}</div>`;
+    const errHtml = `<div class="p-6 text-center text-rose-400 text-xs">Fehler beim Laden der Scans: ${err.message}</div>`;
+    if (container) container.innerHTML = errHtml;
+    if (tabContainer) tabContainer.innerHTML = errHtml;
   }
 }
 
 async function loadSavedScan(scanId) {
   try {
     const res = await fetch(`/api/user/scans/${scanId}`);
+    const json = await res.json();
+    if (!json.success || !json.scan) {
+      alert(currentLang === 'de' ? 'Scan konnte nicht geladen werden.' : 'Could not load scan.');
+      return;
+    }
+
+    closeUserScansModal();
+    switchTab('fullscan');
+
+    const results = json.scan.results;
+    const payload = json.scan.payload;
+
+    renderFullReport(results, payload);
+
+    const savedNotice = document.getElementById('scanSavedNotification');
+    if (savedNotice) savedNotice.classList.remove('hidden');
+
+    // Smooth scroll to the report
+    setTimeout(() => {
+      const dossier = document.getElementById('fullReportContainer');
+      if (dossier) {
+        dossier.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 200);
+
+  } catch (err) {
+    alert('Fehler beim Öffnen des Scans: ' + err.message);
+  }
+}
     const json = await res.json();
     if (!json.success || !json.scan) {
       alert(currentLang === 'de' ? 'Scan konnte nicht geladen werden.' : 'Could not load scan.');

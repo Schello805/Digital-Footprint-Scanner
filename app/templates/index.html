@@ -82,11 +82,16 @@
     </div>
   </header>
 
-  <!-- Navigation Bar -->
-  <nav class="border-b border-slate-800 bg-slate-950 px-4">
+  <!-- Navigation Bar (Visible only when authenticated) -->
+  <nav id="appNavContainer" class="hidden border-b border-slate-800 bg-slate-950 px-4">
     <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5">
       <button onclick="switchTab('fullscan')" id="tab-btn-fullscan" class="tab-btn active px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md">
         <span data-i18n="tab_fullscan">🚀 Full Scan (All-in-One)</span>
+      </button>
+      <button onclick="switchTab('scans')" id="tab-btn-scans" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>📁</span>
+        <span data-i18n="tab_scans">Meine Scans</span>
+        <span id="tabNavScansBadge" class="px-1.5 py-0.2 text-[10px] bg-indigo-600 text-white rounded-full font-bold">0</span>
       </button>
       <button onclick="switchTab('exif')" id="tab-btn-exif" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
         <span data-i18n="tab_exif">📸 EXIF Photo Inspector</span>
@@ -109,8 +114,109 @@
     </div>
   </nav>
 
-  <!-- Main Content Area -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
+  <!-- ==================== REGISTRATION & LOGIN GATE (PRIMARY INITIAL VIEW) ==================== -->
+  <div id="authGateContainer" class="flex-1 max-w-xl w-full mx-auto px-4 py-12 flex flex-col justify-center">
+    <!-- Hero Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-600/10 border border-indigo-500/30 text-4xl mb-4 shadow-xl">
+        🛡️
+      </div>
+      <h1 class="text-3xl font-black text-white tracking-tight sm:text-4xl" data-i18n="gate_title">
+        Digital Footprint Scanner
+      </h1>
+      <p class="text-slate-400 mt-2 text-sm sm:text-base max-w-md mx-auto" data-i18n="gate_desc">
+        Kostenlos registrieren, um deinen digitalen Fußabdruck zu scannen. Alle Funde, Social-Media-Konten und Berichte werden dauerhaft in deinem Profil gesichert.
+      </p>
+    </div>
+
+    <!-- Registration / Login Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+      <!-- Mode Toggle: Registrieren / Anmelden -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 mb-6 text-sm font-semibold">
+        <button type="button" onclick="setGateAuthMode('register')" id="btnGateModeRegister" class="py-2.5 rounded-lg bg-indigo-600 text-white transition cursor-pointer shadow">
+          📝 1. Registrieren
+        </button>
+        <button type="button" onclick="setGateAuthMode('login')" id="btnGateModeLogin" class="py-2.5 rounded-lg text-slate-400 hover:text-white transition cursor-pointer">
+          🔑 2. Anmelden
+        </button>
+      </div>
+
+      <!-- Auth Form -->
+      <form id="gateAuthForm" onsubmit="handleGateAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5" for="gateAuthEmail">
+            E-Mail-Adresse
+          </label>
+          <input 
+            type="email" 
+            id="gateAuthEmail" 
+            required 
+            placeholder="name@example.com" 
+            autocomplete="email"
+            class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-indigo-500 transition" 
+          />
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400" for="gateAuthPassword">
+              Passwort
+            </label>
+            <span id="gatePwdHelpText" class="text-[11px] text-slate-500 font-mono">Mind. 8 Zeichen</span>
+          </div>
+          <input 
+            type="password" 
+            id="gateAuthPassword" 
+            required 
+            minlength="8" 
+            placeholder="••••••••••••" 
+            autocomplete="current-password"
+            class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-indigo-500 transition font-mono" 
+          />
+        </div>
+
+        <!-- Error Banner -->
+        <div id="gateAuthError" class="hidden p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-medium"></div>
+
+        <button 
+          type="submit" 
+          id="btnGateAuthSubmit" 
+          class="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition shadow-lg flex items-center justify-center space-x-2 cursor-pointer mt-2"
+        >
+          <span id="gateSpinner" class="hidden animate-spin">🔄</span>
+          <span id="gateSubmitText">🚀 Kostenlos registrieren & Scan starten</span>
+        </button>
+      </form>
+
+      <!-- Trust Badges -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8 pt-6 border-t border-slate-800/80 text-xs">
+        <div class="flex items-start space-x-2 text-slate-400">
+          <span class="text-base text-emerald-400">💾</span>
+          <div>
+            <span class="font-bold text-slate-300 block">Dauerhafter Speicher</span>
+            <span>Scans bleiben in deinem Profil erhalten.</span>
+          </div>
+        </div>
+        <div class="flex items-start space-x-2 text-slate-400">
+          <span class="text-base text-indigo-400">🔍</span>
+          <div>
+            <span class="font-bold text-slate-300 block">28+ Netzwerke & Leaks</span>
+            <span>Social Handles, Pwned-Leaks & Domains.</span>
+          </div>
+        </div>
+        <div class="flex items-start space-x-2 text-slate-400">
+          <span class="text-base text-cyan-400">🛡️</span>
+          <div>
+            <span class="font-bold text-slate-300 block">100% DSGVO-sicher</span>
+            <span>scrypt KDF Hash, keine Weitergabe.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area (Visible only when authenticated) -->
+  <main id="appMainContainer" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
 
     <!-- ==================== TAB 0: 1-CLICK FULL SCAN (PRIMARY) ==================== -->
     <div id="tab-content-fullscan" class="tab-pane">
@@ -215,6 +321,20 @@
 
       <!-- Unified Report Container (Hidden until scanned) -->
       <div id="fullReportContainer" class="hidden space-y-10 mt-10 mb-24">
+
+        <!-- Persistent Saved Notification (no-print) -->
+        <div id="scanSavedNotification" class="no-print bg-indigo-950/80 border border-indigo-700/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center space-x-3 text-indigo-200">
+            <span class="text-2xl">💾</span>
+            <div>
+              <span class="font-bold text-white text-sm block">Scan dauerhaft in deinem Profil archiviert</span>
+              <span class="text-xs text-slate-300">Dieser Bericht bleibt jederzeit über den Reiter „Meine Scans“ abrufbar.</span>
+            </div>
+          </div>
+          <button onclick="switchTab('scans')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition cursor-pointer self-end sm:self-auto shadow">
+            📁 Zu meinen Scans
+          </button>
+        </div>
 
         <!-- Dossier Top Action Bar (no-print) -->
         <div class="no-print bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
@@ -498,6 +618,31 @@ Sincerely,
 
       </div>
 
+    </div>
+
+    <!-- ==================== TAB: USER SCANS ARCHIVE ==================== -->
+    <div id="tab-content-scans" class="tab-pane hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+              <span>📁 Meine gespeicherten Scans</span>
+              <span id="tabScansCountBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800 font-bold">0 archiviert</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Alle deine durchgeführten Audits und Dossiers werden hier dauerhaft gesichert. Du kannst jeden Bericht jederzeit wieder öffnen, vergleichen oder als DIN A4 ausdrucken.
+            </p>
+          </div>
+          <button onclick="switchTab('fullscan')" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center space-x-2 shadow cursor-pointer self-start sm:self-auto">
+            <span>🚀 Neuen Scan starten</span>
+          </button>
+        </div>
+
+        <!-- Scans List Container -->
+        <div id="userScansTabListContainer" class="mt-6 space-y-3">
+          <div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== TAB 1: EXIF METADATA ==================== -->

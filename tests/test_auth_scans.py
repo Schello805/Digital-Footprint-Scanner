@@ -10,6 +10,11 @@ def test_auth_and_user_scans_workflow():
     test_email = f"tester_{int(time.time())}_{secrets.token_hex(4)}@example.com"
     test_password = "SecurePassword123!"
 
+    # 0. Unauthenticated full scan is blocked (requires registration/login)
+    unauth_scan = client.post("/api/scan/full", json={"name": "Pre Auth Target"})
+    assert unauth_scan.status_code == 401
+    print("✓ Unauthenticated scan blocked with 401 (registration required).")
+
     # 1. Register
     reg_resp = client.post("/api/auth/register", json={"email": test_email, "password": test_password})
     assert reg_resp.status_code == 200
