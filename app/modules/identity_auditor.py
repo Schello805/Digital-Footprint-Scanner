@@ -1,12 +1,14 @@
-from typing import Dict, Any, List
-from app.modules.email_permutator import generate_email_permutations
+from typing import Dict, Any, List, Optional
 from app.modules.phone_recon import analyze_phone_number
 from app.modules.dork_builder import generate_dorks
 
-def audit_identity_profile(data: Dict[str, Any]) -> Dict[str, Any]:
+def audit_identity_profile(
+    data: Dict[str, Any],
+    scan_results: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """
-    Correlates multi-attribute identity inputs to calculate the overall footprint exposure,
-    threat vectors, generated permutations and GDPR removal tools.
+    Audits the target digital footprint strictly based on FACTS and verified scan evidence.
+    No assumptions, no arbitrary risk points for unverified inputs.
     """
     full_name = data.get("full_name", "").strip()
     usernames = [u.strip() for u in data.get("usernames", []) if u.strip()]
@@ -14,55 +16,73 @@ def audit_identity_profile(data: Dict[str, Any]) -> Dict[str, Any]:
     employers = [e.strip() for e in data.get("employers", []) if e.strip()]
     emails = [em.strip() for em in data.get("emails", []) if em.strip()]
     phones = [p.strip() for p in data.get("phones", []) if p.strip()]
-    keywords = [k.strip() for k in data.get("keywords", []) if k.strip()]
 
-    # Threat vectors and risk score calculation
     score = 0
     threat_vectors = []
-    
-    if full_name:
-        score += 20
-        if cities:
-            score += 25
+
+    # 1. Fact-based assessment from verified scan evidence
+    if scan_results:
+        # A. Password breach fact
+        pwd_res = scan_results.get("password_result")
+        if pwd_res and pwd_res.get("pwned"):
+            cnt = pwd_res.get("count", 0)
+            score += 35
+            threat_vectors.append({
+                "severity": "CRITICAL",
+                "title": "Passwort in bekannten Datenpannen öffentlich kompromittiert",
+                "title_en": "Password compromised in public data breaches",
+                "desc": f"Verifizierter Fakt: Das geprüfte Passwort taucht {cnt:,} Mal in geleakten Datenbanken (HaveIBeenPwned k-Anonymity) auf.",
+                "desc_en": f"Verified fact: The tested password appears {cnt:,} times in leaked databases (HaveIBeenPwned k-Anonymity)."
+            })
+
+        # B. Email breach fact
+        email_res = scan_results.get("email_result")
+        if email_res and email_res.get("breached"):
+            b_count = email_res.get("breach_count", 0)
+            b_names = email_res.get("breach_names", [])
+            score += min(35, b_count * 10)
+            names_preview = ", ".join(b_names[:4])
             threat_vectors.append({
                 "severity": "HIGH",
-                "title": "Verknüpfung Name + Wohnort",
-                "desc": f"Die Kombination aus '{full_name}' und '{', '.join(cities)}' ermöglicht die exakte Identifikation deiner Person und führt häufig zu privaten Meldeadressen oder Telefonbucheinträgen."
+                "title": f"E-Mail in {b_count} bestätigten Datenpannen registriert",
+                "title_en": f"Email registered in {b_count} confirmed data breaches",
+                "desc": f"Verifizierter Fakt: Folgende Sicherheitsvorfälle betreffen diese Adresse: {names_preview}.",
+                "desc_en": f"Verified fact: Confirmed security incidents affecting this address: {names_preview}."
             })
-        if employers:
-            score += 20
+
+        # C. Domain SPF/DMARC spoofing vulnerability fact
+        dom_res = scan_results.get("domain_result")
+        if dom_res and dom_res.get("email_security"):
+            spf_status = dom_res["email_security"].get("spf", {}).get("status")
+            dmarc_status = dom_res["email_security"].get("dmarc", {}).get("status")
+            if spf_status == "missing" or dmarc_status == "missing":
+                score += 20
+                threat_vectors.append({
+                    "severity": "MEDIUM",
+                    "title": "Fehlender DNS-Schutz vor E-Mail-Identitätsdiebstahl (Spoofing)",
+                    "title_en": "Missing DNS spoofing protection for personal domain",
+                    "desc": "Verifizierter Fakt: Die autoritativen DNS-Einträge der Domain weisen keinen SPF- oder DMARC-Schutz auf. Fremde können E-Mails im Namen dieser Domain versenden.",
+                    "desc_en": "Verified fact: Authoritative DNS records lack SPF or DMARC protection. Third parties can forge emails using this domain."
+                })
+
+        # D. Verified profile matches (facts where name/city appears in public profile)
+        found_profiles = scan_results.get("found_profiles", [])
+        verified_profiles = [p for p in found_profiles if p.get("match", {}).get("confidence") in ["high", "medium"]]
+        if verified_profiles:
+            score += min(20, len(verified_profiles) * 5)
+            plat_names = ", ".join([p["platform"] for p in verified_profiles[:4]])
             threat_vectors.append({
                 "severity": "MEDIUM",
-                "title": "Social Engineering & Spear Phishing",
-                "desc": f"Durch die Bekanntheit deines Arbeitgebers '{', '.join(employers)}' können Angreifer gezielte Business-Phishing-Mails verfassen."
+                "title": f"{len(verified_profiles)} öffentlich bestätigte Benutzerkonten",
+                "title_en": f"{len(verified_profiles)} publicly confirmed online accounts",
+                "desc": f"Verifizierter Fakt: Öffentliche Profile mit Namens- oder Ortsübereinstimmung gefunden auf: {plat_names}.",
+                "desc_en": f"Verified fact: Public profiles with verified name or location match found on: {plat_names}."
             })
 
-    if phones:
-        score += 25
-        threat_vectors.append({
-            "severity": "CRITICAL",
-            "title": "Offengelegte Rufnummer",
-            "desc": "Eine öffentlich auffindbare Handynummer birgt Risiken für Smishing (SMS-Phishing), Messenger-Stalking und SIM-Swapping-Angriffe."
-        })
-
-    if emails:
-        score += 15
-
-    # Email Permutations
-    email_permutations = []
-    if full_name:
-        parts = full_name.split()
-        if len(parts) >= 2:
-            fn, ln = parts[0], parts[-1]
-            custom_dom = ""
-            if employers and "." in employers[0]:
-                custom_dom = employers[0]
-            email_permutations = generate_email_permutations(fn, ln, custom_domain=custom_dom)[:12]
-
-    # Phone Analysis
+    # Phone analysis strictly based on official ITU/BNetzA numbering plan
     phone_analyses = [analyze_phone_number(p) for p in phones]
 
-    # Dorks correlated with identity
+    # Google Dorks for direct register search
     first_user = usernames[0] if usernames else ""
     first_city = cities[0] if cities else ""
     first_emp = employers[0] if employers else ""
@@ -76,15 +96,15 @@ def audit_identity_profile(data: Dict[str, Any]) -> Dict[str, Any]:
         email=first_mail
     )
 
-    # Risk level determination
+    # Risk level determination strictly based on factual exposure
     score = min(score, 100)
-    if score >= 75:
+    if score >= 70:
         level = "KRITISCH"
         color = "rose"
-    elif score >= 50:
+    elif score >= 40:
         level = "HOCH"
         color = "amber"
-    elif score >= 25:
+    elif score >= 20:
         level = "MODERAT"
         color = "yellow"
     else:
@@ -125,7 +145,6 @@ Sincerely,
             "exposure_level": level,
             "badge_color": color,
             "threat_vectors": threat_vectors,
-            "email_permutations": email_permutations,
             "phone_analyses": phone_analyses,
             "dorks": dorks,
             "gdpr_template": gdpr_template_en,

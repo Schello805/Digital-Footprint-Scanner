@@ -13,6 +13,7 @@ from app.config import settings
 async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Executes a comprehensive, orchestrated 1-click audit across all OSINT footprint vectors concurrently.
+    All scores and assessments are strictly derived from verified facts.
     """
     name = data.get("name", "").strip()
     username = data.get("username", "").strip()
@@ -26,19 +27,7 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     
     keywords = [k.strip() for k in raw_keywords.split(",") if k.strip()] if isinstance(raw_keywords, str) else (raw_keywords or [])
 
-    # 1. Identity & Threat Vector Baseline
-    id_data = {
-        "full_name": name,
-        "usernames": [username] if username else [],
-        "cities": [city] if city else [],
-        "employers": [employer] if employer else [],
-        "emails": [email] if email else [],
-        "phones": [phone] if phone else [],
-        "keywords": keywords
-    }
-    identity_audit = audit_identity_profile(id_data)
-
-    # 2. Prepare Async Tasks
+    # Prepare Async Tasks
     tasks = []
 
     # Username task
@@ -71,11 +60,12 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return await loop.run_in_executor(None, check_domain_dns, domain)
     tasks.append(do_domain_check())
 
-    # Mailing list task
+    # Mailing list task (sync function, run in executor)
     async def do_mailing_list_check():
         if not email:
             return None
-        return await check_mailing_lists(email)
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, check_mailing_lists, email)
     tasks.append(do_mailing_list_check())
 
     # Execute all concurrently
@@ -83,7 +73,7 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Filter & sort username results
     found_profiles = [p for p in username_results if p.get("exists")]
-    # Sort: high match confidence first, then platform name
+    
     def sort_key(p):
         conf = p.get("match", {}).get("confidence", "")
         if conf == "high": return 0
@@ -103,35 +93,54 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         email=email
     )
 
-    # Remediation & Cleanup Guide (FootprintIQ inspiration)
+    # Remediation & Cleanup Guide
     remediation_guide = get_remediation_guide(found_profiles, name=name, email=email)
 
-    # Aggregated Summary Stats
+    # Factual Evidence-based Exposure Audit
+    id_data = {
+        "full_name": name,
+        "usernames": [username] if username else [],
+        "cities": [city] if city else [],
+        "employers": [employer] if employer else [],
+        "emails": [email] if email else [],
+        "phones": [phone] if phone else [],
+        "keywords": keywords
+    }
+    
+    scan_results = {
+        "password_result": password_res.get("data") if password_res and password_res.get("success") else None,
+        "email_result": email_res.get("data") if email_res and email_res.get("success") else None,
+        "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
+        "found_profiles": found_profiles,
+        "phone_result": phone_res,
+        "mailing_result": mailing_res.get("data") if mailing_res and mailing_res.get("success") else None
+    }
+    
+    identity_audit = audit_identity_profile(id_data, scan_results=scan_results)
+    audit_data = identity_audit.get("data", {})
+
+    # Aggregated Summary Stats (All strictly verified facts)
+    high_matches = len([p for p in found_profiles if p.get("match", {}).get("confidence") in ["high", "medium"]])
     summary = {
         "profiles_checked": len(username_results),
         "profiles_found": len(found_profiles),
-        "high_confidence_matches": len([p for p in found_profiles if p.get("match", {}).get("confidence") in ["high", "medium"]]),
+        "high_confidence_matches": high_matches,
+        "unverified_handles": len(found_profiles) - high_matches,
         "password_pwned": password_res.get("data", {}).get("pwned") if password_res and password_res.get("success") else None,
         "password_breach_count": password_res.get("data", {}).get("count") if password_res and password_res.get("success") else 0,
         "email_breached": email_res.get("data", {}).get("breached") if email_res and email_res.get("success") else None,
         "email_breach_count": email_res.get("data", {}).get("breach_count", 0) if email_res and email_res.get("success") else 0,
         "domain_spf_status": domain_res.get("data", {}).get("email_security", {}).get("spf", {}).get("status") if domain_res and domain_res.get("success") else None,
         "domain_dmarc_status": domain_res.get("data", {}).get("email_security", {}).get("dmarc", {}).get("status") if domain_res and domain_res.get("success") else None,
-        "exposure_score": identity_audit.get("data", {}).get("exposure_score", 0),
-        "exposure_level": identity_audit.get("data", {}).get("exposure_level", "GERING"),
-        "badge_color": identity_audit.get("data", {}).get("badge_color", "emerald")
+        "exposure_score": audit_data.get("exposure_score", 0),
+        "exposure_level": audit_data.get("exposure_level", "GERING"),
+        "badge_color": audit_data.get("badge_color", "emerald")
     }
-
-    # Adjust Exposure Score if real leaks were detected
-    if summary["password_pwned"]:
-        summary["exposure_score"] = min(100, summary["exposure_score"] + 30)
-        summary["exposure_level"] = "KRITISCH"
-        summary["badge_color"] = "rose"
 
     return {
         "success": True,
         "summary": summary,
-        "identity_audit": identity_audit.get("data", {}),
+        "identity_audit": audit_data,
         "found_profiles": found_profiles,
         "password_result": password_res.get("data") if password_res and password_res.get("success") else None,
         "email_result": email_res.get("data") if email_res and email_res.get("success") else None,

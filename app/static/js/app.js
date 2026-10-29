@@ -60,10 +60,10 @@ const translations = {
     th_bio: "Extracted Bio Snippet / Note",
     th_link: "Profile Link",
     sec_3_title: "3. Forensic Threat Vector Analysis (Social Engineering & Doxing)",
-    sec_comm_title: "4. Communication & Permutation Intelligence",
-    sec_phone_recon: "📞 Phone Reputation & Lookup",
-    sec_mailing_lists: "📬 Public Mailing Lists",
-    sec_permutations: "✉️ Probable Email Permutations",
+    sec_comm_title: "4. Verified Communication Channels & Infrastructure Audit",
+    sec_phone_recon: "📞 Phone Network & Routing (ITU/BNetzA)",
+    sec_mailing_lists: "📬 Mailing Lists & Discussion Archives",
+    sec_email_audit: "✉️ Verified Email Address & MX Routing",
     sec_dorks_title: "5. Public Registries & Document Trails (Registers, Leaks, PDFs)",
     sec_dorks_sub: "Click links below to open direct search queries across registries (North Data, Bundesanzeiger) and public document dumps without bot blocks:",
     sec_cleanup_title: "🛡️ 6. Footprint Remediation & Account Deletion (Action Plan)",
@@ -150,10 +150,10 @@ const translations = {
     th_bio: "Gefundener Bio-Auszug / Notiz",
     th_link: "Profil-Link",
     sec_3_title: "3. Forensische Bedrohungsanalyse (Social Engineering & Doxing)",
-    sec_comm_title: "4. Kommunikationskanäle & Namenspermutationen",
-    sec_phone_recon: "📞 Rufnummern-Rückwärtssuche",
-    sec_mailing_lists: "📬 Öffentliche Mailinglisten",
-    sec_permutations: "✉️ Wahrscheinliche E-Mail-Permutationen",
+    sec_comm_title: "4. Verifizierte Kommunikationskanäle & Infrastruktur-Audit",
+    sec_phone_recon: "📞 Telefonnetz & Routing (ITU/BNetzA)",
+    sec_mailing_lists: "📬 Mailinglisten & Diskussionsarchive",
+    sec_email_audit: "✉️ Verifizierte E-Mail-Adresse & MX-Routing",
     sec_dorks_title: "5. Öffentliche Register & Spurensuche (Handelsregister, PDFs, North Data)",
     sec_dorks_sub: "Klicke auf die Links, um Suchergebnisse in Registern (North Data, Bundesanzeiger) und Foren ohne Bot-Sperren direkt zu prüfen:",
     sec_cleanup_title: "🛡️ 6. Footprint-Bereinigung & Account-Löschung (Action Plan)",
@@ -491,14 +491,14 @@ function renderFullReport(res, payload) {
   } else {
     fullScanProfiles.forEach(p => {
       const isHigh = p.match && (p.match.confidence === 'high' || p.match.confidence === 'medium');
-      let matchBadge = `<span class="text-slate-500">⚪ ${currentLang === 'de' ? 'Namensvetter' : 'Coincidental'}</span>`;
+      let matchBadge = `<span class="px-2 py-0.5 text-[10px] rounded bg-slate-900 text-slate-400 border border-slate-800">⚪ ${currentLang === 'de' ? 'Account existiert (Identität unbestätigt)' : 'Account exists (Unverified)'}</span>`;
       if (p.match && p.match.confidence === 'high') {
-        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">🟢 ${p.match.score}% MATCH</span>`;
+        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">🟢 ${currentLang === 'de' ? 'Bestätigt durch Bio / Daten' : 'Verified by Bio / Metadata'}</span>`;
       } else if (p.match && p.match.confidence === 'medium') {
-        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-950 text-yellow-400 border border-yellow-800">🟡 ${p.match.score}% ${currentLang === 'de' ? 'Treffer' : 'Likely'}</span>`;
+        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-950 text-yellow-400 border border-yellow-800">🟡 ${currentLang === 'de' ? 'Kontext-Übereinstimmung' : 'Context Match'}</span>`;
       }
 
-      const noteText = p.snippet ? `"${p.snippet}"` : (p.match && p.match.matches ? p.match.matches.join(', ') : '-');
+      const noteText = p.snippet ? `"${p.snippet}"` : (p.match && p.match.matches && p.match.matches.length > 0 ? p.match.matches.join(', ') : '-');
 
       const tr = document.createElement('tr');
       tr.className = isHigh ? 'bg-indigo-950/20' : '';
@@ -515,20 +515,22 @@ function renderFullReport(res, payload) {
     });
   }
 
-  // 4. Bedrohungsvektoren (Section 3)
+  // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
   const threatsBox = document.getElementById('sbThreatsContainer');
   threatsBox.innerHTML = '';
   const threats = data.identity_audit.threat_vectors || [];
   if (threats.length === 0) {
-    threatsBox.innerHTML = `<p class="text-slate-400">${currentLang === 'de' ? 'Keine direkten Identitätskonflikte oder Risikoverknüpfungen festgestellt.' : 'No direct high-risk identity cross-correlations detected.'}</p>`;
+    threatsBox.innerHTML = `<p class="text-emerald-400 text-xs font-medium">✓ ${currentLang === 'de' ? 'Keine verifizierten Sicherheitsvorfälle, Leaks oder Konfigurationsfehler festgestellt (Alle durchgeführten Prüfungen negativ).' : 'No verified security breaches, leaked passwords, or DNS vulnerabilities detected across checked records.'}</p>`;
   } else {
     threats.forEach(tv => {
+      const title = currentLang === 'de' ? tv.title : (tv.title_en || tv.title);
+      const desc = currentLang === 'de' ? tv.desc : (tv.desc_en || tv.desc);
       const div = document.createElement('div');
       div.className = 'p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-start justify-between gap-3';
       div.innerHTML = `
         <div>
-          <span class="font-bold text-white block text-xs">${tv.title}</span>
-          <span class="text-slate-400 text-[11px] leading-relaxed block mt-0.5">${tv.desc}</span>
+          <span class="font-bold text-white block text-xs">${title}</span>
+          <span class="text-slate-400 text-[11px] leading-relaxed block mt-0.5">${desc}</span>
         </div>
         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-950 text-rose-400 border border-rose-800 shrink-0">${tv.severity}</span>
       `;
@@ -536,7 +538,7 @@ function renderFullReport(res, payload) {
     });
   }
 
-  // 5. Phone & Mailing Lists & Permutations (Section 4)
+  // 5. Phone & Mailing Lists & Verified Email (Section 4)
   const phoneBox = document.getElementById('sbPhoneReconBox');
   if (data.phone_result) {
     const pr = data.phone_result;
@@ -553,34 +555,39 @@ function renderFullReport(res, payload) {
   const mlBox = document.getElementById('sbMailingListBox');
   if (data.mailing_list_result) {
     const ml = data.mailing_list_result;
-    if (ml.found_in_marc) {
-      mlBox.innerHTML = `
-        <div class="text-rose-400 font-bold">⚠️ ${ml.marc_hit_count} ${currentLang === 'de' ? 'Treffer auf MARC.info' : 'hits on MARC.info'}</div>
-        <div class="text-[10px] text-slate-300">Lists: ${ml.detected_lists.slice(0, 3).join(', ')}</div>
-        <div class="pt-1 flex flex-wrap gap-1">
-          <a href="${ml.marc_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">MARC Archive ↗</a>
-          <a href="${ml.specialized_searches[0].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">The Mail Archive ↗</a>
-        </div>
-      `;
-    } else {
-      mlBox.innerHTML = `
-        <div class="text-emerald-400 font-medium">${currentLang === 'de' ? 'Keine MARC-Treffer' : 'Clean on MARC.info'}</div>
-        <div class="flex flex-wrap gap-1 pt-0.5">
-          <a href="${ml.specialized_searches[0].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">Mail Archive ↗</a>
-          <a href="${ml.specialized_searches[1].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">Pipermail ↗</a>
-        </div>
-      `;
-    }
+    mlBox.innerHTML = `
+      <div class="text-slate-300 font-medium mb-1">${currentLang === 'de' ? 'Verifikationsabfragen:' : 'Archive Search Queries:'}</div>
+      <div class="flex flex-wrap gap-1.5 pt-0.5">
+        ${ml.specialized_searches.map(s => `<a href="${s.url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${s.title} ↗</a>`).join('')}
+      </div>
+    `;
   } else {
     mlBox.textContent = currentLang === 'de' ? 'Keine E-Mail angegeben.' : 'No email provided.';
   }
 
-  const permBox = document.getElementById('sbPermutationsBox');
-  const perms = data.identity_audit.email_permutations || [];
-  if (perms.length > 0) {
-    permBox.innerHTML = perms.slice(0, 8).map(em => `<span class="inline-block bg-slate-900 px-2 py-0.5 rounded border border-slate-800 mr-1 mb-1 text-[11px] text-slate-300">${em}</span>`).join('');
-  } else {
-    permBox.textContent = currentLang === 'de' ? 'Keine Permutationen berechnet.' : 'No permutations calculated.';
+  const emailAuditBox = document.getElementById('sbEmailAuditBox');
+  if (emailAuditBox) {
+    if (payload.email) {
+      const ml = data.mailing_list_result || {};
+      const er = data.email_result || {};
+      const mxText = ml.has_valid_mx
+        ? `<span class="text-emerald-400">✓ DNS MX erreichbar (${ml.mx_hosts ? ml.mx_hosts[0] : 'OK'})</span>`
+        : `<span class="text-slate-400">-</span>`;
+      
+      const breachText = er.breached
+        ? `<span class="text-rose-400 font-bold">⚠️ ${currentLang === 'de' ? `In ${er.breach_count} Datenpannen` : `In ${er.breach_count} leaks`}</span>`
+        : `<span class="text-emerald-400 font-medium">✓ ${currentLang === 'de' ? '0 bekannte Datenlecks' : '0 known leaks'}</span>`;
+
+      emailAuditBox.innerHTML = `
+        <div class="text-white font-mono font-bold truncate">${payload.email}</div>
+        <div class="text-[11px] text-slate-300 mt-1 space-y-1">
+          <div>Leak-Status: ${breachText}</div>
+          <div>Routing: ${mxText}</div>
+        </div>
+      `;
+    } else {
+      emailAuditBox.textContent = currentLang === 'de' ? 'Keine E-Mail angegeben.' : 'No email provided.';
+    }
   }
 
   // 6. Register & Dorks (Section 5)
