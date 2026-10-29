@@ -96,6 +96,7 @@ const translations = {
     btn_generate_dorks: "Generate Queries",
     settings_title: "⚙️ Optional API Keys",
     settings_desc: "All core features run 100% free. If you have an official HaveIBeenPwned API key or Google Custom Search key, configure them here.",
+    btn_back_to_cockpit: "To Full Scan Cockpit",
     btn_save: "Save Settings",
     classification_tag: "OSINT PRIVACY AUDIT // PERSONAL INTELLIGENCE DOSSIER",
     confidential_tag: "CONFIDENTIAL // PRIVATE SECURITY AUDIT USE ONLY",
@@ -238,6 +239,7 @@ const translations = {
     btn_generate_dorks: "Abfragen generieren",
     settings_title: "⚙️ Optionale API-Keys",
     settings_desc: "Die Kernfunktionen laufen standardmäßig 100% kostenlos und ohne API-Keys. Optional können HIBP- oder Google Keys hinterlegt werden.",
+    btn_back_to_cockpit: "Zum Vollscan Cockpit",
     btn_save: "Einstellungen speichern",
     classification_tag: "OSINT PRIVACY AUDIT // PERSÖNLICHES PERSONENDOSSIER",
     confidential_tag: "VERTRAULICH // NUR ZUR PRIVATEN SICHERHEITSAUDITIERUNG",
@@ -475,6 +477,27 @@ function switchTab(tabId) {
   if (activeBtn) {
     activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200');
     activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+  }
+
+  // Header quick buttons active states
+  const btnCockpit = document.getElementById('btnHeaderCockpit');
+  const btnSettings = document.getElementById('btnHeaderSettings');
+
+  if (btnCockpit) {
+    if (tabId === 'fullscan') {
+      btnCockpit.className = 'px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow flex items-center space-x-1.5 cursor-pointer';
+    } else {
+      btnCockpit.className = 'px-3.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-medium hover:bg-slate-800 transition shadow flex items-center space-x-1.5 cursor-pointer';
+    }
+  }
+
+  if (btnSettings) {
+    if (tabId === 'settings') {
+      btnSettings.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium transition shadow flex items-center space-x-1 cursor-pointer';
+      loadSettings();
+    } else {
+      btnSettings.className = 'px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition flex items-center space-x-1 text-slate-300 cursor-pointer';
+    }
   }
 
   if (tabId === 'exif' && leafletMap) {
@@ -1136,14 +1159,93 @@ async function generateDorkQueries(e) {
 }
 
 // ==================== 6. SETTINGS ====================
+async function loadSettings() {
+  const badgeHibp = document.getElementById('badgeHibpStatus');
+  const badgeGoogle = document.getElementById('badgeGoogleStatus');
+  const inputHibp = document.getElementById('hibpApiKeyInput');
+  const inputGoogleKey = document.getElementById('googleApiKeyInput');
+  const inputGoogleCx = document.getElementById('googleCxInput');
+
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+
+    if (badgeHibp) {
+      if (data.hibp_api_key_configured) {
+        badgeHibp.className = 'px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
+        badgeHibp.textContent = currentLang === 'de' ? '✓ Aktiv / Konfiguriert' : '✓ Active / Configured';
+        if (inputHibp) inputHibp.placeholder = '•••••••••••••••• (' + (currentLang === 'de' ? 'Bereits gespeichert' : 'Already configured') + ')';
+      } else {
+        badgeHibp.className = 'px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        badgeHibp.textContent = currentLang === 'de' ? 'Kostenloser k-Anonymity Modus' : 'Free k-Anonymity Mode';
+        if (inputHibp) inputHibp.placeholder = currentLang === 'de' ? 'HIBP API Key eintragen...' : 'Enter HIBP API Key...';
+      }
+    }
+
+    if (badgeGoogle) {
+      if (data.google_search_configured) {
+        badgeGoogle.className = 'px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
+        badgeGoogle.textContent = currentLang === 'de' ? '✓ Aktiv / Konfiguriert' : '✓ Active / Configured';
+        if (inputGoogleKey) inputGoogleKey.placeholder = '•••••••••••••••• (' + (currentLang === 'de' ? 'Bereits gespeichert' : 'Already configured') + ')';
+        if (inputGoogleCx) inputGoogleCx.placeholder = '•••••••••••••••• (' + (currentLang === 'de' ? 'Bereits gespeichert' : 'Already configured') + ')';
+      } else {
+        badgeGoogle.className = 'px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        badgeGoogle.textContent = currentLang === 'de' ? '100% Kostenloser Browser-Modus' : '100% Free Browser Mode';
+        if (inputGoogleKey) inputGoogleKey.placeholder = 'AIzaSy...';
+        if (inputGoogleCx) inputGoogleCx.placeholder = '0123456789...:abcdef';
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load settings status:', err);
+  }
+}
+
 async function saveSettings(e) {
   e.preventDefault();
-  await fetch('/api/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hibp_api_key: document.getElementById('hibpApiKeyInput').value })
-  });
-  alert(currentLang === 'de' ? 'Einstellungen gespeichert!' : 'Settings saved successfully!');
+  const btn = document.getElementById('btnSaveSettings');
+  const banner = document.getElementById('settingsFeedbackBanner');
+
+  const hibpVal = document.getElementById('hibpApiKeyInput')?.value?.trim();
+  const googleKeyVal = document.getElementById('googleApiKeyInput')?.value?.trim();
+  const googleCxVal = document.getElementById('googleCxInput')?.value?.trim();
+
+  const payload = {};
+  if (hibpVal !== undefined && hibpVal !== '') payload.hibp_api_key = hibpVal;
+  if (googleKeyVal !== undefined && googleKeyVal !== '') payload.google_search_api_key = googleKeyVal;
+  if (googleCxVal !== undefined && googleCxVal !== '') payload.google_search_cx = googleCxVal;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('opacity-75');
+  }
+
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (json.success) {
+      if (banner) {
+        banner.textContent = currentLang === 'de' ? '✓ Einstellungen erfolgreich gespeichert!' : '✓ Settings saved successfully!';
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 4000);
+      }
+      await loadSettings();
+      // Clear inputs
+      if (document.getElementById('hibpApiKeyInput')) document.getElementById('hibpApiKeyInput').value = '';
+      if (document.getElementById('googleApiKeyInput')) document.getElementById('googleApiKeyInput').value = '';
+      if (document.getElementById('googleCxInput')) document.getElementById('googleCxInput').value = '';
+    }
+  } catch (err) {
+    alert(currentLang === 'de' ? 'Fehler beim Speichern der Einstellungen.' : 'Failed to save settings.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('opacity-75');
+    }
+  }
 }
 
 // ==================== 7. UNSUBSCRIBE & OPT-OUT HUB (INCOGNI-STYLE GUIDED FLOW) ====================
@@ -1642,4 +1744,5 @@ document.addEventListener('DOMContentLoaded', () => {
   updateGdprLetter();
   updateDisclaimerContent();
   fetchAndRenderMarketingBrokers();
+  loadSettings();
 });
