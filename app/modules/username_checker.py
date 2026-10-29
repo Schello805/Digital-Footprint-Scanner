@@ -295,18 +295,55 @@ async def scan_username_stream(
     """
     Scans platforms concurrently using a Semaphore and yields exclusively confirmed accounts as they appear.
     Platforms where the username does NOT exist are never emitted as profile results.
+    If an email address is entered, automatically performs cryptographic Gravatar OSINT resolution to determine
+    the associated online handle and cascades the search.
     """
+    target_username = username.strip()
+    gravatar_hit = None
+
+    if "@" in target_username:
+        from app.modules.email_account_checker import lookup_gravatar
+        grav = await lookup_gravatar(target_username)
+        if grav and grav.get("username"):
+            grav_handle = grav["username"]
+            target_username = grav_handle
+            gravatar_hit = {
+                "platform": "Gravatar (E-Mail verknüpft)",
+                "category": "E-Mail OSINT",
+                "url": grav.get("profile_url") or f"https://gravatar.com/{grav_handle}",
+                "exists": True,
+                "status": "found",
+                "snippet": f"Kryptografisch verknüpfter Account-Handle für {username}: @{grav_handle} (Standort: {grav.get('location') or 'nicht angegeben'})",
+                "match": {
+                    "score": 100,
+                    "matches": [f"E-Mail-Hash aufgelöst zu @{grav_handle}"],
+                    "confidence": "high"
+                }
+            }
+        else:
+            target_username = target_username.split("@")[0].strip()
+
     total = len(PLATFORMS)
     checked = 0
     found_count = 0
     high_match_count = 0
+
+    if gravatar_hit:
+        found_count += 1
+        high_match_count += 1
+        gravatar_hit["progress"] = {
+            "found": found_count,
+            "high_match_count": high_match_count,
+            "percent": 5.0
+        }
+        yield gravatar_hit
     
     sem = asyncio.Semaphore(12)
     
     async with httpx.AsyncClient(headers=HEADERS, cookies=COOKIES, timeout=8.0, follow_redirects=True) as client:
         async def sem_check(p):
             async with sem:
-                return await check_platform(client, p, username, context=context)
+                return await check_platform(client, p, target_username, context=context)
         
         tasks = [asyncio.create_task(sem_check(p)) for p in PLATFORMS]
         
@@ -342,14 +379,48 @@ async def scan_usernames_fast(
     """
     Scans all platforms concurrently and returns exclusively verified found accounts.
     Platforms that return 404/not_found or errors are completely excluded.
+    If an email is passed, resolves it to the underlying handle automatically via Gravatar.
     """
+    target_username = username.strip()
+    additional_profiles = []
+
+    if "@" in target_username:
+        from app.modules.email_account_checker import lookup_gravatar
+        grav = await lookup_gravatar(target_username)
+        if grav and grav.get("username"):
+            grav_handle = grav["username"]
+            target_username = grav_handle
+            additional_profiles.append({
+                "platform": "Gravatar (E-Mail verknüpft)",
+                "category": "E-Mail OSINT",
+                "url": grav.get("profile_url") or f"https://gravatar.com/{grav_handle}",
+                "exists": True,
+                "status": "found",
+                "snippet": f"Kryptografisch verknüpfter Account-Handle für {username}: @{grav_handle} (Standort: {grav.get('location') or 'nicht angegeben'})",
+                "match": {
+                    "score": 100,
+                    "matches": [f"E-Mail-Hash aufgelöst zu @{grav_handle}"],
+                    "confidence": "high"
+                }
+            })
+        else:
+            target_username = target_username.split("@")[0].strip()
+
     sem = asyncio.Semaphore(15)
     async with httpx.AsyncClient(headers=HEADERS, cookies=COOKIES, timeout=7.0, follow_redirects=True) as client:
         async def sem_check(p):
             async with sem:
-                return await check_platform(client, p, username, context=context)
+                return await check_platform(client, p, target_username, context=context)
         
         tasks = [asyncio.create_task(sem_check(p)) for p in PLATFORMS]
         results = await asyncio.gather(*tasks, return_exceptions=False)
-        return [r for r in results if isinstance(r, dict) and r.get("exists") is True]
+        verified = [r for r in results if isinstance(r, dict) and r.get("exists") is True]
+        
+        # Merge Gravatar hit if not already in verified
+        seen_urls = {p.get("url") for p in verified}
+        for add_p in additional_profiles:
+            if add_p.get("url") not in seen_urls:
+                verified.insert(0, add_p)
+                
+        return verified
 

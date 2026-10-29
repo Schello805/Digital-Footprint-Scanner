@@ -9,6 +9,7 @@ from app.modules.identity_auditor import audit_identity_profile
 from app.modules.full_scanner import execute_full_scan
 from PIL import Image
 import io
+from app.modules.email_account_checker import check_email_accounts
 
 def test_sync_modules():
     print(f"✓ Username checker loaded {len(PLATFORMS)} platforms.")
@@ -66,7 +67,14 @@ async def test_full_scan_pipeline():
     assert "identity_audit" in res
     assert "found_profiles" in res
     assert "dorks" in res
+    assert "email_accounts" in res
     print(f"✓ Full 1-Click Scan passed! Exposure Score: {res['summary']['exposure_score']}, Dorks: {len(res['dorks'])}")
+
+    # Test Email Account Checker
+    print("Testing Email Account Recon...")
+    invalid_res = await check_email_accounts("invalid-email")
+    assert invalid_res["success"] is False
+    print("✓ Email Account Recon handles invalid input gracefully.")
 
 if __name__ == "__main__":
     test_sync_modules()

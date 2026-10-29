@@ -617,13 +617,24 @@ function renderFullReport(res, payload) {
   document.getElementById('dossierConfidentialTag').textContent = t.confidential_tag;
 
   // 1. Steckbrief-Kopf
-  const targetName = payload.name || payload.username || (currentLang === 'de' ? 'UNBEKANNTE ZIELPERSON' : 'UNKNOWN TARGET');
+  const resolvedHandle = data.resolved_username || data.discovered_handle;
+  const resolvedCity = data.resolved_city || (data.summary && data.summary.discovered_location);
+  const resolvedName = data.resolved_name;
+
+  const targetName = payload.name || resolvedName || (resolvedHandle ? `@${resolvedHandle}` : (currentLang === 'de' ? 'UNBEKANNTE ZIELPERSON' : 'UNKNOWN TARGET'));
   document.getElementById('sbTargetNameTop').textContent = targetName;
-  document.getElementById('sbTargetAliasTop').textContent = payload.username ? `@${payload.username}` : (payload.name ? `${payload.name}` : '-');
+  
+  if (payload.username) {
+    document.getElementById('sbTargetAliasTop').textContent = `@${payload.username}`;
+  } else if (resolvedHandle) {
+    document.getElementById('sbTargetAliasTop').innerHTML = `<span class="text-indigo-400 font-bold">@${resolvedHandle}</span> <span class="text-[10px] text-slate-400">(via OSINT)</span>`;
+  } else {
+    document.getElementById('sbTargetAliasTop').textContent = payload.name ? `${payload.name}` : '-';
+  }
 
   // Stammdaten-Tabelle
-  document.getElementById('sbName').textContent = payload.name || '-';
-  document.getElementById('sbCity').textContent = payload.city || '-';
+  document.getElementById('sbName').textContent = payload.name || resolvedName || '-';
+  document.getElementById('sbCity').textContent = payload.city || (resolvedCity ? `${resolvedCity} (via Gravatar)` : '-');
   document.getElementById('sbEmployer').textContent = payload.employer || '-';
   document.getElementById('sbEmail').textContent = payload.email || '-';
   
@@ -827,6 +838,7 @@ function renderFullReport(res, payload) {
     if (payload.email) {
       const ml = data.mailing_list_result || {};
       const er = data.email_result || {};
+      const ea = data.email_accounts || [];
       const mxText = ml.has_valid_mx
         ? `<span class="text-emerald-400">✓ DNS MX erreichbar (${ml.mx_hosts ? ml.mx_hosts[0] : 'OK'})</span>`
         : `<span class="text-slate-400">-</span>`;
@@ -835,11 +847,19 @@ function renderFullReport(res, payload) {
         ? `<span class="text-rose-400 font-bold">⚠️ ${currentLang === 'de' ? `In ${er.breach_count} Datenpannen` : `In ${er.breach_count} leaks`}</span>`
         : `<span class="text-emerald-400 font-medium">✓ ${currentLang === 'de' ? '0 bekannte Datenlecks' : '0 known leaks'}</span>`;
 
+      let regAccountsHtml = '';
+      if (ea.length > 0) {
+        regAccountsHtml = `<div class="mt-2 pt-2 border-t border-slate-800 space-y-1"><span class="text-[10px] uppercase font-bold text-indigo-400 block">${currentLang === 'de' ? 'Verifizierte Konten:' : 'Verified Accounts:'}</span>` +
+          ea.map(a => `<div class="text-[11px] text-slate-300 flex items-center justify-between"><span>• <strong class="text-white">${a.service}</strong></span><span class="text-[10px] text-emerald-400 font-mono">${a.status || 'Aktiv'}</span></div>`).join('') +
+          `</div>`;
+      }
+
       emailAuditBox.innerHTML = `
         <div class="text-white font-mono font-bold truncate">${payload.email}</div>
         <div class="text-[11px] text-slate-300 mt-1 space-y-1">
           <div>Leak-Status: ${breachText}</div>
           <div>Routing: ${mxText}</div>
+          ${regAccountsHtml}
         </div>
       `;
     } else {
