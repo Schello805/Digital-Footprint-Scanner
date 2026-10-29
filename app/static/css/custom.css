@@ -1,9 +1,9 @@
-/* Selfscanner Custom Dark Theme & Dossier Print Styles */
+/* Selfscanner Custom Modern Theme & Dossier Print Styles */
 :root {
-  --bg-main: #0b0f19;
-  --bg-card: #111827;
-  --bg-card-dark: #0f172a;
-  --border-color: #1e293b;
+  --bg-main: #141c2e;
+  --bg-card: #1c273e;
+  --bg-card-dark: #182236;
+  --border-color: #2e3d5a;
   --accent-cyan: #06b6d4;
   --accent-indigo: #6366f1;
   --accent-emerald: #10b981;
@@ -11,49 +11,56 @@
 }
 
 body {
-  background-color: #0b0f19 !important;
-  color: #e2e8f0;
+  background-color: #141c2e !important;
+  color: #edf2f9;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0f172a; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-track { background: #141c2e; }
+::-webkit-scrollbar-thumb { background: #334466; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475b85; }
 
-/* Slate utility compatibility */
-.bg-slate-950 { background-color: #020617 !important; }
-.bg-slate-900 { background-color: #0f172a !important; }
-.bg-slate-800 { background-color: #1e293b !important; }
-.bg-slate-700 { background-color: #334155 !important; }
+/* Slate utility compatibility (Refreshed, noticeably brighter & softer palette) */
+.bg-slate-950 { background-color: #1a243a !important; }
+.bg-slate-900 { background-color: #212e47 !important; }
+.bg-slate-800 { background-color: #2d3e5e !important; }
+.bg-slate-700 { background-color: #3b4f75 !important; }
 
-.border-slate-800 { border-color: #1e293b !important; }
-.border-slate-700 { border-color: #334155 !important; }
+.border-slate-800 { border-color: #2c3a55 !important; }
+.border-slate-700 { border-color: #3d4f73 !important; }
 
-.text-slate-200 { color: #e2e8f0 !important; }
-.text-slate-300 { color: #cbd5e1 !important; }
-.text-slate-400 { color: #94a3b8 !important; }
-.text-slate-500 { color: #64748b !important; }
+.text-slate-200 { color: #edf2f9 !important; }
+.text-slate-300 { color: #cbd6e7 !important; }
+.text-slate-400 { color: #9bb0ce !important; }
+.text-slate-500 { color: #7285a3 !important; }
 
 /* Form inputs & textareas readable high contrast */
 input, textarea, select {
-  color: #f8fafc !important;
-  background-color: #020617 !important;
-  border-color: #334155 !important;
+  color: #ffffff !important;
+  background-color: #162033 !important;
+  border: 1px solid #3d4f73 !important;
   font-family: inherit;
 }
 
+input:focus, textarea:focus, select:focus {
+  border-color: #6366f1 !important;
+  background-color: #1c273e !important;
+  outline: none;
+}
+
 input::placeholder, textarea::placeholder {
-  color: #64748b !important;
+  color: #7285a3 !important;
 }
 
 #repGdprText {
   color: #f8fafc !important;
-  background-color: #020617 !important;
-  border: 1px solid #334155 !important;
+  background-color: #162033 !important;
+  border: 1px solid #3d4f73 !important;
   line-height: 1.65 !important;
   white-space: pre-wrap !important;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
@@ -63,6 +70,135 @@ input::placeholder, textarea::placeholder {
 #repGdprText:focus {
   border-color: #6366f1 !important;
   outline: none;
+}
+
+/* ==================== CLEAN LIGHT THEME ==================== */
+html.theme-light body {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+html.theme-light .bg-slate-950 {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+html.theme-light .bg-slate-900 {
+  background-color: #f8fafc !important;
+}
+
+html.theme-light .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+
+html.theme-light .bg-slate-700 {
+  background-color: #cbd5e1 !important;
+}
+
+html.theme-light .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-light .text-white {
+  color: #0f172a !important;
+}
+
+html.theme-light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html.theme-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.theme-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.theme-light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.theme-light input,
+html.theme-light textarea,
+html.theme-light select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.theme-light input:focus,
+html.theme-light textarea:focus,
+html.theme-light select:focus {
+  background-color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+
+html.theme-light input::placeholder,
+html.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.theme-light #repGdprText {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.theme-light .bg-indigo-950 {
+  background-color: #e0e7ff !important;
+}
+html.theme-light .text-indigo-400,
+html.theme-light .text-indigo-300 {
+  color: #4338ca !important;
+}
+html.theme-light .border-indigo-800,
+html.theme-light .border-indigo-700 {
+  border-color: #c7d2fe !important;
+}
+
+html.theme-light .bg-emerald-950 {
+  background-color: #d1fae5 !important;
+}
+html.theme-light .text-emerald-400 {
+  color: #047857 !important;
+}
+html.theme-light .border-emerald-800 {
+  border-color: #a7f3d0 !important;
+}
+
+html.theme-light .bg-rose-950 {
+  background-color: #ffe4e6 !important;
+}
+html.theme-light .text-rose-400 {
+  color: #be123c !important;
+}
+html.theme-light .border-rose-800 {
+  border-color: #fecdd3 !important;
+}
+
+html.theme-light .bg-amber-950 {
+  background-color: #fef3c7 !important;
+}
+html.theme-light .text-amber-400 {
+  color: #b45309 !important;
+}
+html.theme-light .border-amber-800 {
+  border-color: #fde68a !important;
+}
+
+html.theme-light header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light nav {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* Indigo / Brand */

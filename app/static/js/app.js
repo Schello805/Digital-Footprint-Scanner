@@ -455,6 +455,11 @@ function setLanguage(lang) {
     lblLogin.textContent = lang === 'de' ? 'Anmelden' : 'Sign In';
   }
 
+  // Refresh theme button text
+  if (typeof applyTheme === 'function') {
+    applyTheme(currentTheme);
+  }
+
   // Always keep GDPR letter localized
   updateGdprLetter(lastScanPayload ? lastScanPayload.name : '');
   updateDisclaimerContent();
@@ -2213,8 +2218,39 @@ async function deleteSavedScan(scanId) {
   }
 }
 
+// ==================== THEME MANAGEMENT ====================
+let currentTheme = localStorage.getItem('selfscanner_theme') || 'dark';
+
+function initTheme() {
+  applyTheme(currentTheme);
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('selfscanner_theme', currentTheme);
+  applyTheme(currentTheme);
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const icon = document.getElementById('themeIcon');
+  const text = document.getElementById('themeText');
+  if (theme === 'light') {
+    root.classList.add('theme-light');
+    root.classList.remove('dark');
+    if (icon) icon.textContent = '🌙';
+    if (text) text.textContent = currentLang === 'de' ? 'Dunkel' : 'Dark';
+  } else {
+    root.classList.remove('theme-light');
+    root.classList.add('dark');
+    if (icon) icon.textContent = '☀️';
+    if (text) text.textContent = currentLang === 'de' ? 'Hell' : 'Light';
+  }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   setLanguage(currentLang);
   updateGdprLetter();
   updateDisclaimerContent();
