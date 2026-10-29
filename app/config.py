@@ -11,4 +11,11 @@ class AppSettings(BaseModel):
     google_search_api_key: str = os.getenv("GOOGLE_SEARCH_API_KEY", "")
     google_search_cx: str = os.getenv("GOOGLE_SEARCH_CX", "")
 
+    # OAuth 2.0 (Google & GitHub)
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    github_client_id: str = os.getenv("GITHUB_CLIENT_ID", "")
+    github_client_secret: str = os.getenv("GITHUB_CLIENT_SECRET", "")
+    app_base_url: str = os.getenv("APP_BASE_URL", "") # e.g. http://192.168.1.80:8000
+
 settings = AppSettings()

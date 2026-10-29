@@ -97,6 +97,26 @@ def test_auth_and_user_scans_workflow():
     assert unauth_resp.status_code == 401
     print("✓ Unauthorized archive access rejected (401).")
 
+    # 11. OAuth Setup & Endpoint Validation
+    g_resp = client.get("/api/auth/oauth/google/login")
+    assert g_resp.status_code == 200
+    assert "Google OAuth" in g_resp.text
+    print("✓ Google OAuth login endpoint tested (setup instructions verified).")
+
+    gh_resp = client.get("/api/auth/oauth/github/login")
+    assert gh_resp.status_code == 200
+    assert "GitHub OAuth" in gh_resp.text
+    print("✓ GitHub OAuth login endpoint tested (setup instructions verified).")
+
+    # 12. OAuth User Creation in DB
+    from app.modules.db import get_or_create_oauth_user
+    oauth_email = f"google_user_{secrets.token_hex(4)}@gmail.com"
+    o_user, o_token, o_err = get_or_create_oauth_user(oauth_email, provider="google", oauth_id="google_12345")
+    assert o_err is None
+    assert o_user["email"] == oauth_email
+    assert o_token is not None
+    print("✓ OAuth user creation & session generation verified.")
+
 if __name__ == "__main__":
     test_auth_and_user_scans_workflow()
     print("🎉 All Auth & User Scan Archive tests passed!")

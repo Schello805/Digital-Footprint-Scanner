@@ -125,6 +125,45 @@ def register_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], 
     finally:
         conn.close()
 
+def get_or_create_oauth_user(email: str, provider: str, oauth_id: str = "") -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+    """
+    Finds or creates a user account authenticated via Google or GitHub OAuth.
+    Returns: (user_dict, session_token, error_message)
+    """
+    email_clean = email.strip().lower()
+    if not email_clean or "@" not in email_clean:
+        return None, None, "Ungültige E-Mail-Adresse vom OAuth-Provider."
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute("SELECT id, email FROM users WHERE email = ?", (email_clean,)).fetchone()
+        if user:
+            user_id = user["id"]
+        else:
+            salt_hex = os.urandom(16).hex()
+            pwd_hash = f"OAUTH_{provider.upper()}_{secrets.token_hex(16)}"
+            with conn:
+                cursor = conn.execute(
+                    "INSERT INTO users (email, password_hash, salt) VALUES (?, ?, ?)",
+                    (email_clean, pwd_hash, salt_hex)
+                )
+                user_id = cursor.lastrowid
+
+        # Create session
+        token = secrets.token_urlsafe(32)
+        expires_at = int(time.time()) + (30 * 86400) # 30 days
+        with conn:
+            conn.execute(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+                (token, user_id, expires_at)
+            )
+
+        return {"id": user_id, "email": email_clean}, token, None
+    except Exception as e:
+        return None, None, f"OAuth-Fehler: {str(e)}"
+    finally:
+        conn.close()
+
 # Static dummy salt for timing attack resistance
 _DUMMY_SALT = b"dummy_salt_timing_safe_16b"
 

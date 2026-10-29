@@ -1,8 +1,10 @@
 import json
 import asyncio
+import secrets
+import urllib.parse
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse, Response, FileResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, Response, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -357,6 +359,193 @@ async def api_me(request: Request):
     if user:
         return {"success": True, "authenticated": True, "user": user}
     return {"success": True, "authenticated": False, "user": None}
+
+def get_app_base_url(request: Request) -> str:
+    if settings.app_base_url:
+        return settings.app_base_url.rstrip("/")
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host", request.headers.get("host", "localhost:8000"))
+    return f"{proto}://{host}"
+
+# --- Google OAuth 2.0 ---
+@app.get("/api/auth/oauth/google/login")
+async def oauth_google_login(request: Request):
+    if not settings.google_client_id:
+        return HTMLResponse(
+            f"""
+            <html><head><meta charset="utf-8"><title>Google OAuth Setup</title>
+            <body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#141c2e;color:#e2e8f0;padding:40px;line-height:1.6;">
+            <div style="max-width:620px;margin:auto;background:#1a243a;padding:32px;border-radius:18px;border:1px solid #334466;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+              <h2 style="color:#60a5fa;margin-top:0;">⚙️ Google OAuth Konfiguration</h2>
+              <p>Um die Google-Anmeldung zu aktivieren, erstelle in der <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#38bdf8;text-decoration:underline;">Google Cloud Console</a> eine <b>OAuth-Client-ID</b> und hinterlege diese in der Umgebung oder <code>.env</code>:</p>
+              <pre style="background:#0f172a;padding:14px;border-radius:10px;color:#a5f3fc;font-size:12px;border:1px solid #334155;overflow-x:auto;">GOOGLE_CLIENT_ID="deine-id.apps.googleusercontent.com"&#10;GOOGLE_CLIENT_SECRET="dein-secret"</pre>
+              <p style="margin-top:16px;"><b>Autorisierte Weiterleitungs-URI (Redirect URI):</b><br>
+                <code style="background:#0f172a;padding:6px 10px;border-radius:6px;color:#34d399;font-size:13px;display:inline-block;margin-top:4px;word-break:break-all;">{get_app_base_url(request)}/api/auth/oauth/google/callback</code>
+              </p>
+              <div style="margin-top:28px;"><a href="/" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;">← Zurück zur App</a></div>
+            </div>
+            </body></html>
+            """,
+            status_code=200
+        )
+    
+    redirect_uri = f"{get_app_base_url(request)}/api/auth/oauth/google/callback"
+    state = secrets.token_urlsafe(16)
+    google_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={urllib.parse.quote(settings.google_client_id)}&"
+        f"redirect_uri={urllib.parse.quote(redirect_uri)}&"
+        "response_type=code&"
+        "scope=openid%20email%20profile&"
+        f"state={state}"
+    )
+    return RedirectResponse(google_url)
+
+@app.get("/api/auth/oauth/google/callback")
+async def oauth_google_callback(request: Request, code: Optional[str] = None, error: Optional[str] = None):
+    if error or not code:
+        return RedirectResponse("/?oauth_error=" + (error or "missing_code"))
+    
+    import httpx
+    redirect_uri = f"{get_app_base_url(request)}/api/auth/oauth/google/callback"
+    try:
+        async with httpx.AsyncClient() as http_client:
+            token_resp = await http_client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": settings.google_client_id,
+                    "client_secret": settings.google_client_secret,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": redirect_uri,
+                },
+                timeout=10.0
+            )
+            tokens = token_resp.json()
+            access_token = tokens.get("access_token")
+            if not access_token:
+                return RedirectResponse("/?oauth_error=token_exchange_failed")
+            
+            userinfo_resp = await http_client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+                timeout=10.0
+            )
+            user_info = userinfo_resp.json()
+            email = user_info.get("email")
+            if not email:
+                return RedirectResponse("/?oauth_error=no_email")
+            
+            from app.modules.db import get_or_create_oauth_user
+            user, session_token, err = get_or_create_oauth_user(email, provider="google", oauth_id=str(user_info.get("id", "")))
+            if err:
+                return RedirectResponse("/?oauth_error=" + urllib.parse.quote(err))
+            
+            response = RedirectResponse("/", status_code=303)
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            response.set_cookie(
+                "session_token", session_token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"
+            )
+            return response
+    except Exception as e:
+        return RedirectResponse("/?oauth_error=" + urllib.parse.quote(str(e)))
+
+# --- GitHub OAuth 2.0 ---
+@app.get("/api/auth/oauth/github/login")
+async def oauth_github_login(request: Request):
+    if not settings.github_client_id:
+        return HTMLResponse(
+            f"""
+            <html><head><meta charset="utf-8"><title>GitHub OAuth Setup</title>
+            <body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#141c2e;color:#e2e8f0;padding:40px;line-height:1.6;">
+            <div style="max-width:620px;margin:auto;background:#1a243a;padding:32px;border-radius:18px;border:1px solid #334466;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+              <h2 style="color:#60a5fa;margin-top:0;">⚙️ GitHub OAuth Konfiguration</h2>
+              <p>Um die GitHub-Anmeldung zu aktivieren, erstelle in den <a href="https://github.com/settings/developers" target="_blank" style="color:#38bdf8;text-decoration:underline;">GitHub Developer Settings</a> eine <b>OAuth App</b> und hinterlege diese in der Umgebung oder <code>.env</code>:</p>
+              <pre style="background:#0f172a;padding:14px;border-radius:10px;color:#a5f3fc;font-size:12px;border:1px solid #334155;overflow-x:auto;">GITHUB_CLIENT_ID="deine-github-client-id"&#10;GITHUB_CLIENT_SECRET="dein-github-secret"</pre>
+              <p style="margin-top:16px;"><b>Authorization Callback URL:</b><br>
+                <code style="background:#0f172a;padding:6px 10px;border-radius:6px;color:#34d399;font-size:13px;display:inline-block;margin-top:4px;word-break:break-all;">{get_app_base_url(request)}/api/auth/oauth/github/callback</code>
+              </p>
+              <div style="margin-top:28px;"><a href="/" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;">← Zurück zur App</a></div>
+            </div>
+            </body></html>
+            """,
+            status_code=200
+        )
+    
+    redirect_uri = f"{get_app_base_url(request)}/api/auth/oauth/github/callback"
+    state = secrets.token_urlsafe(16)
+    github_url = (
+        "https://github.com/login/oauth/authorize?"
+        f"client_id={urllib.parse.quote(settings.github_client_id)}&"
+        f"redirect_uri={urllib.parse.quote(redirect_uri)}&"
+        "scope=user:email&"
+        f"state={state}"
+    )
+    return RedirectResponse(github_url)
+
+@app.get("/api/auth/oauth/github/callback")
+async def oauth_github_callback(request: Request, code: Optional[str] = None, error: Optional[str] = None):
+    if error or not code:
+        return RedirectResponse("/?oauth_error=" + (error or "missing_code"))
+    
+    import httpx
+    redirect_uri = f"{get_app_base_url(request)}/api/auth/oauth/github/callback"
+    try:
+        async with httpx.AsyncClient() as http_client:
+            token_resp = await http_client.post(
+                "https://github.com/login/oauth/access_token",
+                headers={"Accept": "application/json"},
+                data={
+                    "client_id": settings.github_client_id,
+                    "client_secret": settings.github_client_secret,
+                    "code": code,
+                    "redirect_uri": redirect_uri,
+                },
+                timeout=10.0
+            )
+            tokens = token_resp.json()
+            access_token = tokens.get("access_token")
+            if not access_token:
+                return RedirectResponse("/?oauth_error=github_token_exchange_failed")
+            
+            user_resp = await http_client.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
+                timeout=10.0
+            )
+            user_data = user_resp.json()
+            email = user_data.get("email")
+            
+            if not email:
+                emails_resp = await http_client.get(
+                    "https://api.github.com/user/emails",
+                    headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
+                    timeout=10.0
+                )
+                emails = emails_resp.json()
+                if isinstance(emails, list):
+                    primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+                    if primary:
+                        email = primary.get("email")
+                    elif len(emails) > 0:
+                        email = emails[0].get("email")
+            
+            if not email:
+                return RedirectResponse("/?oauth_error=no_github_verified_email")
+            
+            from app.modules.db import get_or_create_oauth_user
+            user, session_token, err = get_or_create_oauth_user(email, provider="github", oauth_id=str(user_data.get("id", "")))
+            if err:
+                return RedirectResponse("/?oauth_error=" + urllib.parse.quote(err))
+            
+            response = RedirectResponse("/", status_code=303)
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            response.set_cookie(
+                "session_token", session_token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"
+            )
+            return response
+    except Exception as e:
+        return RedirectResponse("/?oauth_error=" + urllib.parse.quote(str(e)))
 
 @app.get("/api/user/scans")
 async def api_user_scans(request: Request):
