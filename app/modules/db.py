@@ -87,14 +87,14 @@ def _hash_password(password: str, salt_bytes: bytes) -> str:
 
 def register_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
     """
-    Registers a new user account.
+    Registers a new user account with strong password requirements.
     Returns: (user_dict, session_token, error_message)
     """
     email_clean = email.strip().lower()
     if not email_clean or "@" not in email_clean:
         return None, None, "Bitte eine gültige E-Mail-Adresse eingeben."
-    if len(password) < 6:
-        return None, None, "Das Passwort muss mindestens 6 Zeichen lang sein."
+    if len(password) < 8:
+        return None, None, "Das Passwort muss mindestens 8 Zeichen lang sein (NIST Cybersecurity Standard)."
 
     salt_bytes = os.urandom(16)
     salt_hex = salt_bytes.hex()
@@ -125,9 +125,12 @@ def register_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], 
     finally:
         conn.close()
 
+# Static dummy salt for timing attack resistance
+_DUMMY_SALT = b"dummy_salt_timing_safe_16b"
+
 def login_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
     """
-    Authenticates an existing user.
+    Authenticates an existing user with timing side-channel attack protection.
     Returns: (user_dict, session_token, error_message)
     """
     email_clean = email.strip().lower()
@@ -135,6 +138,8 @@ def login_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], Opt
     try:
         user = conn.execute("SELECT * FROM users WHERE email = ?", (email_clean,)).fetchone()
         if not user:
+            # Perform dummy scrypt computation to match execution time and prevent user enumeration
+            _hash_password(password, _DUMMY_SALT)
             return None, None, "E-Mail oder Passwort ungültig."
 
         salt_bytes = bytes.fromhex(user["salt"])

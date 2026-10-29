@@ -17,6 +17,11 @@ def check_domain_dns(domain_input: str) -> Dict[str, Any]:
     if not domain or "." not in domain:
         return {"success": False, "error": "Bitte einen gültigen Domainnamen eingeben (z. B. beispiel.de)"}
 
+    # SSRF & Private Network Protection
+    from app.modules.security import is_ssrf_dangerous
+    if is_ssrf_dangerous(domain):
+        return {"success": False, "error": "Sicherheitswarnung: Private, lokale oder reservierte Netzadressen können nicht gescannt werden."}
+
     result = {
         "domain": domain,
         "records": {

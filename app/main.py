@@ -25,6 +25,10 @@ app = FastAPI(
     description="Automatisierter Digital Footprint & OSINT Privacy Auditor"
 )
 
+# Cybersecurity Hardening: Enforce Security Headers, CSP & Rate Limiting
+from app.modules.security import SecurityAndRateLimitMiddleware
+app.add_middleware(SecurityAndRateLimitMiddleware)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -126,11 +130,15 @@ async def audit_identity(req: IdentityAuditRequest):
     return result
 
 # --- 3. EXIF & Metadata Inspector ---
+MAX_IMAGE_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB limit
+
 @app.post("/api/exif/inspect")
 async def inspect_exif(file: UploadFile = File(...)):
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Keine Datei übermittelt")
+    if len(content) > MAX_IMAGE_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Dateigröße überschreitet das Sicherheitslimit von 15 MB.")
     result = extract_exif_metadata(content, filename=file.filename or "upload.jpg")
     return result
 
@@ -139,7 +147,13 @@ async def strip_exif(file: UploadFile = File(...)):
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="Keine Datei übermittelt")
-    clean_bytes, fmt = strip_exif_metadata(content)
+    if len(content) > MAX_IMAGE_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Dateigröße überschreitet das Sicherheitslimit von 15 MB.")
+    try:
+        clean_bytes, fmt = strip_exif_metadata(content)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
     clean_name = f"sanitized_{file.filename or 'image'}"
     if not clean_name.lower().endswith(f".{fmt}"):
         clean_name += f".{fmt}"
@@ -267,7 +281,10 @@ async def get_settings():
     }
 
 @app.post("/api/settings")
-async def update_settings(update: SettingsUpdate):
+async def update_settings(update: SettingsUpdate, request: Request):
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Zugriff verweigert: Bitte zuerst anmelden, um Einstellungen zu bearbeiten.")
     if update.hibp_api_key is not None:
         settings.hibp_api_key = update.hibp_api_key.strip()
     if update.google_search_api_key is not None:
@@ -293,21 +310,27 @@ class AuthRequest(BaseModel):
     password: str
 
 @app.post("/api/auth/register")
-async def api_register(req: AuthRequest, response: Response):
+async def api_register(req: AuthRequest, request: Request, response: Response):
     from app.modules.db import register_user
     user, token, err = register_user(req.email, req.password)
     if err:
         return {"success": False, "error": err}
-    response.set_cookie("session_token", token, max_age=30*86400, httponly=True, samesite="lax")
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    response.set_cookie(
+        "session_token", token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"
+    )
     return {"success": True, "user": user, "token": token}
 
 @app.post("/api/auth/login")
-async def api_login(req: AuthRequest, response: Response):
+async def api_login(req: AuthRequest, request: Request, response: Response):
     from app.modules.db import login_user
     user, token, err = login_user(req.email, req.password)
     if err:
         return {"success": False, "error": err}
-    response.set_cookie("session_token", token, max_age=30*86400, httponly=True, samesite="lax")
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    response.set_cookie(
+        "session_token", token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"
+    )
     return {"success": True, "user": user, "token": token}
 
 @app.post("/api/auth/logout")

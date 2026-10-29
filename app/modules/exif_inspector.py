@@ -2,6 +2,25 @@ import io
 from typing import Dict, Any, Optional, Tuple
 from PIL import Image, ExifTags
 
+# Cybersecurity Hardening: Prevent Decompression Bomb Attacks (Denial of Service via huge pixel dimensions)
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
+VALID_IMAGE_MAGIC = [
+    b"\xff\xd8\xff",       # JPEG
+    b"\x89PNG\r\n\x1a\n",  # PNG
+    b"RIFF",               # WEBP (starts with RIFF)
+    b"II*\x00",            # TIFF Little Endian
+    b"MM\x00*",            # TIFF Big Endian
+]
+
+def is_valid_image_header(data: bytes) -> bool:
+    if not data or len(data) < 4:
+        return False
+    for magic in VALID_IMAGE_MAGIC:
+        if data.startswith(magic):
+            return True
+    return False
+
 def _convert_to_degrees(value) -> Optional[float]:
     """Helper function to convert the GPS coordinates stored in the EXIF to degrees in float format"""
     if not value:
@@ -16,6 +35,12 @@ def _convert_to_degrees(value) -> Optional[float]:
         return None
 
 def extract_exif_metadata(image_bytes: bytes, filename: str = "") -> Dict[str, Any]:
+    if not is_valid_image_header(image_bytes):
+        return {
+            "success": False,
+            "error": "Ungültiger Datei-Header: Nur echte Bilddateien (JPEG, PNG, WebP, TIFF) sind zulässig."
+        }
+
     try:
         image = Image.open(io.BytesIO(image_bytes))
     except Exception as e:
@@ -139,6 +164,8 @@ def strip_exif_metadata(image_bytes: bytes) -> Tuple[bytes, str]:
     """
     Strips all metadata from the image and returns clean image bytes.
     """
+    if not is_valid_image_header(image_bytes):
+        raise ValueError("Ungültige Bilddatei: Datei-Header wird nicht unterstützt.")
     image = Image.open(io.BytesIO(image_bytes))
     
     # Create a fresh image with identical pixel data but zero metadata

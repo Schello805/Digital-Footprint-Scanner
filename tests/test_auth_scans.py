@@ -1,11 +1,13 @@
 import os
+import time
+import secrets
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
 
 def test_auth_and_user_scans_workflow():
-    test_email = "tester_audit@example.com"
+    test_email = f"tester_{int(time.time())}_{secrets.token_hex(4)}@example.com"
     test_password = "SecurePassword123!"
 
     # 1. Register
