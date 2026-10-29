@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selfscanner – Digital Footprint & OSINT Privacy Auditor</title>
+  
+  <!-- Local Tailwind CSS & Custom Theme -->
+  <link rel="stylesheet" href="/static/css/tailwind.min.css" />
+  <link rel="stylesheet" href="/static/css/custom.css" />
+  
+  <!-- Local Leaflet CSS for GPS Mapping -->
+  <link rel="stylesheet" href="/static/css/leaflet.css" />
+</head>
+<body class="bg-[#0b0f19] text-slate-200 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg text-white font-black text-xl">
+          🔍
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-lg font-bold tracking-tight text-white">Selfscanner</span>
+            <span class="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full">All-in-One OSINT Suite</span>
+          </div>
+          <p class="text-xs text-slate-400">Ganzheitlicher digitaler Fußabdruck-Scan ohne Umwege</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 text-xs">
+        <button onclick="switchTab('fullscan')" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow flex items-center space-x-1.5">
+          <span>🚀 Vollscan Cockpit</span>
+        </button>
+        <button onclick="switchTab('settings')" class="px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition flex items-center space-x-1 text-slate-300">
+          <span>⚙️ API-Keys</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="border-b border-slate-800 bg-slate-950 px-4">
+    <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5">
+      <button onclick="switchTab('fullscan')" id="tab-btn-fullscan" class="tab-btn active px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md">
+        <span>🚀 Vollscan (Alles auf einmal)</span>
+      </button>
+      <button onclick="switchTab('exif')" id="tab-btn-exif" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>📸 EXIF-Foto-Inspektor</span>
+      </button>
+      <button onclick="switchTab('username')" id="tab-btn-username" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>👤 Einzelner Username-Check</span>
+      </button>
+      <button onclick="switchTab('domain')" id="tab-btn-domain" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>🌐 Domain & DNS-Security</span>
+      </button>
+      <button onclick="switchTab('breach')" id="tab-btn-breach" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>🛡️ Passwort- & Breach-Check</span>
+      </button>
+      <button onclick="switchTab('dorks')" id="tab-btn-dorks" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <span>🔎 Google Dorking</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== TAB 0: 1-KLICK VOLLSCAN (PRIMARY) ==================== -->
+    <div id="tab-content-fullscan" class="tab-pane">
+      
+      <!-- Cockpit Form Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-4 border-b border-slate-800 gap-2">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+              <span>Automatisierter Vollscan</span>
+              <span class="text-xs font-normal text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">1-Klick Komplett-Audit</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Gib einmal deine Daten ein. Der Scanner prüft gleichzeitig <strong>Social-Media-Accounts, Datenpannen, Rufnummern, Mail-Spoofing, Register</strong> und filtert fremde Namensvetter automatisch aus.
+            </p>
+          </div>
+          <div class="text-xs text-slate-500 font-mono">
+            Keine Pflichtfelder außer Name oder Username
+          </div>
+        </div>
+
+        <form id="fullScanForm" onsubmit="runFullScan(event)" class="space-y-4">
+          <!-- Input Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Row 1: Personendaten -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Vor- & Nachname</label>
+              <input type="text" id="fsName" placeholder="z. B. Michael Schmidt"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Benutzername / Alias</label>
+              <input type="text" id="fsUsername" placeholder="z. B. mikeshadow"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">E-Mail-Adresse</label>
+              <input type="email" id="fsEmail" placeholder="z. B. name@beispiel.de"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Passwort (Leak-Check)</label>
+              <input type="password" id="fsPassword" placeholder="Passwort auf Leaks testen"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <!-- Row 2: Kontext & Infrastruktur -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Wohnort / Stadt</label>
+              <input type="text" id="fsCity" placeholder="z. B. München oder Berlin"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Firma / Arbeitgeber</label>
+              <input type="text" id="fsEmployer" placeholder="z. B. Siemens AG"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Telefon / Handy</label>
+              <input type="text" id="fsPhone" placeholder="z. B. 0171 1234567"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Eigene Domain (Mail-Security)</label>
+              <input type="text" id="fsDomain" placeholder="z. B. deinedomain.de"
+                class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-indigo-500" />
+            </div>
+
+          </div>
+
+          <!-- Action Button Row -->
+          <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span class="text-xs text-slate-500">
+              Prüft k-Anonymity Hashes, 40+ Social-Netzwerke, Mail-Spoofing & Dorks gleichzeitig.
+            </span>
+            <button type="submit" id="fsSubmitBtn"
+              class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2">
+              <span id="fsBtnText">🚀 Vollscan starten (Alles prüfen)</span>
+              <span id="fsSpinner" class="hidden animate-spin">🌀</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Scanning Status Bar -->
+        <div id="fsProgressContainer" class="hidden mt-6 pt-5 border-t border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span id="fsProgressStep" class="font-medium text-cyan-400">Analysiere alle Vektoren parallel...</span>
+            <span class="text-slate-400 font-mono">Dauer ca. 2–3 Sekunden</span>
+          </div>
+          <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div id="fsProgressBar" class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-2 transition-all duration-300" style="width: 25%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unified Report Container (Hidden until scanned) -->
+      <div id="fullReportContainer" class="hidden space-y-6">
+
+        <!-- Dossier Top Action Bar (no-print) -->
+        <div class="no-print bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-bold text-white text-sm">Vollständiges Personen-Dossier erstellt</span>
+            <span class="text-xs text-slate-400 font-mono" id="dossierTimestamp"></span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center space-x-1.5">
+              <span>📄 Als DIN A4 Steckbrief drucken / PDF</span>
+            </button>
+            <button onclick="toggleDossierView()" id="toggleViewBtn" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition">
+              Kachel-Ansicht
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== DIN A4 STECKBRIEF / DOSSIER ==================== -->
+        <div id="dossierSheet" class="dossier-sheet rounded-2xl p-6 sm:p-10 border border-slate-700 text-slate-200 space-y-6">
+          
+          <!-- Dossier Header Ribbon -->
+          <div class="border-b-2 border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div class="text-[11px] font-mono tracking-widest text-indigo-400 uppercase font-black">
+                OSINT PRIVACY AUDIT // PERSÖNLICHES PERSONENDOSSIER
+              </div>
+              <div class="text-xs text-slate-400 font-mono" id="dossierAktenzeichen">
+                AKTENZEICHEN: AZ-OSINT-2026-X
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-rose-950 text-rose-400 border border-rose-800 font-mono">
+                VERTRAULICH // NUR ZUR PRIVATEN SICHERHEITSAUDITIERUNG
+              </span>
+            </div>
+          </div>
+
+          <!-- Steckbrief Kopf: Profilbild-Frame + Stammdaten + Risikostempel -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pb-6 border-b border-slate-800">
+            
+            <!-- Silhouette / Photo Placeholder -->
+            <div class="md:col-span-3 flex flex-col items-center justify-center p-4 bg-slate-950 rounded-xl border-2 border-dashed border-slate-700 text-center">
+              <div class="w-24 h-24 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-4xl mb-2 text-indigo-400 shadow-inner">
+                👤
+              </div>
+              <span class="text-xs font-bold text-white font-mono tracking-wider uppercase" id="sbTargetNameTop">ZIELPERSON</span>
+              <span class="text-[11px] text-slate-400 font-mono" id="sbTargetAliasTop">@alias</span>
+            </div>
+
+            <!-- Profile Attributes Table -->
+            <div class="md:col-span-6 space-y-2 text-xs">
+              <h3 class="font-bold text-slate-300 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-1">
+                📋 Stammdatenblatt
+              </h3>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Klarname:</span>
+                <span class="col-span-2 font-bold text-white font-mono" id="sbName">-</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Wohnort / Region:</span>
+                <span class="col-span-2 text-slate-200 font-mono" id="sbCity">-</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Firma / Arbeitgeber:</span>
+                <span class="col-span-2 text-slate-200 font-mono" id="sbEmployer">-</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Primäre E-Mail:</span>
+                <span class="col-span-2 text-slate-200 font-mono" id="sbEmail">-</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Rufnummer:</span>
+                <span class="col-span-2 text-slate-200 font-mono" id="sbPhone">-</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1 py-1">
+                <span class="text-slate-400 font-semibold">Eigene Domain:</span>
+                <span class="col-span-2 text-slate-200 font-mono" id="sbDomain">-</span>
+              </div>
+            </div>
+
+            <!-- Exposure Stamp (Amtlicher Stempel-Look) -->
+            <div class="md:col-span-3 flex flex-col items-center justify-center p-3 text-center">
+              <div id="sbDossierStamp" class="dossier-stamp p-3 rounded-lg text-center">
+                <div class="text-[10px] tracking-widest uppercase">AUDIT RESULTAT</div>
+                <div class="text-2xl font-black my-0.5" id="sbExposureVal">0%</div>
+                <div class="text-[10px] tracking-wider font-mono uppercase" id="sbExposureLevel">RISIKO: MODERAT</div>
+              </div>
+              <span class="text-[10px] text-slate-500 mt-3 font-mono">Berechnet nach OWASP/OSINT Angriffsfläche</span>
+            </div>
+
+          </div>
+
+          <!-- Section 1: Sicherheits- & Kompromittierungs-Status -->
+          <div class="dossier-section space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1">
+              1. Sicherheitsanalyse & Kompromittierungs-Status (Breaches)
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block font-semibold">🔑 Passwort-Integrität:</span>
+                <span id="sbPwdStatus" class="font-bold text-sm block mt-1">Nicht geprüft</span>
+                <span id="sbPwdDetail" class="text-[11px] text-slate-500 block mt-0.5">k-Anonymity HIBP</span>
+              </div>
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block font-semibold">📬 E-Mail Datenpannen:</span>
+                <span id="sbEmailStatus" class="font-bold text-sm block mt-1">Geprüft</span>
+                <span id="sbEmailDetail" class="text-[11px] text-slate-500 block mt-0.5">Keine Leaks bekannt</span>
+              </div>
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block font-semibold">🌐 Domain Mail-Spoofing:</span>
+                <span id="sbDomainStatus" class="font-bold text-sm block mt-1">Keine Domain</span>
+                <span id="sbDomainDetail" class="text-[11px] text-slate-500 block mt-0.5">SPF / DMARC Integrität</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Entdeckte Profile & Verifizierte Identitäten -->
+          <div class="dossier-section space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                2. Aufgedeckte Profile & Digitale Präsenz (Plattform-Abgleich)
+              </h4>
+              <span class="text-xs font-mono text-slate-400" id="sbProfilesCountText">0 Accounts</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border border-slate-800 rounded-lg">
+                <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono">
+                  <tr>
+                    <th class="py-2 px-3">Plattform</th>
+                    <th class="py-2 px-3">Kategorie</th>
+                    <th class="py-2 px-3">Verifikations-Status</th>
+                    <th class="py-2 px-3">Gefundener Bio-Auszug / Notiz</th>
+                    <th class="py-2 px-3 text-right">Profil-Link</th>
+                  </tr>
+                </thead>
+                <tbody id="sbProfilesTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
+                  <!-- Injected Profile Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 3: Bedrohungsvektoren -->
+          <div class="dossier-section space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1">
+              3. Forensische Bedrohungsanalyse (Social Engineering & Doxing)
+            </h4>
+            <div id="sbThreatsContainer" class="space-y-2 text-xs">
+              <!-- Threat vector list -->
+            </div>
+          </div>
+
+          <!-- Section 4: Rufnummer, Mailinglisten & Permutationen -->
+          <div class="dossier-section grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">📞 Rufnummern-Rückwärtssuche</h5>
+              <div id="sbPhoneReconBox" class="text-slate-400">Keine Rufnummer angegeben.</div>
+            </div>
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">📬 Öffentliche Mailinglisten</h5>
+              <div id="sbMailingListBox" class="text-slate-400 space-y-1.5">Keine E-Mail geprüft.</div>
+            </div>
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]">✉️ E-Mail-Permutationen</h5>
+              <div id="sbPermutationsBox" class="text-slate-400 font-mono line-clamp-3">Keine Permutationen berechnet.</div>
+            </div>
+          </div>
+
+          <!-- Section 5: Registerfunde (Dorks) -->
+          <div class="dossier-section space-y-2 text-xs">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1">
+              4. Öffentliche Register & Spurensuche (Handelsregister, PDFs, North Data)
+            </h4>
+            <div id="sbDorksLinksList" class="flex flex-wrap gap-2 pt-1">
+              <!-- Fast dork links -->
+            </div>
+          </div>
+
+          <!-- Section 6: DSGVO Art. 17 Recht auf Vergessenwerden Musterschreiben -->
+          <div class="dossier-section space-y-2 text-xs pt-3 border-t border-slate-800">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                5. Rechtliche Sofortmaßnahme: Art. 17 DSGVO Löschanforderung
+              </h4>
+              <button onclick="copyGdprTemplate(this)" class="no-print px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px]">
+                Text kopieren
+              </button>
+            </div>
+            <textarea id="repGdprText" readonly rows="5"
+              class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg font-mono text-[11px] text-slate-300 outline-none select-all"></textarea>
+            <div class="text-right text-[11px]">
+              <a href="https://support.google.com/websearch/troubleshooter/3111061" target="_blank" class="text-indigo-400 hover:underline">
+                Offiziellen Google-Suchergebnis-Entfernungsantrag einreichen ↗
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+          </div>
+
+          <div id="repProfilesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Profile cards -->
+          </div>
+        </div>
+
+        <!-- 4. Phone Recon & Email Permutations Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Phone Analysis -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+              <span>📞 Rufnummer & Telefonverzeichnisse</span>
+            </h3>
+            <div id="repPhoneContent" class="text-xs text-slate-400">
+              <!-- Phone info -->
+            </div>
+          </div>
+
+          <!-- Email Permutations -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+              <span>📬 Häufige E-Mail-Permutationen</span>
+            </h3>
+            <p class="text-xs text-slate-400">Typische Adressen, unter denen Accounts registriert sein könnten:</p>
+            <div id="repPermutationsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+              <!-- Permutations -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 5. Relevant Google Dorks (Pre-filtered with 1-Click Search) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white">🔎 Gezielte Google Dorking Abfragen (Register & Dokumente)</h3>
+          <p class="text-xs text-slate-400">
+            Klicke auf die Links, um Suchergebnisse in Registern (North Data, Bundesanzeiger) und Foren ohne Bot-Sperren direkt zu prüfen:
+          </p>
+          <div id="repDorksContainer" class="space-y-4">
+            <!-- Dorks -->
+          </div>
+        </div>
+
+        <!-- 6. GDPR Art. 17 Deletion Letter Generator -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-white">⚖️ Recht auf Vergessenwerden (Art. 17 DSGVO Musterschreiben)</h3>
+              <p class="text-xs text-slate-400">Nutze diesen vorgefertigten Rechtstext, um Plattformen zur Löschung deiner Daten aufzufordern.</p>
+            </div>
+            <button onclick="copyGdprTemplate(this)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition">
+              Kopieren
+            </button>
+          </div>
+          <textarea id="repGdprText" readonly rows="6"
+            class="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-300 outline-none select-all"></textarea>
+          <div class="text-right">
+            <a href="https://support.google.com/websearch/troubleshooter/3111061" target="_blank" rel="noopener noreferrer" class="text-xs text-indigo-400 hover:underline">
+              Google-Suchergebnis-Entfernungsantrag öffnen ↗
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 1: EXIF METADATEN ==================== -->
+    <div id="tab-content-exif" class="tab-pane hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-xl font-bold text-white mb-2">Metadaten- & EXIF-Inspektor</h2>
+            <p class="text-sm text-slate-400 mb-6">
+              Lade ein Foto hoch. Wir analysieren GPS-Koordinaten, Kameramodell und bieten dir einen 1-Klick-Datenschutz-Bereiniger.
+            </p>
+            <div id="dropZone"
+              class="border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-3">
+              <div class="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center text-2xl text-cyan-400">📷</div>
+              <div>
+                <p class="text-sm font-semibold text-slate-200">Foto hier hineinziehen oder klicken</p>
+                <p class="text-xs text-slate-500 mt-1">JPG, PNG, WEBP oder TIFF (bis zu 25 MB)</p>
+              </div>
+              <input type="file" id="exifFileInput" accept="image/*" class="hidden" onchange="handleFileSelect(this.files[0])" />
+            </div>
+            <div id="exifActions" class="hidden mt-6 space-y-3">
+              <button onclick="downloadSanitizedImage()"
+                class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl transition shadow-lg flex items-center justify-center space-x-2">
+                <span>🛡️ Bild bereinigen & ohne EXIF herunterladen</span>
+              </button>
+            </div>
+          </div>
+          <div id="exifRiskCard" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Datenschutz-Bewertung</h3>
+            <div id="exifRiskBadge" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-bold mb-3"></div>
+            <ul id="exifRiskReasons" class="text-xs space-y-2 text-slate-300"></ul>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 space-y-6">
+          <div id="exifMapContainer" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <span>📍 Aufgedeckter Aufnahmeort</span>
+                <span class="text-xs font-normal text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800">Sensible Daten</span>
+              </h3>
+              <div id="exifMapCoords" class="text-xs font-mono text-cyan-400"></div>
+            </div>
+            <div id="exifMap"></div>
+          </div>
+          <div id="exifTableContainer" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h3 class="text-base font-bold text-white mb-4">Gefundene Metadaten-Tags</h3>
+            <div class="overflow-x-auto max-h-[380px]">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 sticky top-0">
+                  <tr><th class="py-2.5 px-3">Eigenschaft</th><th class="py-2.5 px-3">Wert</th></tr>
+                </thead>
+                <tbody id="exifTableBody" class="divide-y divide-slate-800 text-slate-300 font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: EINZELNER USERNAME CHECK ==================== -->
+    <div id="tab-content-username" class="tab-pane hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-6">
+        <h2 class="text-xl font-bold text-white mb-2">Einzelne Username-Suche (Sherlock)</h2>
+        <p class="text-sm text-slate-400 mb-4">Prüfe gezielt einen einzelnen Benutzernamen über 40+ Plattformen.</p>
+        <form onsubmit="startUsernameScan(event)" class="space-y-4">
+          <div class="flex gap-3">
+            <input type="text" id="usernameInput" required placeholder="Benutzername..."
+              class="flex-1 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white outline-none" />
+            <button type="submit" id="usernameScanBtn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl">Scan starten</button>
+          </div>
+        </form>
+        <div id="usernameProgressSection" class="hidden mt-6 pt-4 border-t border-slate-800">
+          <div class="text-xs text-slate-400 mb-2">Geprüft: <span id="scanCount">0/0</span> | Treffer: <span id="scanFoundCount" class="text-emerald-400">0</span></div>
+          <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden"><div id="scanProgressBar" class="bg-indigo-500 h-2.5" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div id="usernameResultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </div>
+
+    <!-- ==================== TAB 3: DOMAIN RECON ==================== -->
+    <div id="tab-content-domain" class="tab-pane hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mb-6">
+        <h2 class="text-xl font-bold text-white mb-2">Domain- & Mail-Security-Audit</h2>
+        <form onsubmit="startDomainRecon(event)" class="flex gap-3">
+          <input type="text" id="domainInput" required placeholder="z. B. deinedomain.de" class="flex-1 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white" />
+          <button type="submit" id="domainBtn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl">Domain scannen</button>
+        </form>
+      </div>
+      <div id="domainResults" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="spfCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between"><span class="font-bold text-white text-sm">SPF</span><span id="spfBadge" class="text-xs px-2 py-0.5 rounded font-bold"></span></div><p id="spfAssessment" class="text-xs text-slate-300 mt-2"></p></div>
+          <div id="dmarcCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between"><span class="font-bold text-white text-sm">DMARC</span><span id="dmarcBadge" class="text-xs px-2 py-0.5 rounded font-bold"></span></div><p id="dmarcAssessment" class="text-xs text-slate-300 mt-2"></p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: BREACH CHECK ==================== -->
+    <div id="tab-content-breach" class="tab-pane hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-white mb-3">Passwort-Leak-Prüfung (k-Anonymity)</h2>
+          <form onsubmit="checkPassword(event)" class="space-y-3">
+            <input type="password" id="passwordInput" required placeholder="Passwort..." class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white" />
+            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl">Prüfen</button>
+          </form>
+          <div id="pwdResult" class="hidden mt-4 p-4 rounded-xl border"></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-white mb-3">E-Mail Datenpannen-Check</h2>
+          <form onsubmit="checkEmail(event)" class="space-y-3">
+            <input type="email" id="emailInput" required placeholder="name@beispiel.de" class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white" />
+            <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl">Prüfen</button>
+          </form>
+          <div id="emailResult" class="hidden mt-4 space-y-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: DORKS ==================== -->
+    <div id="tab-content-dorks" class="tab-pane hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <h2 class="text-xl font-bold text-white mb-3">Google Dorking Generator</h2>
+        <form onsubmit="generateDorkQueries(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <input type="text" id="dorkName" placeholder="Name..." class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+          <input type="text" id="dorkCity" placeholder="Stadt..." class="px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+          <button type="submit" class="sm:col-span-2 py-2.5 bg-indigo-600 text-white rounded-xl">Abfragen generieren</button>
+        </form>
+      </div>
+      <div id="dorksContainer" class="space-y-6"></div>
+    </div>
+
+    <!-- ==================== TAB 6: SETTINGS ==================== -->
+    <div id="tab-content-settings" class="tab-pane hidden">
+      <div class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <h2 class="text-xl font-bold text-white mb-3">⚙️ Optionale API-Keys</h2>
+        <form onsubmit="saveSettings(event)" class="space-y-4">
+          <input type="password" id="hibpApiKeyInput" placeholder="HIBP API Key..." class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-sm" />
+          <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl">Speichern</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-950 text-slate-500 py-6 text-xs text-center">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span>Selfscanner • 1-Click All-in-One OSINT Suite</span>
+      <span>100% lokal & sicher • Keine externe Speicherung</span>
+    </div>
+  </footer>
+
+  <script src="/static/js/leaflet.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

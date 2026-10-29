@@ -1,0 +1,153 @@
+/* Selfscanner Custom Dark Theme & Dossier Print Styles */
+:root {
+  --bg-main: #0b0f19;
+  --bg-card: #111827;
+  --bg-card-dark: #0f172a;
+  --border-color: #1e293b;
+  --accent-cyan: #06b6d4;
+  --accent-indigo: #6366f1;
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+}
+
+body {
+  background-color: #0b0f19 !important;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Slate utility compatibility */
+.bg-slate-950 { background-color: #020617 !important; }
+.bg-slate-900 { background-color: #0f172a !important; }
+.bg-slate-800 { background-color: #1e293b !important; }
+.bg-slate-700 { background-color: #334155 !important; }
+
+.border-slate-800 { border-color: #1e293b !important; }
+.border-slate-700 { border-color: #334155 !important; }
+
+.text-slate-200 { color: #e2e8f0 !important; }
+.text-slate-300 { color: #cbd5e1 !important; }
+.text-slate-400 { color: #94a3b8 !important; }
+.text-slate-500 { color: #64748b !important; }
+
+/* Indigo / Brand */
+.bg-indigo-600 { background-color: #4f46e5 !important; }
+.bg-indigo-500 { background-color: #6366f1 !important; }
+.bg-indigo-950 { background-color: #1e1b4b !important; }
+.hover\:bg-indigo-500:hover { background-color: #6366f1 !important; }
+.text-indigo-300 { color: #a5b4fc !important; }
+.text-indigo-400 { color: #818cf8 !important; }
+.border-indigo-500 { border-color: #6366f1 !important; }
+.border-indigo-800 { border-color: #3730a3 !important; }
+
+/* Emerald / Rose */
+.text-emerald-400 { color: #34d399 !important; }
+.bg-emerald-950 { background-color: #064e3b !important; }
+.border-emerald-800 { border-color: #065f46 !important; }
+
+.text-rose-400 { color: #fb7185 !important; }
+.bg-rose-950 { background-color: #4c0519 !important; }
+.border-rose-800 { border-color: #9f1239 !important; }
+
+.text-amber-400 { color: #fbbf24 !important; }
+.bg-amber-950 { background-color: #451a03 !important; }
+.border-amber-800 { border-color: #92400e !important; }
+
+/* Map styling */
+#exifMap {
+  height: 320px;
+  border-radius: 0.75rem;
+  z-index: 10;
+  width: 100%;
+}
+
+/* ==================== DIN A4 DOSSIER & PRINT STYLES ==================== */
+.dossier-sheet {
+  background: #0f172a;
+  border: 2px solid #334155;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  position: relative;
+}
+
+.dossier-stamp {
+  border: 3px dashed #ef4444;
+  color: #ef4444;
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  transform: rotate(-4deg);
+  display: inline-block;
+}
+
+/* Perfect DIN A4 Print Layout */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt;
+  }
+
+  /* Hide interactive UI elements */
+  header, nav, footer, #fullScanForm, #fsProgressContainer, .no-print, button {
+    display: none !important;
+  }
+
+  /* Show dossier full width */
+  #fullReportContainer {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .dossier-sheet {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #94a3b8 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .dossier-stamp {
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+  }
+
+  /* Force dark elements to high-contrast black/white */
+  .bg-slate-950, .bg-slate-900, .bg-slate-800 {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .text-white, .text-slate-200, .text-slate-300 {
+    color: #0f172a !important;
+  }
+
+  .text-slate-400, .text-slate-500 {
+    color: #475569 !important;
+  }
+
+  a {
+    color: #1e3a8a !important;
+    text-decoration: underline !important;
+  }
+
+  /* Avoid breaking inside cards */
+  .dossier-section, .dossier-card {
+    page-break-inside: avoid;
+  }
+}
