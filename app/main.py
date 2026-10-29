@@ -1,7 +1,7 @@
 import json
 import asyncio
-from typing import Optional, List
-from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
+from typing import Optional, List, Dict, Any
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -37,6 +37,19 @@ async def serve_index():
     with open("app/templates/index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+# --- Helper: User Session Resolution ---
+def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
+    auth_header = request.headers.get("Authorization")
+    token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1].strip()
+    if not token:
+        token = request.cookies.get("session_token")
+    if token:
+        from app.modules.db import get_user_from_token
+        return get_user_from_token(token)
+    return None
+
 # --- 0. Full Footprint 1-Click Scan ---
 class FullScanRequest(BaseModel):
     name: Optional[str] = ""
@@ -50,8 +63,14 @@ class FullScanRequest(BaseModel):
     keywords: Optional[str] = ""
 
 @app.post("/api/scan/full")
-async def full_scan(req: FullScanRequest):
+async def full_scan(req: FullScanRequest, request: Request):
     result = await execute_full_scan(req.dict())
+    user = get_current_user(request)
+    if user:
+        from app.modules.db import save_user_scan
+        scan_id = save_user_scan(user["id"], req.dict(), result)
+        result["saved_scan_id"] = scan_id
+        result["user_email"] = user["email"]
     return result
 
 # --- 1. Username Scanner with Context & Bio Matching (SSE Stream) ---
@@ -267,4 +286,78 @@ async def get_system_version():
     """
     version_info = await check_for_updates()
     return {"success": True, "data": version_info}
+
+# --- 11. Multi-User Authentication & Personal Scans ---
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/auth/register")
+async def api_register(req: AuthRequest, response: Response):
+    from app.modules.db import register_user
+    user, token, err = register_user(req.email, req.password)
+    if err:
+        return {"success": False, "error": err}
+    response.set_cookie("session_token", token, max_age=30*86400, httponly=True, samesite="lax")
+    return {"success": True, "user": user, "token": token}
+
+@app.post("/api/auth/login")
+async def api_login(req: AuthRequest, response: Response):
+    from app.modules.db import login_user
+    user, token, err = login_user(req.email, req.password)
+    if err:
+        return {"success": False, "error": err}
+    response.set_cookie("session_token", token, max_age=30*86400, httponly=True, samesite="lax")
+    return {"success": True, "user": user, "token": token}
+
+@app.post("/api/auth/logout")
+async def api_logout(request: Request, response: Response):
+    from app.modules.db import logout_token
+    auth_header = request.headers.get("Authorization")
+    token = None
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1].strip()
+    if not token:
+        token = request.cookies.get("session_token")
+    if token:
+        logout_token(token)
+    response.delete_cookie("session_token")
+    return {"success": True}
+
+@app.get("/api/auth/me")
+async def api_me(request: Request):
+    user = get_current_user(request)
+    if user:
+        return {"success": True, "authenticated": True, "user": user}
+    return {"success": True, "authenticated": False, "user": None}
+
+@app.get("/api/user/scans")
+async def api_user_scans(request: Request):
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bitte anmelden, um gespeicherte Scans einzusehen.")
+    from app.modules.db import get_user_scans_list
+    scans = get_user_scans_list(user["id"])
+    return {"success": True, "scans": scans}
+
+@app.get("/api/user/scans/{scan_id}")
+async def api_get_user_scan(scan_id: int, request: Request):
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bitte anmelden.")
+    from app.modules.db import get_scan_by_id
+    scan = get_scan_by_id(user["id"], scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan nicht gefunden.")
+    return {"success": True, "scan": scan}
+
+@app.delete("/api/user/scans/{scan_id}")
+async def api_delete_user_scan(scan_id: int, request: Request):
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Bitte anmelden.")
+    from app.modules.db import delete_user_scan
+    deleted = delete_user_scan(user["id"], scan_id)
+    return {"success": deleted}
+
 

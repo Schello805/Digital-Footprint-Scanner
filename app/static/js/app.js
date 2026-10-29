@@ -450,6 +450,11 @@ function setLanguage(lang) {
     }
   });
 
+  const lblLogin = document.getElementById('lblLoginBtn');
+  if (lblLogin) {
+    lblLogin.textContent = lang === 'de' ? 'Anmelden' : 'Sign In';
+  }
+
   // Always keep GDPR letter localized
   updateGdprLetter(lastScanPayload ? lastScanPayload.name : '');
   updateDisclaimerContent();
@@ -582,6 +587,9 @@ async function runFullScan(e) {
       progressStep.textContent = currentLang === 'de' ? '✓ Vollscan abgeschlossen! DIN A4 Steckbrief erstellt.' : '✓ Full scan complete! Dossier generated.';
       setTimeout(() => progressBox.classList.add('hidden'), 800);
       renderFullReport(json, payload);
+      if (currentUser) {
+        checkAuthStatus();
+      }
     } else {
       alert('Error: ' + (json.error || 'Full scan failed'));
     }
@@ -630,6 +638,32 @@ function renderFullReport(res, payload) {
     document.getElementById('sbTargetAliasTop').innerHTML = `<span class="text-indigo-400 font-bold">@${resolvedHandle}</span> <span class="text-[10px] text-slate-400">(via OSINT)</span>`;
   } else {
     document.getElementById('sbTargetAliasTop').textContent = payload.name ? `${payload.name}` : '-';
+  }
+
+  // Feature 3: Avatar- & Foto-Forensik (Reverse Image OSINT)
+  const avatarPlaceholder = document.getElementById('sbAvatarPlaceholder');
+  const avatarImg = document.getElementById('sbAvatarImg');
+  const revSection = document.getElementById('sbReverseImageSection');
+  if (data.avatar_url) {
+    if (avatarImg) {
+      avatarImg.src = data.avatar_url;
+      avatarImg.classList.remove('hidden');
+    }
+    if (avatarPlaceholder) avatarPlaceholder.classList.add('hidden');
+    if (revSection) {
+      revSection.classList.remove('hidden');
+      const encUrl = encodeURIComponent(data.avatar_url);
+      const btnLens = document.getElementById('btnLens');
+      const btnTinEye = document.getElementById('btnTinEye');
+      const btnYandex = document.getElementById('btnYandex');
+      if (btnLens) btnLens.href = `https://lens.google.com/uploadbyurl?url=${encUrl}`;
+      if (btnTinEye) btnTinEye.href = `https://tineye.com/search?url=${encUrl}`;
+      if (btnYandex) btnYandex.href = `https://yandex.com/images/search?rpt=imageview&url=${encUrl}`;
+    }
+  } else {
+    if (avatarImg) avatarImg.classList.add('hidden');
+    if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
+    if (revSection) revSection.classList.add('hidden');
   }
 
   // Stammdaten-Tabelle
@@ -1911,6 +1945,274 @@ function copyInstallCommand(btn) {
   });
 }
 
+// ==================== 8. MULTI-USER AUTHENTICATION & PERSONAL SCANS ARCHIVE ====================
+let currentUser = null;
+let currentAuthMode = 'login'; // 'login' or 'register'
+
+async function checkAuthStatus() {
+  try {
+    const res = await fetch('/api/auth/me');
+    const json = await res.json();
+    const loginBtn = document.getElementById('btnHeaderLogin');
+    const userDropdown = document.getElementById('headerUserDropdown');
+    const emailText = document.getElementById('headerUserEmailText');
+    const scansBadge = document.getElementById('headerUserScansBadge');
+
+    if (json.success && json.authenticated && json.user) {
+      currentUser = json.user;
+      if (loginBtn) loginBtn.classList.add('hidden');
+      if (userDropdown) userDropdown.classList.remove('hidden');
+      if (emailText) emailText.textContent = currentUser.email;
+
+      // Update scans count in badge
+      try {
+        const sRes = await fetch('/api/user/scans');
+        const sJson = await sRes.json();
+        if (sJson.success && scansBadge) {
+          scansBadge.textContent = (sJson.scans || []).length;
+        }
+      } catch (e) {
+        // quiet
+      }
+    } else {
+      currentUser = null;
+      if (loginBtn) loginBtn.classList.remove('hidden');
+      if (userDropdown) userDropdown.classList.add('hidden');
+    }
+  } catch (err) {
+    console.warn('Auth status check failed:', err);
+  }
+}
+
+function openAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const errBanner = document.getElementById('authErrorBanner');
+    if (errBanner) errBanner.classList.add('hidden');
+  }
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchAuthMode(mode) {
+  currentAuthMode = mode;
+  const tabLogin = document.getElementById('tabAuthLogin');
+  const tabReg = document.getElementById('tabAuthRegister');
+  const submitText = document.getElementById('authSubmitText');
+  const privacyNote = document.getElementById('authPrivacyNote');
+  const errBanner = document.getElementById('authErrorBanner');
+  if (errBanner) errBanner.classList.add('hidden');
+
+  if (mode === 'register') {
+    tabLogin.className = 'flex-1 py-1.5 font-medium rounded-lg transition text-slate-400 hover:text-white';
+    tabReg.className = 'flex-1 py-1.5 font-bold rounded-lg transition text-white bg-indigo-600 shadow';
+    if (submitText) submitText.textContent = currentLang === 'de' ? 'Kostenlos registrieren' : 'Create Free Account';
+    if (privacyNote) privacyNote.classList.remove('hidden');
+  } else {
+    tabReg.className = 'flex-1 py-1.5 font-medium rounded-lg transition text-slate-400 hover:text-white';
+    tabLogin.className = 'flex-1 py-1.5 font-bold rounded-lg transition text-white bg-indigo-600 shadow';
+    if (submitText) submitText.textContent = currentLang === 'de' ? 'Anmelden' : 'Sign In';
+    if (privacyNote) privacyNote.classList.add('hidden');
+  }
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById('authEmail');
+  const pwdInput = document.getElementById('authPassword');
+  const errBanner = document.getElementById('authErrorBanner');
+  const spinner = document.getElementById('authSpinner');
+  const submitBtn = document.getElementById('authSubmitBtn');
+
+  const email = emailInput.value.trim();
+  const password = pwdInput.value;
+
+  if (!email || !password) return;
+
+  if (errBanner) errBanner.classList.add('hidden');
+  if (spinner) spinner.classList.remove('hidden');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const endpoint = currentAuthMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      closeAuthModal();
+      pwdInput.value = '';
+      await checkAuthStatus();
+    } else {
+      if (errBanner) {
+        errBanner.textContent = json.error || (currentLang === 'de' ? 'Fehler bei der Authentifizierung' : 'Authentication failed');
+        errBanner.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    if (errBanner) {
+      errBanner.textContent = currentLang === 'de' ? 'Verbindungsfehler zum Server' : 'Connection error to server';
+      errBanner.classList.remove('hidden');
+    }
+  } finally {
+    if (spinner) spinner.classList.add('hidden');
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function performLogout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) {
+    // quiet
+  }
+  currentUser = null;
+  await checkAuthStatus();
+}
+
+function openUserScansModal() {
+  const modal = document.getElementById('userScansModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    refreshUserScans();
+  }
+}
+
+function closeUserScansModal() {
+  const modal = document.getElementById('userScansModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function refreshUserScans() {
+  const container = document.getElementById('userScansListContainer');
+  if (!container) return;
+
+  container.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>`;
+
+  try {
+    const res = await fetch('/api/user/scans');
+    const json = await res.json();
+
+    if (!json.success || !json.scans || json.scans.length === 0) {
+      container.innerHTML = `
+        <div class="p-8 text-center bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+          <span class="text-3xl block">📂</span>
+          <div class="font-bold text-white text-sm">${currentLang === 'de' ? 'Noch keine Scans gespeichert' : 'No saved scans yet'}</div>
+          <p class="text-slate-400 text-xs">${currentLang === 'de' ? 'Führe einen Vollscan durch – deine Berichte und Dossiers werden hier automatisch für dich archiviert.' : 'Execute a full scan – your intelligence reports will be archived here automatically.'}</p>
+          <div class="pt-2">
+            <button onclick="closeUserScansModal(); switchTab('fullscan');" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
+              ${currentLang === 'de' ? '🚀 Zum Vollscan Cockpit' : '🚀 To Full Scan Cockpit'}
+            </button>
+          </div>
+        </div>
+      `;
+      const badge = document.getElementById('headerUserScansBadge');
+      if (badge) badge.textContent = '0';
+      return;
+    }
+
+    const badge = document.getElementById('headerUserScansBadge');
+    if (badge) badge.textContent = json.scans.length;
+
+    container.innerHTML = json.scans.map(s => {
+      const targetLabel = s.target_name || (s.target_handle ? `@${s.target_handle}` : (s.target_email || 'Unbekanntes Ziel'));
+      const handleSub = s.target_handle ? `@${s.target_handle}` : (s.target_email || '-');
+      const dateStr = s.created_at ? s.created_at.replace('T', ' ').slice(0, 16) : '-';
+      
+      let badgeColor = 'emerald';
+      if (s.exposure_score >= 70) badgeColor = 'rose';
+      else if (s.exposure_score >= 35) badgeColor = 'amber';
+
+      return `
+        <div class="p-4 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-white text-sm">${targetLabel}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-${badgeColor}-950 text-${badgeColor}-400 border border-${badgeColor}-800 font-mono">
+                ${s.exposure_score}% ${s.exposure_level}
+              </span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-mono flex items-center space-x-3">
+              <span>Handle: ${handleSub}</span>
+              <span>•</span>
+              <span class="text-indigo-400 font-semibold">${s.profiles_found} Profile (${s.high_confidence_matches} verifiziert)</span>
+              <span>•</span>
+              <span>📅 ${dateStr}</span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 self-end sm:self-center">
+            <button onclick="loadSavedScan(${s.id})" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1 cursor-pointer">
+              <span>📂 Dossier öffnen</span>
+            </button>
+            <button onclick="deleteSavedScan(${s.id})" title="Löschen" class="p-1.5 rounded-lg border border-slate-800 hover:border-rose-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 transition cursor-pointer">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = `<div class="p-6 text-center text-rose-400 text-xs">Fehler beim Laden der Scans: ${err.message}</div>`;
+  }
+}
+
+async function loadSavedScan(scanId) {
+  try {
+    const res = await fetch(`/api/user/scans/${scanId}`);
+    const json = await res.json();
+    if (!json.success || !json.scan) {
+      alert(currentLang === 'de' ? 'Scan konnte nicht geladen werden.' : 'Could not load scan.');
+      return;
+    }
+
+    closeUserScansModal();
+    switchTab('fullscan');
+
+    const results = json.scan.results;
+    const payload = json.scan.payload;
+
+    renderFullReport(results, payload);
+
+    // Smooth scroll to the report
+    setTimeout(() => {
+      const dossier = document.getElementById('dossierSheet');
+      if (dossier) {
+        dossier.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 200);
+
+  } catch (err) {
+    alert('Fehler beim Öffnen des Scans: ' + err.message);
+  }
+}
+
+async function deleteSavedScan(scanId) {
+  const confirmMsg = currentLang === 'de' 
+    ? 'Möchtest du diesen gespeicherten Scan wirklich aus deinem Archiv löschen?' 
+    : 'Are you sure you want to delete this scan from your archive?';
+  
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const res = await fetch(`/api/user/scans/${scanId}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (json.success) {
+      await refreshUserScans();
+    }
+  } catch (err) {
+    alert('Löschfehler: ' + err.message);
+  }
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   setLanguage(currentLang);
@@ -1919,4 +2221,5 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchAndRenderMarketingBrokers();
   loadSettings();
   initVersionTracker();
+  checkAuthStatus();
 });

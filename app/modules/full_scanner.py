@@ -183,6 +183,7 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "summary": summary,
         "identity_audit": audit_data,
         "found_profiles": found_profiles,
+        "avatar_url": email_recon_res.get("avatar_url") if email_recon_res else None,
         "email_accounts": email_recon_res.get("registered_accounts", []) if email_recon_res else [],
         "discovered_handle": discovered_handle,
         "resolved_username": username,
