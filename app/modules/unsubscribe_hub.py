@@ -138,11 +138,56 @@ Sincerely,
     if target_mail_recipient:
         gdpr_mailto = f"mailto:{target_mail_recipient}?subject={urllib.parse.quote(gdpr_subject)}&body={urllib.parse.quote(gdpr_body)}"
 
+    # Detect category & provide forensic info
+    matched_broker = None
+    for b in MARKETING_LIST_BROKERS:
+        if b["name"].lower() in clean_target or (b["privacy_email"] and b["privacy_email"] in clean_target) or (b.get("opt_out_url") and urllib.parse.urlparse(b["opt_out_url"]).netloc in clean_target):
+            matched_broker = b
+            break
+
+    if matched_broker:
+        detected_category_de = f"Kuratierter Datenbroker: {matched_broker['name']}"
+        detected_category_en = f"Curated Data Broker: {matched_broker['name']}"
+        detected_type = "broker"
+        legal_summary_de = "Bedingungsloser Widerspruchsanspruch gegen Adresshandel und Profilbildung gem. Art. 21 Abs. 2 DSGVO i.V.m. Löschung nach Art. 17 DSGVO."
+        legal_summary_en = "Unconditional right to object against data brokering & audience profiling under Art. 21(2) & erasure under Art. 17 GDPR."
+        protocol_summary_de = f"Direkter Datenschutzbeauftragten-Kontakt ({matched_broker['privacy_email']}) oder zentrales Opt-Out-Portal."
+        protocol_summary_en = f"Direct Data Protection Officer contact ({matched_broker['privacy_email']}) or central web opt-out portal."
+        if matched_broker.get("privacy_email"):
+            target_mail_recipient = matched_broker["privacy_email"]
+            gdpr_mailto = f"mailto:{target_mail_recipient}?subject={urllib.parse.quote(gdpr_subject)}&body={urllib.parse.quote(gdpr_body)}"
+        if matched_broker.get("opt_out_url"):
+            web_options_url = matched_broker["opt_out_url"]
+    elif "list" in clean_target or "mailman" in domain or "groups" in domain or "-request" in clean_target:
+        detected_category_de = "RFC 2369 Mailinglisten-Server (Mailman / Sympa / Ezmlm)"
+        detected_category_en = "RFC 2369 Mailing List Daemon (Mailman / Sympa / Ezmlm)"
+        detected_type = "rfc_list"
+        legal_summary_de = "Automatisierter Listenserver-Widerruf (RFC 2369) und ergänzender DSGVO Art. 17 Löschanspruch aus den Verteilerarchiven."
+        legal_summary_en = "Automated list daemon revocation (RFC 2369) and supplementary GDPR Art. 17 erasure request from list archives."
+        protocol_summary_de = f"Automatischer Listen-Daemon: <{mailman_req_email}> verarbeitet 'unsubscribe' ohne menschlichen Support."
+        protocol_summary_en = f"Automated list daemon: <{mailman_req_email}> parses 'unsubscribe' commands without manual intervention."
+    else:
+        detected_category_de = "Kommerzieller Newsletter- & Direktmarketing-Verteiler"
+        detected_category_en = "Commercial Newsletter & Direct Marketing Distribution"
+        detected_type = "newsletter"
+        legal_summary_de = "Gesetzliches Werbewiderspruchsrecht nach Art. 21 Abs. 2 DSGVO und § 7 Abs. 3 UWG. Keine Kündigungsfristen oder Begründung erforderlich."
+        legal_summary_en = "Statutory objection right to direct marketing under Art. 21(2) GDPR. No cancellation notice period or justification required."
+        protocol_summary_de = "Direktwerbe-Widerspruch per 1-Klick-Mail an Datenschutzbeauftragten oder Absenderadresse."
+        protocol_summary_en = "1-Click direct marketing objection email to privacy officer or sender address."
+
     return {
         "success": True,
         "data": {
             "target": clean_target,
             "user_email": clean_email,
+            "user_name": name_str,
+            "detected_type": detected_type,
+            "detected_category_de": detected_category_de,
+            "detected_category_en": detected_category_en,
+            "legal_summary_de": legal_summary_de,
+            "legal_summary_en": legal_summary_en,
+            "protocol_summary_de": protocol_summary_de,
+            "protocol_summary_en": protocol_summary_en,
             "mailman_request_email": mailman_req_email,
             "rfc_subject": rfc_subject,
             "rfc_body": rfc_body,

@@ -119,7 +119,33 @@ const translations = {
     lbl_letter_preview: "Formal GDPR Objection & Erasure Text (Pre-populated)",
     btn_copy_letter: "Copy Letter",
     brokers_catalog_title: "Direct Marketing & Broker Opt-Out Directory",
-    brokers_catalog_sub: "Opt-out directly from large consumer data aggregators and address brokers that fuel commercial cold-mailings and lead lists."
+    brokers_catalog_sub: "Opt-out directly from large consumer data aggregators and address brokers that fuel commercial cold-mailings and lead lists.",
+    step1_title: "1. Input",
+    step1_sub: "Select list or broker",
+    step2_title: "2. Info & Analysis",
+    step2_sub: "Type, DPO & Legal Basis",
+    step3_title: "3. Action & Status",
+    step3_sub: "Opt-out & Log Status",
+    unsub_step1_manual_title: "Option A: Custom List or Sender",
+    unsub_step1_manual_sub: "Enter the address of the unwanted mailing list or newsletter.",
+    btn_use_scan_email: "Use email from scan",
+    btn_next_step2: "🔍 Proceed to Step 2: Info & Analysis ➔",
+    unsub_step1_broker_title: "Option B: Quick-Select Top Data Brokers",
+    unsub_step1_broker_sub: "Click a broker to immediately load it into Step 2:",
+    step2_header_title: "Forensic Classification & Legal Basis",
+    btn_edit_target: "Edit input",
+    card_detected_type_title: "1. Detected Type & Protocol",
+    card_legal_basis_title: "2. Statutory Legal Grounds",
+    card_routing_title: "3. Discovered Contact Points",
+    btn_back_step1: "⬅ Back to Step 1 (Input)",
+    btn_next_step3: "⚡ Proceed to Step 3: Execute Action ➔",
+    step3_header_title: "Immediate Action & Status Tracking",
+    act_primary_mail_title: "1. Email Unsubscription",
+    act_web_title: "2. Web Opt-Out Portal",
+    act_copy_title: "3. Copy Letter",
+    status_tracker_title: "Incogni-Style Status Tracker for this Request:",
+    btn_back_step2: "⬅ Back to Step 2 (Info)",
+    btn_new_unsub: "Unsubscribe another list or broker"
   },
   de: {
     app_title: "Digital Footprint Scanner",
@@ -228,7 +254,33 @@ const translations = {
     lbl_letter_preview: "Offizielles DSGVO Widerspruchs- & Löschschreiben (Vorausgefüllt)",
     btn_copy_letter: "Brief kopieren",
     brokers_catalog_title: "Marketing- & Adresshändler-Verzeichnis",
-    brokers_catalog_sub: "Trage dich direkt bei den führenden Datenbrokern und Adresshändlern aus, die Kaltakquise und Werbelisten speisen."
+    brokers_catalog_sub: "Trage dich direkt bei den führenden Datenbrokern und Adresshändlern aus, die Kaltakquise und Werbelisten speisen.",
+    step1_title: "1. Eingabe",
+    step1_sub: "Liste oder Broker wählen",
+    step2_title: "2. Info & Analyse",
+    step2_sub: "Typ, DPO & Rechtsgrundlage",
+    step3_title: "3. Aktion & Status",
+    step3_sub: "Austragen & Protokollieren",
+    unsub_step1_manual_title: "Option A: Eigene Liste oder Absender",
+    unsub_step1_manual_sub: "Gib die Adresse der unerwünschten Mailingliste oder des Newsletters ein.",
+    btn_use_scan_email: "Aus Vollscan übernehmen",
+    btn_next_step2: "🔍 Weiter zu Schritt 2: Info & Analyse ➔",
+    unsub_step1_broker_title: "Option B: Schnellauswahl Top-Datenbroker",
+    unsub_step1_broker_sub: "Klicke auf einen Broker, um ihn sofort mit deinen Daten in Schritt 2 zu laden:",
+    step2_header_title: "Forensische Einordnung & Rechtsgrundlage",
+    btn_edit_target: "Eingabe ändern",
+    card_detected_type_title: "1. Erkannter Typ & Protokoll",
+    card_legal_basis_title: "2. Gesetzliche Rechtsgrundlage",
+    card_routing_title: "3. Erkannte Kontaktpunkte",
+    btn_back_step1: "⬅ Zurück zu Schritt 1 (Eingabe)",
+    btn_next_step3: "⚡ Weiter zu Schritt 3: Aktion ausführen ➔",
+    step3_header_title: "Sofort-Aktion & Status-Tracking",
+    act_primary_mail_title: "1. E-Mail-Austragung",
+    act_web_title: "2. Web-Opt-Out Portal",
+    act_copy_title: "3. Text kopieren",
+    status_tracker_title: "Incogni-Style Status-Tracker für diese Austragung:",
+    btn_back_step2: "⬅ Zurück zu Schritt 2 (Info)",
+    btn_new_unsub: "Weitere Liste / Weiteren Broker abmelden"
   }
 };
 
@@ -1013,7 +1065,12 @@ async function saveSettings(e) {
   alert(currentLang === 'de' ? 'Einstellungen gespeichert!' : 'Settings saved successfully!');
 }
 
-// ==================== 7. UNSUBSCRIBE & OPT-OUT HUB (INCOGNI-STYLE) ====================
+// ==================== 7. UNSUBSCRIBE & OPT-OUT HUB (INCOGNI-STYLE GUIDED FLOW) ====================
+let currentUnsubStep = 1;
+let currentUnsubData = null;
+let cachedMarketingBrokers = null;
+let removalStatusStore = JSON.parse(localStorage.getItem('selfscanner_unsub_statuses') || '{}');
+
 function openUnsubscribeForEmail() {
   if (lastScanPayload) {
     const emailInput = document.getElementById('unsubUserEmail');
@@ -1022,28 +1079,94 @@ function openUnsubscribeForEmail() {
     if (nameInput && lastScanPayload.name) nameInput.value = lastScanPayload.name;
   }
   switchTab('unsubscribe');
+  goToUnsubStep(1);
   const targetInput = document.getElementById('unsubTargetInput');
   if (targetInput) targetInput.focus();
 }
 
-async function handleGenerateUnsubscribe(e) {
-  e.preventDefault();
+function populateUserEmailFromScan() {
+  if (lastScanPayload && lastScanPayload.email) {
+    const emailInput = document.getElementById('unsubUserEmail');
+    const nameInput = document.getElementById('unsubUserName');
+    if (emailInput) emailInput.value = lastScanPayload.email;
+    if (nameInput && lastScanPayload.name) nameInput.value = lastScanPayload.name;
+  } else {
+    alert(currentLang === 'de' ? 'Im letzten Scan war keine E-Mail hinterlegt.' : 'No email was provided in the last scan.');
+  }
+}
+
+function goToUnsubStep(stepNum) {
+  // If navigating to step 2 or 3 without data, check if we can generate it
+  if ((stepNum === 2 || stepNum === 3) && !currentUnsubData) {
+    const targetInput = document.getElementById('unsubTargetInput');
+    const userEmailInput = document.getElementById('unsubUserEmail');
+    if (targetInput && userEmailInput && targetInput.value.trim() && userEmailInput.value.trim()) {
+      handleStep1Submit(null, stepNum);
+      return;
+    } else {
+      stepNum = 1;
+    }
+  }
+
+  currentUnsubStep = stepNum;
+
+  // Toggle pane visibility
+  ['unsubStep1', 'unsubStep2', 'unsubStep3'].forEach((id, idx) => {
+    const pane = document.getElementById(id);
+    if (pane) {
+      if (idx + 1 === stepNum) {
+        pane.classList.remove('hidden');
+      } else {
+        pane.classList.add('hidden');
+      }
+    }
+  });
+
+  // Update step navigation tabs styling
+  for (let s = 1; s <= 3; s++) {
+    const tabBtn = document.getElementById(`unsub-step-tab-${s}`);
+    const badge = document.getElementById(`unsub-step-badge-${s}`);
+    if (!tabBtn || !badge) continue;
+
+    if (s === stepNum) {
+      tabBtn.className = 'p-3 rounded-xl border transition flex items-center space-x-3 bg-indigo-950/80 border-indigo-500 text-white cursor-pointer';
+      badge.className = 'w-7 h-7 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0';
+      badge.textContent = `${s}`;
+    } else if (s < stepNum || (currentUnsubData && s <= 2)) {
+      tabBtn.className = 'p-3 rounded-xl border transition flex items-center space-x-3 bg-slate-900 border-slate-700 text-slate-200 hover:border-slate-600 cursor-pointer';
+      badge.className = 'w-7 h-7 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold flex items-center justify-center text-xs shrink-0';
+      badge.textContent = '✓';
+    } else {
+      tabBtn.className = 'p-3 rounded-xl border transition flex items-center space-x-3 bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 cursor-pointer';
+      badge.className = 'w-7 h-7 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-xs shrink-0';
+      badge.textContent = `${s}`;
+    }
+  }
+}
+
+async function handleStep1Submit(e, targetStep = 2) {
+  if (e) e.preventDefault();
+
   const targetInput = document.getElementById('unsubTargetInput');
   const userEmailInput = document.getElementById('unsubUserEmail');
   const userNameInput = document.getElementById('unsubUserName');
-  const submitBtn = document.getElementById('btnUnsubSubmit');
+  const submitBtn = document.getElementById('btnToStep2');
 
   const listIdentifier = targetInput.value.trim();
   const userEmail = userEmailInput.value.trim();
   const userName = userNameInput.value.trim();
 
   if (!listIdentifier || !userEmail) {
-    alert(currentLang === 'de' ? 'Bitte Mailingliste und E-Mail-Adresse angeben.' : 'Please provide both mailing list and email address.');
+    alert(currentLang === 'de' ? 'Bitte Mailingliste/Absender und deine E-Mail angeben.' : 'Please enter the list/sender and your email.');
+    if (targetInput && !listIdentifier) targetInput.focus();
+    else if (userEmailInput && !userEmail) userEmailInput.focus();
     return;
   }
 
-  submitBtn.disabled = true;
-  submitBtn.classList.add('opacity-75');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-75');
+  }
 
   try {
     const res = await fetch('/api/unsubscribe/generate', {
@@ -1058,54 +1181,169 @@ async function handleGenerateUnsubscribe(e) {
     });
     const json = await res.json();
     if (json.success && json.data) {
-      const d = json.data;
-      
-      document.getElementById('unsubTargetDisplay').textContent = `${d.target} • (${d.user_email})`;
-      const badge = document.getElementById('unsubStatusBadge');
-      badge.classList.remove('hidden');
-      badge.textContent = currentLang === 'de' ? 'BEREIT' : 'READY';
-
-      // 1. RFC Mailto Link
-      const btnRfc = document.getElementById('btnRfcMailto');
-      if (d.rfc_mailto) {
-        btnRfc.href = d.rfc_mailto;
-        btnRfc.classList.remove('pointer-events-none', 'opacity-50');
-      } else {
-        btnRfc.href = '#';
-        btnRfc.classList.add('pointer-events-none', 'opacity-50');
-      }
-
-      // 2. GDPR Mailto Link
-      const btnGdpr = document.getElementById('btnGdprMailto');
-      if (d.gdpr_mailto) {
-        btnGdpr.href = d.gdpr_mailto;
-        btnGdpr.classList.remove('pointer-events-none', 'opacity-50');
-      } else {
-        btnGdpr.href = '#';
-        btnGdpr.classList.add('pointer-events-none', 'opacity-50');
-      }
-
-      // 3. Web Options Link
-      const btnWeb = document.getElementById('btnWebPortal');
-      if (d.web_options_url) {
-        btnWeb.href = d.web_options_url;
-        btnWeb.classList.remove('pointer-events-none', 'opacity-50');
-      } else {
-        btnWeb.href = '#';
-        btnWeb.classList.add('pointer-events-none', 'opacity-50');
-      }
-
-      // 4. Letter Preview Textarea
-      const letterArea = document.getElementById('unsubLetterText');
-      letterArea.value = d.gdpr_body;
+      currentUnsubData = json.data;
+      renderUnsubSteps(currentUnsubData);
+      goToUnsubStep(targetStep);
     }
   } catch (err) {
-    console.error('Failed to generate unsubscribe package:', err);
-    alert(currentLang === 'de' ? 'Fehler beim Generieren des Austragungs-Pakets.' : 'Failed to generate unsubscribe package.');
+    console.error('Failed to generate unsubscribe analysis:', err);
+    alert(currentLang === 'de' ? 'Fehler bei der Analyse des Verteilers.' : 'Failed to analyze list target.');
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.classList.remove('opacity-75');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-75');
+    }
   }
+}
+
+function renderUnsubSteps(d) {
+  // Step 2: Info fields
+  const sub2 = document.getElementById('step2TargetSubtitle');
+  if (sub2) sub2.textContent = `${d.target} • (${d.user_email})`;
+
+  const detType = document.getElementById('infoDetectedType');
+  if (detType) detType.textContent = currentLang === 'de' ? d.detected_category_de : d.detected_category_en;
+
+  const protSum = document.getElementById('infoProtocolSummary');
+  if (protSum) protSum.textContent = currentLang === 'de' ? d.protocol_summary_de : d.protocol_summary_en;
+
+  const legSum = document.getElementById('infoLegalSummary');
+  if (legSum) legSum.textContent = currentLang === 'de' ? d.legal_summary_de : d.legal_summary_en;
+
+  const tgtAddr = document.getElementById('infoTargetAddress');
+  if (tgtAddr) tgtAddr.textContent = d.target;
+
+  const primCont = document.getElementById('infoPrimaryContact');
+  if (primCont) primCont.textContent = d.mailman_request_email || d.primary_contact || `privacy@${(d.target.split('@')[1] || d.target)}`;
+
+  // Step 3: Action fields
+  const sub3 = document.getElementById('step3TargetSubtitle');
+  if (sub3) sub3.textContent = `${d.target} • (${d.user_email})`;
+
+  // Primary Mailto Link (RFC command preferred if mailman, else GDPR objection)
+  const btnMail = document.getElementById('btnPrimaryMailto');
+  const mailDesc = document.getElementById('actMailDesc');
+  const mailUrl = d.rfc_mailto || d.gdpr_mailto;
+  if (btnMail && mailUrl) {
+    btnMail.href = mailUrl;
+    btnMail.classList.remove('pointer-events-none', 'opacity-50');
+  }
+  if (mailDesc) {
+    if (d.detected_type === 'rfc_list') {
+      mailDesc.textContent = currentLang === 'de'
+        ? `Sendet den Roboterbefehl 'unsubscribe' an ${d.mailman_request_email} für automatische De-Registrierung.`
+        : `Sends automated daemon command 'unsubscribe' to ${d.mailman_request_email}.`;
+    } else {
+      mailDesc.textContent = currentLang === 'de'
+        ? `Öffnet rechtlich bindenden Art. 21 DSGVO Werbewiderspruch an ${d.target}.`
+        : `Opens statutory Art. 21 GDPR direct marketing objection to ${d.target}.`;
+    }
+  }
+
+  // Web Portal Link
+  const btnWeb = document.getElementById('btnPrimaryWebPortal');
+  if (btnWeb) {
+    if (d.web_options_url) {
+      btnWeb.href = d.web_options_url;
+      btnWeb.classList.remove('pointer-events-none', 'opacity-50');
+    } else {
+      btnWeb.href = '#';
+      btnWeb.classList.add('pointer-events-none', 'opacity-50');
+    }
+  }
+
+  // Letter Preview Textarea
+  const letterArea = document.getElementById('unsubLetterText');
+  if (letterArea) letterArea.value = d.gdpr_body;
+
+  // Restore removal status for this target
+  const savedStatus = removalStatusStore[d.target] || 'pending';
+  updateRemovalStatusUI(savedStatus);
+}
+
+function selectBrokerQuick(brokerName, privacyEmail, optOutUrl) {
+  const targetInput = document.getElementById('unsubTargetInput');
+  const userEmailInput = document.getElementById('unsubUserEmail');
+  const userNameInput = document.getElementById('unsubUserName');
+
+  if (targetInput) targetInput.value = privacyEmail || brokerName;
+  if (userEmailInput && !userEmailInput.value.trim() && lastScanPayload && lastScanPayload.email) {
+    userEmailInput.value = lastScanPayload.email;
+  }
+  if (userNameInput && !userNameInput.value.trim() && lastScanPayload && lastScanPayload.name) {
+    userNameInput.value = lastScanPayload.name;
+  }
+
+  if (userEmailInput && userEmailInput.value.trim()) {
+    handleStep1Submit(null, 2);
+  } else {
+    alert(currentLang === 'de' ? `Broker "${brokerName}" ausgewählt. Bitte gib noch deine E-Mail an.` : `Broker "${brokerName}" selected. Please provide your email.`);
+    if (userEmailInput) userEmailInput.focus();
+  }
+}
+
+function setRemovalStatus(status) {
+  if (!currentUnsubData || !currentUnsubData.target) return;
+  removalStatusStore[currentUnsubData.target] = status;
+  localStorage.setItem('selfscanner_unsub_statuses', JSON.stringify(removalStatusStore));
+  updateRemovalStatusUI(status);
+}
+
+function updateRemovalStatusUI(status) {
+  const badge = document.getElementById('trackerCurrentBadge');
+  const note = document.getElementById('trackerStatusNote');
+  const btnPending = document.getElementById('btnStatusPending');
+  const btnSent = document.getElementById('btnStatusSent');
+  const btnCompleted = document.getElementById('btnStatusCompleted');
+
+  // Reset button classes
+  [btnPending, btnSent, btnCompleted].forEach(b => {
+    if (b) {
+      b.className = 'py-2 px-3 rounded-lg border text-xs font-semibold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 cursor-pointer';
+    }
+  });
+
+  if (status === 'completed') {
+    if (badge) {
+      badge.textContent = currentLang === 'de' ? '✅ Erfolgreich abgemeldet' : '✅ Unsubscribed & Erased';
+      badge.className = 'text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-bold';
+    }
+    if (note) {
+      note.textContent = currentLang === 'de' ? 'Austragung erfolgreich vollzogen und bestätigt.' : 'Successfully unsubscribed and erased from list.';
+    }
+    if (btnCompleted) {
+      btnCompleted.className = 'py-2 px-3 rounded-lg border text-xs font-semibold transition bg-emerald-950 text-emerald-300 border-emerald-700 font-bold';
+    }
+  } else if (status === 'sent') {
+    if (badge) {
+      badge.textContent = currentLang === 'de' ? '📨 Anfrage gesendet' : '📨 Request Dispatched';
+      badge.className = 'text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 font-mono font-bold';
+    }
+    if (note) {
+      note.textContent = currentLang === 'de' ? 'Anfrage versendet. Gesetzliche Frist zur Löschung gem. Art. 12 Abs. 3 DSGVO: 1 Monat.' : 'Request sent. Legal deadline for deletion under Art. 12(3) GDPR: 1 month.';
+    }
+    if (btnSent) {
+      btnSent.className = 'py-2 px-3 rounded-lg border text-xs font-semibold transition bg-amber-950 text-amber-300 border-amber-700 font-bold';
+    }
+  } else {
+    if (badge) {
+      badge.textContent = currentLang === 'de' ? '⏳ Nicht gesendet' : '⏳ Pending / Not Sent';
+      badge.className = 'text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-mono font-bold';
+    }
+    if (note) {
+      note.textContent = currentLang === 'de' ? 'Noch keine Austragung versendet.' : 'No removal request dispatched yet.';
+    }
+    if (btnPending) {
+      btnPending.className = 'py-2 px-3 rounded-lg border text-xs font-semibold transition bg-slate-800 text-slate-200 border-slate-600 font-bold';
+    }
+  }
+}
+
+function resetUnsubWizard() {
+  const targetInput = document.getElementById('unsubTargetInput');
+  if (targetInput) targetInput.value = '';
+  currentUnsubData = null;
+  goToUnsubStep(1);
 }
 
 function copyUnsubLetter() {
@@ -1113,27 +1351,25 @@ function copyUnsubLetter() {
   if (!letterArea || !letterArea.value) return;
 
   navigator.clipboard.writeText(letterArea.value).then(() => {
-    const copyBtnText = document.getElementById('btnCopyUnsubLetterText');
-    const originalText = copyBtnText ? copyBtnText.textContent : '';
-    if (copyBtnText) copyBtnText.textContent = currentLang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
+    const btn = document.getElementById('btnCopyLetterStep3');
+    const orig = btn ? btn.textContent : '';
+    if (btn) btn.textContent = currentLang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
     setTimeout(() => {
-      if (copyBtnText) copyBtnText.textContent = originalText;
+      if (btn) btn.textContent = orig;
     }, 2000);
   });
 }
 
-let cachedMarketingBrokers = null;
-
 async function fetchAndRenderMarketingBrokers() {
-  const container = document.getElementById('marketingBrokersList');
+  const container = document.getElementById('quickSelectBrokersGrid');
   if (!container) return;
 
   try {
     if (!cachedMarketingBrokers) {
       const res = await fetch('/api/unsubscribe/brokers');
       const json = await res.json();
-      if (json.success && json.brokers) {
-        cachedMarketingBrokers = json.brokers;
+      if (json.success && (json.brokers || json.data)) {
+        cachedMarketingBrokers = json.brokers || json.data;
       }
     }
 
@@ -1141,40 +1377,21 @@ async function fetchAndRenderMarketingBrokers() {
 
     container.innerHTML = cachedMarketingBrokers.map(b => {
       const desc = currentLang === 'de' ? b.desc_de : b.desc_en;
-      
-      const optOutBtn = b.opt_out_url ? `
-        <a href="${b.opt_out_url}" target="_blank" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-center font-medium transition text-[11px] block truncate">
-          ${currentLang === 'de' ? 'Opt-Out Portal ↗' : 'Opt-Out Portal ↗'}
-        </a>
-      ` : '';
-
-      const userEmailVal = (lastScanPayload ? lastScanPayload.email : '') || '';
-      const userNameVal = (lastScanPayload ? lastScanPayload.name : '') || (currentLang === 'de' ? 'Betroffene Person' : 'Concerned Individual');
-      
-      const mailtoSubj = encodeURIComponent(currentLang === 'de' ? `Widerspruch gem. Art. 21 DSGVO (${userEmailVal || 'Werbe-Opt-Out'})` : `GDPR Art. 21 Direct Marketing Opt-Out (${userEmailVal || 'Marketing Opt-Out'})`);
-      const mailtoBody = encodeURIComponent(currentLang === 'de' 
-        ? `Sehr geehrte Damen und Herren,\n\nhiermit widerspreche ich gemäß Art. 21 Abs. 2 DSGVO der Verarbeitung meiner personenbezogenen Daten für Werbe- und Marketingzwecke.\n\nBetroffene Daten / E-Mail: ${userEmailVal}\n\nBitte löschen Sie meine Daten unverzüglich aus Ihren Adressbeständen.\n\nMit freundlichen Grüßen,\n${userNameVal}`
-        : `To Whom It May Concern,\n\nPursuant to Article 21(2) of the GDPR, I hereby object to the processing of my personal data for direct marketing and data broker lists.\n\nAffected Email: ${userEmailVal}\n\nPlease delete my data from all distribution lists without undue delay.\n\nSincerely,\n${userNameVal}`
-      );
-
-      const mailtoBtn = b.privacy_email ? `
-        <a href="mailto:${b.privacy_email}?subject=${mailtoSubj}&body=${mailtoBody}" class="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-lg text-center font-medium transition text-[11px] block truncate">
-          ✉️ ${b.privacy_email}
-        </a>
-      ` : '';
+      const targetParam = b.privacy_email || b.name;
+      const isSaved = removalStatusStore[targetParam] === 'completed';
 
       return `
-        <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2.5 shadow-sm">
+        <div onclick="selectBrokerQuick('${b.name}', '${b.privacy_email || ''}', '${b.opt_out_url || ''}')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-indigo-600 rounded-xl cursor-pointer transition flex flex-col justify-between space-y-1.5 group shadow-sm">
           <div>
             <div class="flex items-center justify-between">
-              <span class="font-bold text-white text-xs">${b.name}</span>
-              <span class="text-[10px] text-indigo-400 bg-indigo-950 px-1.5 py-0.5 rounded border border-indigo-900">${b.category}</span>
+              <span class="font-bold text-white text-xs group-hover:text-indigo-300 transition">${b.name}</span>
+              ${isSaved ? '<span class="text-[9px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">✓ Ausgetragen</span>' : `<span class="text-[9px] text-slate-400 bg-slate-900 px-1 py-0.5 rounded">${b.category.split('&')[0]}</span>`}
             </div>
-            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${desc}</p>
+            <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">${desc}</p>
           </div>
-          <div class="grid grid-cols-2 gap-2 pt-1">
-            ${optOutBtn}
-            ${mailtoBtn}
+          <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px] text-indigo-400 font-semibold">
+            <span>${currentLang === 'de' ? 'Auswählen' : 'Select'} ➔</span>
+            <span class="text-slate-500 font-mono">${b.privacy_email || 'Web Opt-Out'}</span>
           </div>
         </div>
       `;

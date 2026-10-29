@@ -41,6 +41,9 @@ class TestUnsubscribeHub(unittest.TestCase):
         self.assertIn("Art. 21 Abs. 2 DSGVO", data["gdpr_body"])
         self.assertIn("Art. 17 DSGVO", data["gdpr_body"])
         self.assertIn("Max Mustermann", data["gdpr_body"])
+        self.assertIn("detected_category_de", data)
+        self.assertIn("legal_summary_de", data)
+        self.assertIn("protocol_summary_de", data)
 
     def test_api_unsubscribe_generate_endpoint(self):
         response = self.client.post("/api/unsubscribe/generate", json={

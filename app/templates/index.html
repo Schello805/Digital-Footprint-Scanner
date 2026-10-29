@@ -600,178 +600,327 @@ Sincerely,
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded bg-indigo-900/60 text-indigo-300 text-xs font-semibold mb-2 border border-indigo-700/50">
-              <span>🛡️ Incogni-Style Privacy Automation</span>
+              <span>🛡️ Incogni-Style Guided Opt-Out</span>
             </div>
             <h2 class="text-2xl font-bold text-white" data-i18n="unsub_hub_title">Mailing List & Marketing Opt-Out Hub</h2>
             <p class="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed" data-i18n="unsub_hub_desc">
-              Unsubscribe from persistent mailing lists, spam distribution lists, and commercial direct marketing data brokers with 1-click RFC 2369 automation commands and legally binding Art. 21 & Art. 17 GDPR objection letters.
+              Guided 3-Step Opt-Out: Select target or broker ➔ review forensic info & legal grounds ➔ execute 1-click unsubscription and track removal status.
             </p>
           </div>
           <div class="hidden md:flex items-center space-x-3 text-right">
             <div class="text-xs">
               <div class="text-emerald-400 font-bold">100% Client-Side Dispatch</div>
-              <div class="text-slate-400 text-[10px]">No SMTP required • Direct mailto</div>
+              <div class="text-slate-400 text-[10px]">No external servers • Direct mailto</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left Column: Generator Form -->
-        <div class="lg:col-span-5 space-y-6">
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div class="border-b border-slate-800 pb-3">
-              <h3 class="font-bold text-white text-base flex items-center space-x-2">
-                <span>✉️</span>
-                <span data-i18n="unsub_form_title">Target List & Mail Details</span>
-              </h3>
-              <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="unsub_form_subtitle">
-                Enter the mailing list address or sender you want to unsubscribe from.
-              </p>
+      <!-- 3-Step Progress Navigation Bar -->
+      <div class="grid grid-cols-3 gap-2 sm:gap-4 pb-1">
+        <button onclick="goToUnsubStep(1)" id="unsub-step-tab-1" class="p-3 rounded-xl border transition flex items-center space-x-3 bg-indigo-950/80 border-indigo-500 text-white cursor-pointer">
+          <span class="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0" id="unsub-step-badge-1">1</span>
+          <div class="text-left truncate">
+            <div class="text-xs font-bold truncate" data-i18n="step1_title">1. Eingabe</div>
+            <div class="text-[10px] text-slate-400 truncate" data-i18n="step1_sub">Liste oder Broker wählen</div>
+          </div>
+        </button>
+
+        <button onclick="goToUnsubStep(2)" id="unsub-step-tab-2" class="p-3 rounded-xl border transition flex items-center space-x-3 bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 cursor-pointer">
+          <span class="w-7 h-7 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-xs shrink-0" id="unsub-step-badge-2">2</span>
+          <div class="text-left truncate">
+            <div class="text-xs font-bold truncate" data-i18n="step2_title">2. Info & Analyse</div>
+            <div class="text-[10px] text-slate-400 truncate" data-i18n="step2_sub">Typ, DPO & Rechtsgrundlage</div>
+          </div>
+        </button>
+
+        <button onclick="goToUnsubStep(3)" id="unsub-step-tab-3" class="p-3 rounded-xl border transition flex items-center space-x-3 bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 cursor-pointer">
+          <span class="w-7 h-7 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-xs shrink-0" id="unsub-step-badge-3">3</span>
+          <div class="text-left truncate">
+            <div class="text-xs font-bold truncate" data-i18n="step3_title">3. Aktion & Status</div>
+            <div class="text-[10px] text-slate-400 truncate" data-i18n="step3_sub">Austragen & Protokollieren</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- ==================== SCHRITT 1: EINGABE ==================== -->
+      <div id="unsubStep1" class="unsub-step-pane space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Option A: Manuelle Eingabe -->
+          <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-white text-base flex items-center space-x-2">
+                  <span>✉️</span>
+                  <span data-i18n="unsub_step1_manual_title">Option A: Eigene Liste oder Absender</span>
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="unsub_step1_manual_sub">
+                  Gib die Adresse der unerwünschten Mailingliste oder des Newsletters ein.
+                </p>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-mono">Manuell</span>
             </div>
 
-            <form onsubmit="handleGenerateUnsubscribe(event)" class="space-y-3 text-xs">
+            <form onsubmit="handleStep1Submit(event)" class="space-y-3.5 text-xs">
               <div>
-                <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_target">Mailing List or Sender Address</label>
-                <input type="text" id="unsubTargetInput" placeholder="e.g. dev-list@domain.org or newsletter@brand.com" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
-                <span class="text-[10px] text-slate-500 mt-1 block">Supports GNU Mailman lists, Sympa, Ezmlm or commercial sender addresses.</span>
+                <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_target">Mailingliste oder Absenderadresse</label>
+                <input type="text" id="unsubTargetInput" placeholder="z. B. newsletter@firma.de oder dev-list@domain.org" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
+                <span class="text-[10px] text-slate-500 mt-1 block">Erkennt GNU Mailman Listen, Sympa, Ezmlm oder kommerzielle Werbeabsender.</span>
               </div>
 
               <div>
-                <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_email">Your Email Address (To Unsubscribe)</label>
-                <input type="email" id="unsubUserEmail" placeholder="e.g. max.mustermann@gmail.com" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-300 font-semibold" data-i18n="lbl_unsub_email">Deine E-Mail-Adresse (die abgemeldet werden soll)</label>
+                  <button type="button" onclick="populateUserEmailFromScan()" class="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer" data-i18n="btn_use_scan_email">
+                    Aus Vollscan übernehmen
+                  </button>
+                </div>
+                <input type="email" id="unsubUserEmail" placeholder="z. B. max.mustermann@gmail.com" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
               </div>
 
               <div>
-                <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_name">Your Name (Optional, for GDPR Letter)</label>
-                <input type="text" id="unsubUserName" placeholder="e.g. Max Mustermann" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:border-indigo-500 focus:outline-none" />
+                <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_name">Dein Name (Optional für DSGVO-Schreiben)</label>
+                <input type="text" id="unsubUserName" placeholder="z. B. Max Mustermann" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:border-indigo-500 focus:outline-none" />
               </div>
 
-              <div class="pt-2">
-                <button type="submit" id="btnUnsubSubmit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 cursor-pointer">
-                  <span>🚀</span>
-                  <span data-i18n="btn_gen_unsub">Generate 1-Click Unsubscribe Package</span>
+              <div class="pt-3">
+                <button type="submit" id="btnToStep2" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 cursor-pointer">
+                  <span data-i18n="btn_next_step2">🔍 Weiter zu Schritt 2: Info & Analyse ➔</span>
                 </button>
               </div>
             </form>
           </div>
 
-          <!-- Incogni Fast Tip Card -->
-          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-xs text-slate-400 space-y-2.5">
-            <div class="font-bold text-white flex items-center space-x-1.5 text-xs">
-              <span>💡</span>
-              <span data-i18n="tip_rfc_title">How RFC 2369 Unsubscribe Works:</span>
-            </div>
-            <p class="text-[11px] leading-relaxed" data-i18n="tip_rfc_desc">
-              Standard mailing lists (Mailman, Majordomo, Sympa) run automated server daemons. Sending an email with the subject <code class="text-indigo-300 bg-slate-950 px-1 py-0.5 rounded">unsubscribe</code> to <code class="text-indigo-300 bg-slate-950 px-1 py-0.5 rounded">&lt;list&gt;-request@...</code> removes you automatically without human intervention.
-            </p>
-          </div>
-        </div>
-
-        <!-- Right Column: Interactive Actions & Letter Preview -->
-        <div class="lg:col-span-7 space-y-6">
-          
-          <!-- Result Container (Empty state / Loaded state) -->
-          <div id="unsubResultsBox" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
-            
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <!-- Option B: Schnellauswahl Datenbroker -->
+          <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
               <div>
                 <h3 class="font-bold text-white text-base flex items-center space-x-2">
-                  <span>⚡</span>
-                  <span data-i18n="unsub_actions_title">1-Click Unsubscribe Actions</span>
+                  <span>🏢</span>
+                  <span data-i18n="unsub_step1_broker_title">Option B: Schnellauswahl Top-Datenbroker</span>
                 </h3>
-                <span class="text-[11px] text-slate-400" id="unsubTargetDisplay">Ready for list analysis</span>
+                <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="unsub_step1_broker_sub">
+                  Klicke auf einen Broker, um ihn sofort mit deinen Daten in Schritt 2 zu laden:
+                </p>
               </div>
-              <span class="text-xs px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono hidden" id="unsubStatusBadge">READY</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">1-Klick</span>
             </div>
 
-            <!-- Action Buttons Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="unsubActionButtonsContainer">
-              
-              <!-- Card 1: RFC 2369 Auto-Command -->
-              <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
-                <div>
-                  <div class="flex items-center space-x-1.5 text-white font-bold text-xs mb-1">
-                    <span>⚡</span>
-                    <span>RFC Mailman</span>
-                  </div>
-                  <p class="text-[10px] text-slate-400 leading-snug">Automated de-registration command to list daemon.</p>
-                </div>
-                <a id="btnRfcMailto" href="#" class="w-full py-2 px-2.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-lg text-center text-xs font-semibold transition block truncate">
-                  ⚡ 1-Click RFC Unsub
-                </a>
-              </div>
-
-              <!-- Card 2: GDPR Art. 21 Objection -->
-              <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
-                <div>
-                  <div class="flex items-center space-x-1.5 text-white font-bold text-xs mb-1">
-                    <span>⚖️</span>
-                    <span>GDPR Art. 21</span>
-                  </div>
-                  <p class="text-[10px] text-slate-400 leading-snug">Legal direct marketing objection & erasure request.</p>
-                </div>
-                <a id="btnGdprMailto" href="#" class="w-full py-2 px-2.5 bg-rose-600/90 hover:bg-rose-600 text-white rounded-lg text-center text-xs font-semibold transition block truncate">
-                  ⚖️ 1-Click GDPR Mail
-                </a>
-              </div>
-
-              <!-- Card 3: Web Options Portal -->
-              <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
-                <div>
-                  <div class="flex items-center space-x-1.5 text-white font-bold text-xs mb-1">
-                    <span>🌐</span>
-                    <span>Web Portal</span>
-                  </div>
-                  <p class="text-[10px] text-slate-400 leading-snug">Direct web administration & subscriber options.</p>
-                </div>
-                <a id="btnWebPortal" href="#" target="_blank" class="w-full py-2 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-center text-xs font-semibold transition block truncate">
-                  🌐 Web Options ↗
-                </a>
-              </div>
-
+            <div id="quickSelectBrokersGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <!-- Rendered dynamically via fetchAndRenderMarketingBrokers() -->
             </div>
-
-            <!-- Letter Preview Textarea -->
-            <div class="space-y-2 pt-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
-                  <span>📄</span>
-                  <span data-i18n="lbl_letter_preview">Formal GDPR Objection & Erasure Text (Pre-populated)</span>
-                </label>
-                <button type="button" onclick="copyUnsubLetter()" class="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition cursor-pointer flex items-center space-x-1">
-                  <span>📋</span>
-                  <span id="btnCopyUnsubLetterText" data-i18n="btn_copy_letter">Copy Letter</span>
-                </button>
-              </div>
-              <textarea id="unsubLetterText" rows="7" readonly class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 font-mono text-[11px] leading-relaxed focus:outline-none resize-none"></textarea>
-            </div>
-
           </div>
 
-          <!-- Incogni-Style Direct Marketing Broker Catalog -->
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div class="border-b border-slate-800 pb-3">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-white text-base flex items-center space-x-2">
-                  <span>🏢</span>
-                  <span data-i18n="brokers_catalog_title">Direct Marketing & Broker Opt-Out Directory</span>
-                </h3>
-                <span class="text-[10px] text-indigo-400 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800 font-mono">6 Top DACH & Global Brokers</span>
+        </div>
+      </div>
+
+      <!-- ==================== SCHRITT 2: INFO & ANALYSE ==================== -->
+      <div id="unsubStep2" class="unsub-step-pane hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-2">
+            <div>
+              <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 text-[10px] font-bold border border-indigo-800 mb-1">
+                <span>ANALYSIS COMPLETE</span>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1" data-i18n="brokers_catalog_sub">
-                Opt-out directly from large consumer data aggregators and address brokers that fuel commercial cold-mailings and lead lists.
+              <h3 class="font-bold text-white text-lg flex items-center space-x-2">
+                <span>📋</span>
+                <span data-i18n="step2_header_title">Forensische Einordnung & Rechtsgrundlage</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5" id="step2TargetSubtitle">
+                Analyseergebnis für den ausgewählten Verteiler
+              </p>
+            </div>
+            <button onclick="goToUnsubStep(1)" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition cursor-pointer self-start sm:self-auto">
+              ✏️ <span data-i18n="btn_edit_target">Eingabe ändern</span>
+            </button>
+          </div>
+
+          <!-- 3 Info Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Card 1: Erkannter Typ & Protokoll -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center space-x-2 text-indigo-400 font-bold text-xs">
+                <span>🔍</span>
+                <span data-i18n="card_detected_type_title">1. Erkannter Typ & Protokoll</span>
+              </div>
+              <div class="font-bold text-white text-sm" id="infoDetectedType">Mailinglisten-Server</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed" id="infoProtocolSummary">
+                Automatischer Listen-Daemon unterstützt RFC 2369 Befehle zur sofortigen De-Registrierung.
               </p>
             </div>
 
-            <div id="marketingBrokersList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <!-- Rendered dynamically -->
+            <!-- Card 2: Gesetzliche Rechtsgrundlage -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center space-x-2 text-emerald-400 font-bold text-xs">
+                <span>⚖️</span>
+                <span data-i18n="card_legal_basis_title">2. Gesetzliche Rechtsgrundlage</span>
+              </div>
+              <div class="font-bold text-white text-sm">Art. 21 Abs. 2 & Art. 17 DSGVO</div>
+              <p class="text-[11px] text-slate-400 leading-relaxed" id="infoLegalSummary">
+                Bedingungsloser Werbewiderspruch. Der Betreiber ist gesetzlich verpflichtet, deine Daten unverzüglich aus allen Verteilern zu löschen.
+              </p>
             </div>
+
+            <!-- Card 3: Erkannte Kontaktpunkte -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center space-x-2 text-cyan-400 font-bold text-xs">
+                <span>🎯</span>
+                <span data-i18n="card_routing_title">3. Erkannte Kontaktpunkte</span>
+              </div>
+              <div class="text-[11px] text-slate-300 space-y-1 font-mono">
+                <div><span class="text-slate-500">Ziel:</span> <span id="infoTargetAddress" class="text-white truncate block">-</span></div>
+                <div><span class="text-slate-500">DPO / Roboter:</span> <span id="infoPrimaryContact" class="text-cyan-300 truncate block">-</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Navigation Step 2 -->
+          <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button onclick="goToUnsubStep(1)" class="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer">
+              <span data-i18n="btn_back_step1">⬅ Zurück zu Schritt 1 (Eingabe)</span>
+            </button>
+            <button onclick="goToUnsubStep(3)" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 cursor-pointer">
+              <span data-i18n="btn_next_step3">⚡ Weiter zu Schritt 3: Aktion ausführen ➔</span>
+            </button>
           </div>
 
         </div>
+      </div>
 
+      <!-- ==================== SCHRITT 3: AKTION & STATUS ==================== -->
+      <div id="unsubStep3" class="unsub-step-pane hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          
+          <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-white text-lg flex items-center space-x-2">
+                <span>⚡</span>
+                <span data-i18n="step3_header_title">Sofort-Aktion & Status-Tracking</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5" id="step3TargetSubtitle">
+                Führe die Austragung durch und dokumentiere den Bearbeitungsstatus.
+              </p>
+            </div>
+            <span class="text-xs px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-bold">READY TO DISPATCH</span>
+          </div>
+
+          <!-- Action Options (Aktionen) -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <!-- Option 1: 1-Klick Mailto -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-indigo-900/60 flex flex-col justify-between space-y-3 shadow-inner">
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800 mb-1.5 inline-block">EMPFOHLEN</span>
+                <h4 class="font-bold text-white text-sm flex items-center space-x-1.5">
+                  <span>⚡</span>
+                  <span data-i18n="act_primary_mail_title">1. E-Mail-Austragung</span>
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-snug" id="actMailDesc">
+                  Öffnet dein Standard-Mailprogramm mit fertigem Empfänger, Betreff und Widerspruchstext.
+                </p>
+              </div>
+              <a id="btnPrimaryMailto" href="#" class="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-center text-xs font-bold transition flex items-center justify-center space-x-1 shadow-md shadow-indigo-600/20">
+                <span>🚀 In Mailprogramm öffnen</span>
+              </a>
+            </div>
+
+            <!-- Option 2: Web-Portal -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800 mb-1.5 inline-block">ONLINE FORMULAR</span>
+                <h4 class="font-bold text-white text-sm flex items-center space-x-1.5">
+                  <span>🌐</span>
+                  <span data-i18n="act_web_title">2. Web-Opt-Out Portal</span>
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+                  Direktes Abmelde- oder Einstellungsportal des Listenanbieters.
+                </p>
+              </div>
+              <a id="btnPrimaryWebPortal" href="#" target="_blank" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-center text-xs font-semibold transition flex items-center justify-center space-x-1">
+                <span>🌐 Web-Portal öffnen ↗</span>
+              </a>
+            </div>
+
+            <!-- Option 3: DSGVO Text Kopieren -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800 mb-1.5 inline-block">ZWISCHENABLAGE</span>
+                <h4 class="font-bold text-white text-sm flex items-center space-x-1.5">
+                  <span>📋</span>
+                  <span data-i18n="act_copy_title">3. Text kopieren</span>
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+                  Kopiere das vollständige Musterschreiben für Kontaktformulare.
+                </p>
+              </div>
+              <button type="button" onclick="copyUnsubLetter()" class="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-center text-xs font-semibold transition flex items-center justify-center space-x-1 cursor-pointer">
+                <span>📋</span>
+                <span id="btnCopyLetterStep3" data-i18n="btn_copy_letter">Brief kopieren</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Letter Preview Textarea -->
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+                <span>📄</span>
+                <span data-i18n="lbl_letter_preview">Vorausgefülltes Musterschreiben (Art. 21 / Art. 17 DSGVO)</span>
+              </label>
+              <button type="button" onclick="copyUnsubLetter()" class="text-[11px] px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-medium transition cursor-pointer">
+                Kopieren
+              </button>
+            </div>
+            <textarea id="unsubLetterText" rows="6" readonly class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 font-mono text-[11px] leading-relaxed focus:outline-none resize-none"></textarea>
+          </div>
+
+          <!-- Incogni-Style Status-Tracker -->
+          <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-white text-xs flex items-center space-x-1.5">
+                  <span>📌</span>
+                  <span data-i18n="status_tracker_title">Incogni-Style Status-Tracker für diese Austragung:</span>
+                </h4>
+                <p class="text-[11px] text-slate-400" id="trackerStatusNote">
+                  Klicke auf den Status, um deine Abmeldung zu dokumentieren:
+                </p>
+              </div>
+              <span id="trackerCurrentBadge" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-mono font-bold">
+                ⏳ Nicht gesendet
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 pt-1">
+              <button type="button" onclick="setRemovalStatus('pending')" id="btnStatusPending" class="py-2 px-3 rounded-lg border text-xs font-semibold transition bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 cursor-pointer">
+                ⏳ Nicht gesendet
+              </button>
+              <button type="button" onclick="setRemovalStatus('sent')" id="btnStatusSent" class="py-2 px-3 rounded-lg border text-xs font-semibold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-amber-600 cursor-pointer">
+                📨 Anfrage gesendet
+              </button>
+              <button type="button" onclick="setRemovalStatus('completed')" id="btnStatusCompleted" class="py-2 px-3 rounded-lg border text-xs font-semibold transition bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-600 cursor-pointer">
+                ✅ Erfolgreich abgemeldet
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Step 3 -->
+          <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button onclick="goToUnsubStep(2)" class="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer">
+              <span data-i18n="btn_back_step2">⬅ Zurück zu Schritt 2 (Info)</span>
+            </button>
+            <button onclick="resetUnsubWizard()" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+              <span>➕</span>
+              <span data-i18n="btn_new_unsub">Weitere Liste / Weiteren Broker abmelden</span>
+            </button>
+          </div>
+
+        </div>
       </div>
 
     </div>
