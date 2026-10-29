@@ -691,21 +691,21 @@ function setWebDirCategory(cat) {
 function getWebDirCategoryBadge(cat) {
   const c = (cat || '').toLowerCase();
   if (c.includes('suchmaschinen') || c.includes('search')) {
-    return 'bg-cyan-950 text-cyan-300 border border-cyan-800';
+    return 'bg-cyan-950/60 text-cyan-300 border border-cyan-800/50';
   } else if (c.includes('beruf') || c.includes('karriere') || c.includes('business')) {
-    return 'bg-blue-950 text-blue-300 border border-blue-800';
+    return 'bg-blue-950/60 text-blue-300 border border-blue-800/50';
   } else if (c.includes('handelsregister') || c.includes('wirtschaft')) {
-    return 'bg-amber-950 text-amber-300 border border-amber-800';
+    return 'bg-amber-950/60 text-amber-300 border border-amber-800/50';
   } else if (c.includes('amtlich') || c.includes('bekanntmachung')) {
-    return 'bg-orange-950 text-orange-300 border border-orange-800';
+    return 'bg-orange-950/60 text-orange-300 border border-orange-800/50';
   } else if (c.includes('telefon') || c.includes('adresse')) {
-    return 'bg-emerald-950 text-emerald-300 border border-emerald-800';
+    return 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50';
   } else if (c.includes('person') || c.includes('profil')) {
-    return 'bg-yellow-950 text-yellow-300 border border-yellow-800';
+    return 'bg-yellow-950/60 text-yellow-300 border border-yellow-800/50';
   } else if (c.includes('presse') || c.includes('medien')) {
-    return 'bg-purple-950 text-purple-300 border border-purple-800';
+    return 'bg-purple-950/60 text-purple-300 border border-purple-800/50';
   }
-  return 'bg-slate-900 text-slate-300 border border-slate-700';
+  return 'bg-slate-900 text-slate-400 border border-slate-800';
 }
 
 function filterWebDirectories() {
@@ -732,43 +732,45 @@ function filterWebDirectories() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div class="p-6 text-center text-slate-500 font-mono text-xs space-y-1">
-        <span class="text-lg block">🔍</span>
-        <div>${currentLang === 'de' ? 'Keine Webseiten für diesen Filter gefunden.' : 'No websites match this filter.'}</div>
-      </div>
+      <tr>
+        <td colspan="5" class="py-4 text-center text-slate-500 font-mono text-[11px]">
+          ${currentLang === 'de' ? 'Keine Webseiten für diesen Filter gefunden.' : 'No websites match this filter.'}
+        </td>
+      </tr>
     `;
     return;
   }
 
   container.innerHTML = filtered.map(d => {
     const badgeClass = getWebDirCategoryBadge(d.category);
-    const queryTag = d.query ? `
-      <span class="inline-flex items-center gap-1 font-mono text-[10px] text-indigo-300 bg-indigo-950/60 px-1.5 py-0.5 border border-indigo-900/50 rounded max-w-[280px] sm:max-w-[400px] truncate" title="${escapeHtml(d.query)}">
-        <span class="text-slate-500 font-sans">Query:</span>
-        <span class="truncate">${escapeHtml(d.query)}</span>
-      </span>` : '';
-    const openBtnText = currentLang === 'de' ? 'Öffnen' : 'Open';
+    const linkText = currentLang === 'de' ? 'Öffnen ↗' : 'Open ↗';
+    const queryDisplay = d.query 
+      ? `<span class="text-indigo-300 font-mono text-[10px] bg-indigo-950/40 px-1 py-0.5 rounded border border-indigo-900/40" title="${escapeHtml(d.query)}">${escapeHtml(d.query)}</span>` 
+      : '<span class="text-slate-600">-</span>';
 
     return `
-      <div class="px-3 py-2 hover:bg-slate-900/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2 group">
-        <div class="space-y-0.5 flex-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-sm shrink-0">${d.icon || '🌐'}</span>
-            <span class="font-bold text-white text-xs tracking-tight">${escapeHtml(d.site)}</span>
-            <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold font-mono uppercase tracking-wider ${badgeClass}">
-              ${escapeHtml(d.category)}
-            </span>
-            ${queryTag}
-          </div>
-          <p class="text-[11px] text-slate-400 leading-tight">${escapeHtml(d.desc)}</p>
-        </div>
-        <div class="shrink-0 flex items-center self-end sm:self-center">
-          <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-md text-[11px] font-bold transition flex items-center space-x-1 shadow-sm cursor-pointer whitespace-nowrap">
-            <span>${openBtnText}</span>
-            <span class="text-[10px]">↗</span>
+      <tr class="hover:bg-slate-900/60 transition">
+        <td class="py-2 px-3 font-bold text-white flex items-center space-x-1.5 whitespace-nowrap">
+          <span>${d.icon || '🌐'}</span>
+          <span>${escapeHtml(d.site)}</span>
+        </td>
+        <td class="py-2 px-3 whitespace-nowrap">
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-sans font-medium ${badgeClass}">
+            ${escapeHtml(d.category)}
+          </span>
+        </td>
+        <td class="py-2 px-3 max-w-[200px] truncate" title="${escapeHtml(d.query || '')}">
+          ${queryDisplay}
+        </td>
+        <td class="py-2 px-3 text-slate-300 max-w-xs truncate text-[11px] font-sans" title="${escapeHtml(d.desc)}">
+          ${escapeHtml(d.desc)}
+        </td>
+        <td class="py-2 px-3 text-right whitespace-nowrap">
+          <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold text-[11px]">
+            ${linkText}
           </a>
-        </div>
-      </div>
+        </td>
+      </tr>
     `;
   }).join('');
 }
