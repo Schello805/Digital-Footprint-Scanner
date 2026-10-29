@@ -1476,6 +1476,27 @@ function renderUnsubSteps(d) {
     btnMail.href = mailUrl;
     btnMail.classList.remove('pointer-events-none', 'opacity-50');
   }
+
+  // Webmail alternatives for Step 3
+  const btnGmail = document.getElementById('btnPrimaryGmail');
+  if (btnGmail) {
+    if (d.gmail_url) {
+      btnGmail.href = d.gmail_url;
+      btnGmail.classList.remove('hidden');
+    } else {
+      btnGmail.classList.add('hidden');
+    }
+  }
+
+  const btnOutlook = document.getElementById('btnPrimaryOutlook');
+  if (btnOutlook) {
+    if (d.outlook_url) {
+      btnOutlook.href = d.outlook_url;
+      btnOutlook.classList.remove('hidden');
+    } else {
+      btnOutlook.classList.add('hidden');
+    }
+  }
   if (mailDesc) {
     if (d.detected_type === 'rfc_list') {
       mailDesc.textContent = currentLang === 'de'
@@ -1608,7 +1629,19 @@ function copyUnsubLetter() {
   });
 }
 
-async function dispatchBatchBrokerOptOut() {
+let cachedBatchData = null;
+
+function triggerMailto(url) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_top';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 100);
+}
+
+async function ensureBatchData() {
   const userEmailInput = document.getElementById('unsubUserEmail');
   const userNameInput = document.getElementById('unsubUserName');
 
@@ -1622,7 +1655,7 @@ async function dispatchBatchBrokerOptOut() {
       ? 'Bitte trage zuerst deine E-Mail-Adresse ein, die bei den Brokern gelöscht werden soll.' 
       : 'Please enter your email address that should be deleted across all brokers.');
     if (userEmailInput) userEmailInput.focus();
-    return;
+    return null;
   }
 
   try {
@@ -1639,18 +1672,55 @@ async function dispatchBatchBrokerOptOut() {
     });
     const json = await res.json();
     if (json.success && json.data) {
-      window.location.href = json.data.batch_mailto;
-      setTimeout(() => {
-        markAllBrokersSent(false);
-        alert(currentLang === 'de' 
-          ? `✓ Sammel-E-Mail mit ${json.data.brokers_count} Datenschutzbeauftragten (BCC) im Mailprogramm geöffnet!\nAlle ${json.data.brokers_count} Broker wurden im Tracker als 'Anfrage gesendet' markiert.` 
-          : `✓ Multi-broker email with ${json.data.brokers_count} DPOs (BCC) opened in mail client!\nAll ${json.data.brokers_count} brokers marked as 'Request Dispatched'.`);
-      }, 300);
+      cachedBatchData = json.data;
+      return cachedBatchData;
     }
   } catch (err) {
-    console.error('Failed to trigger batch broker opt-out:', err);
-    alert(currentLang === 'de' ? 'Fehler beim Öffnen der Sammel-Austragung.' : 'Failed to launch batch broker opt-out.');
+    console.error('Failed to generate batch broker data:', err);
   }
+  return null;
+}
+
+async function dispatchBatchBrokerOptOut() {
+  const data = await ensureBatchData();
+  if (!data) return;
+
+  triggerMailto(data.batch_mailto);
+  markAllBrokersSent(false);
+
+  alert(currentLang === 'de' 
+    ? `✓ Sammel-E-Mail an ${data.brokers_count} Datenschutzbeauftragte (BCC) im Mailprogramm aufgerufen!\n(Falls sich auf deinem Mac kein Programm öffnet: Klicke einfach auf '🔴 In Gmail öffnen' oder '📋 Empfänger & Text kopieren')` 
+    : `✓ Multi-broker email with ${data.brokers_count} DPOs (BCC) launched in mail client!\n(If it does not open on Mac, use the '🔴 Open in Gmail' button)`);
+}
+
+async function dispatchBatchBrokerWebmail(provider) {
+  const data = await ensureBatchData();
+  if (!data) return;
+
+  if (provider === 'gmail' && data.gmail_url) {
+    window.open(data.gmail_url, '_blank');
+  } else if (provider === 'outlook' && data.outlook_url) {
+    window.open(data.outlook_url, '_blank');
+  }
+  markAllBrokersSent(false);
+}
+
+async function copyBatchBrokerDetails() {
+  const data = await ensureBatchData();
+  if (!data) return;
+
+  const textToCopy = `AN (To): ${data.primary_to}\nBCC: ${data.bcc_emails.join(', ')}\n\nBETREFF: ${data.subject}\n\nTEXT:\n${data.body}`;
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    const btn = document.getElementById('btnCopyBatchBroker');
+    const orig = btn ? btn.innerHTML : '';
+    if (btn) btn.innerHTML = `<span>✓</span><span>Kopiert!</span>`;
+    setTimeout(() => {
+      if (btn) btn.innerHTML = orig;
+    }, 2500);
+    alert(currentLang === 'de'
+      ? '✓ Alle Empfänger (BCC), Betreff und Musterschreiben in die Zwischenablage kopiert! Du kannst es jetzt direkt in dein Mailprogramm einfügen.'
+      : '✓ Copied all BCC recipients, subject, and letter to clipboard!');
+  });
 }
 
 async function dispatchBatchBrokerOptOutFromDossier() {

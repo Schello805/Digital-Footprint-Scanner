@@ -184,6 +184,13 @@ Sincerely,
         protocol_summary_de = "Direktwerbe-Widerspruch per 1-Klick-Mail an Datenschutzbeauftragten oder Absenderadresse."
         protocol_summary_en = "1-Click direct marketing objection email to privacy officer or sender address."
 
+    # Webmail compose URLs for users without configured desktop mail client
+    active_mail = mailman_req_email if detected_type == "rfc_list" else target_mail_recipient
+    active_subj = rfc_subject if detected_type == "rfc_list" else gdpr_subject
+    active_body = rfc_body if detected_type == "rfc_list" else gdpr_body
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={urllib.parse.quote(active_mail)}&su={urllib.parse.quote(active_subj)}&body={urllib.parse.quote(active_body)}"
+    outlook_url = f"https://outlook.live.com/mail/0/deeplink/compose?to={urllib.parse.quote(active_mail)}&subject={urllib.parse.quote(active_subj)}&body={urllib.parse.quote(active_body)}"
+
     return {
         "success": True,
         "data": {
@@ -197,6 +204,7 @@ Sincerely,
             "legal_summary_en": legal_summary_en,
             "protocol_summary_de": protocol_summary_de,
             "protocol_summary_en": protocol_summary_en,
+            "primary_recipient": active_mail,
             "mailman_request_email": mailman_req_email,
             "rfc_subject": rfc_subject,
             "rfc_body": rfc_body,
@@ -205,6 +213,8 @@ Sincerely,
             "gdpr_subject": gdpr_subject,
             "gdpr_body": gdpr_body,
             "gdpr_mailto": gdpr_mailto,
+            "gmail_url": gmail_url,
+            "outlook_url": outlook_url,
             "marketing_brokers": MARKETING_LIST_BROKERS
         }
     }
@@ -280,6 +290,10 @@ Sincerely,
     bcc_param = f"&bcc={urllib.parse.quote(','.join(bcc_list))}" if bcc_list else ""
     batch_mailto = f"mailto:{primary_to}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}{bcc_param}"
 
+    bcc_str = ','.join(bcc_list)
+    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={urllib.parse.quote(primary_to)}&su={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}{('&bcc=' + urllib.parse.quote(bcc_str)) if bcc_str else ''}"
+    outlook_url = f"https://outlook.live.com/mail/0/deeplink/compose?to={urllib.parse.quote(primary_to)}&subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}{('&bcc=' + urllib.parse.quote(bcc_str)) if bcc_str else ''}"
+
     return {
         "success": True,
         "data": {
@@ -292,6 +306,8 @@ Sincerely,
             "brokers_included": email_brokers,
             "subject": subject,
             "body": body,
-            "batch_mailto": batch_mailto
+            "batch_mailto": batch_mailto,
+            "gmail_url": gmail_url,
+            "outlook_url": outlook_url
         }
     }

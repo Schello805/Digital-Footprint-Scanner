@@ -774,15 +774,45 @@ Sincerely,
           </div>
 
           <!-- Action Buttons -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <button type="button" onclick="dispatchBatchBrokerOptOut()" id="btnBatchMailto" class="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-rose-600/20 cursor-pointer">
-              <span>🚀</span>
-              <span data-i18n="btn_batch_mailto">1-Klick Sammel-E-Mail öffnen (BCC)</span>
-            </button>
-            <button type="button" onclick="markAllBrokersSent()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer">
-              <span>✅</span>
-              <span data-i18n="btn_mark_all_sent">Alle 7 als 'Anfrage gesendet' markieren</span>
-            </button>
+          <div class="space-y-2.5 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button type="button" onclick="dispatchBatchBrokerOptOut()" id="btnBatchMailto" class="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-rose-600/20 cursor-pointer">
+                <span>🚀</span>
+                <span data-i18n="btn_batch_mailto">1-Klick Sammel-E-Mail öffnen (BCC)</span>
+              </button>
+              <button type="button" onclick="markAllBrokersSent()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer border border-slate-700">
+                <span>✅</span>
+                <span data-i18n="btn_mark_all_sent">Alle 7 als 'Anfrage gesendet' markieren</span>
+              </button>
+            </div>
+
+            <!-- Alternative Webmail & Copy Dispatchers (Especially for Mac / Webmail users) -->
+            <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px]">
+              <div class="flex items-center space-x-2 text-slate-300">
+                <span class="text-xs">🌐 Webmail:</span>
+                <button type="button" onclick="dispatchBatchBrokerWebmail('gmail')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-rose-950 text-rose-300 hover:text-white border border-rose-900/60 transition font-medium cursor-pointer">
+                  🔴 In Gmail öffnen ↗
+                </button>
+                <button type="button" onclick="dispatchBatchBrokerWebmail('outlook')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-cyan-300 hover:text-white border border-cyan-900/60 transition font-medium cursor-pointer">
+                  🔷 In Outlook Web ↗
+                </button>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <button type="button" onclick="copyBatchBrokerDetails()" id="btnCopyBatchBroker" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 transition font-medium flex items-center space-x-1 cursor-pointer">
+                  <span>📋</span>
+                  <span>Empfänger & Text kopieren</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- macOS Mail.app Helper Alert -->
+            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-start space-x-2 leading-relaxed">
+              <span class="text-sm shrink-0">🍎</span>
+              <div>
+                <span class="font-bold text-slate-300">Mac-Hinweis:</span> Wenn sich das Mailprogramm nicht öffnet, liegt das meist daran, dass kein Standard-Mailprogramm in macOS hinterlegt ist. Klicke einfach oben auf <button type="button" onclick="dispatchBatchBrokerWebmail('gmail')" class="text-rose-400 underline font-semibold">🔴 In Gmail öffnen</button> oder prüfe in der App <i>Mail ➔ Einstellungen ➔ Allgemein ➔ Standard-E-Mail-Programm</i>.
+              </div>
+            </div>
           </div>
         </div>
 
@@ -981,9 +1011,19 @@ Sincerely,
                   Öffnet dein Standard-Mailprogramm mit fertigem Empfänger, Betreff und Widerspruchstext.
                 </p>
               </div>
-              <a id="btnPrimaryMailto" href="#" class="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-center text-xs font-bold transition flex items-center justify-center space-x-1 shadow-md shadow-indigo-600/20">
-                <span>🚀 In Mailprogramm öffnen</span>
-              </a>
+              <div class="space-y-1.5">
+                <a id="btnPrimaryMailto" href="#" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-center text-xs font-bold transition flex items-center justify-center space-x-1 shadow-md shadow-indigo-600/20">
+                  <span>🚀 In Mailprogramm öffnen</span>
+                </a>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <a id="btnPrimaryGmail" href="#" target="_blank" class="py-1.5 px-2 bg-slate-900 hover:bg-rose-950 text-rose-300 hover:text-white border border-rose-900/60 rounded-lg text-center text-[10px] font-semibold transition flex items-center justify-center space-x-1">
+                    <span>🔴 In Gmail ↗</span>
+                  </a>
+                  <a id="btnPrimaryOutlook" href="#" target="_blank" class="py-1.5 px-2 bg-slate-900 hover:bg-cyan-950 text-cyan-300 hover:text-white border border-cyan-900/60 rounded-lg text-center text-[10px] font-semibold transition flex items-center justify-center space-x-1">
+                    <span>🔷 In Outlook ↗</span>
+                  </a>
+                </div>
+              </div>
             </div>
 
             <!-- Option 2: Web-Portal -->
@@ -1021,6 +1061,14 @@ Sincerely,
               </button>
             </div>
 
+          </div>
+
+          <!-- Mac Help Info for Step 3 -->
+          <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 flex items-start space-x-2 leading-relaxed">
+            <span class="text-sm shrink-0">🍎</span>
+            <div>
+              <span class="font-bold text-slate-300">Mac-Hinweis:</span> Wenn sich das Mailprogramm nicht öffnet, klicke einfach auf <b>🔴 In Gmail</b>, <b>🔷 In Outlook</b> oder <b>📋 Brief kopieren</b>. Um Apple Mail dauerhaft als System-Standard zu setzen: <i>Mail.app ➔ Einstellungen (Cmd + ,) ➔ Allgemein ➔ Standard-E-Mail-Programm</i>.
+            </div>
           </div>
 
           <!-- Letter Preview Textarea -->
