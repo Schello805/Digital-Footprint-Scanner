@@ -38,6 +38,33 @@ body {
 .text-slate-400 { color: #94a3b8 !important; }
 .text-slate-500 { color: #64748b !important; }
 
+/* Form inputs & textareas readable high contrast */
+input, textarea, select {
+  color: #f8fafc !important;
+  background-color: #020617 !important;
+  border-color: #334155 !important;
+  font-family: inherit;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #64748b !important;
+}
+
+#repGdprText {
+  color: #f8fafc !important;
+  background-color: #020617 !important;
+  border: 1px solid #334155 !important;
+  line-height: 1.65 !important;
+  white-space: pre-wrap !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 12px !important;
+}
+
+#repGdprText:focus {
+  border-color: #6366f1 !important;
+  outline: none;
+}
+
 /* Indigo / Brand */
 .bg-indigo-600 { background-color: #4f46e5 !important; }
 .bg-indigo-500 { background-color: #6366f1 !important; }

@@ -72,7 +72,7 @@
   </nav>
 
   <!-- Main Content Area -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
 
     <!-- ==================== TAB 0: 1-CLICK FULL SCAN (PRIMARY) ==================== -->
     <div id="tab-content-fullscan" class="tab-pane">
@@ -176,7 +176,7 @@
       </div>
 
       <!-- Unified Report Container (Hidden until scanned) -->
-      <div id="fullReportContainer" class="hidden space-y-6">
+      <div id="fullReportContainer" class="hidden space-y-10 mt-10 mb-24">
 
         <!-- Dossier Top Action Bar (no-print) -->
         <div class="no-print bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
@@ -196,7 +196,7 @@
         </div>
 
         <!-- ==================== DIN A4 STECKBRIEF / DOSSIER ==================== -->
-        <div id="dossierSheet" class="dossier-sheet rounded-2xl p-6 sm:p-10 border border-slate-700 text-slate-200 space-y-6">
+        <div id="dossierSheet" class="dossier-sheet rounded-2xl p-6 sm:p-10 border border-slate-700 text-slate-200 space-y-8">
           
           <!-- Dossier Header Ribbon -->
           <div class="border-b-2 border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -330,68 +330,106 @@
             </div>
           </div>
 
-          <!-- Section 4: Phone & Mailing Lists -->
-          <div class="dossier-section grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]" data-i18n="sec_phone_recon">📞 Phone Reputation & Lookup</h5>
-              <div id="sbPhoneReconBox" class="text-slate-400">No phone number provided.</div>
-            </div>
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]" data-i18n="sec_mailing_lists">📬 Public Mailing Lists</h5>
-              <div id="sbMailingListBox" class="text-slate-400 space-y-1.5">No email provided.</div>
-            </div>
-            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px]" data-i18n="sec_permutations">✉️ Probable Email Permutations</h5>
-              <div id="sbPermutationsBox" class="text-slate-400 font-mono line-clamp-3">No permutations calculated.</div>
+          <!-- Section 4: Phone, Mailing Lists & Permutations -->
+          <div class="dossier-section pt-8 border-t border-slate-800 space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-2" data-i18n="sec_comm_title">
+              4. Communication & Permutation Intelligence
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3 text-xs shadow-inner min-h-[140px] flex flex-col justify-between">
+                <div>
+                  <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px] mb-2" data-i18n="sec_phone_recon">📞 Phone Reputation & Lookup</h5>
+                  <div id="sbPhoneReconBox" class="text-slate-400">No phone number provided.</div>
+                </div>
+              </div>
+              <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3 text-xs shadow-inner min-h-[140px] flex flex-col justify-between">
+                <div>
+                  <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px] mb-2" data-i18n="sec_mailing_lists">📬 Public Mailing Lists</h5>
+                  <div id="sbMailingListBox" class="text-slate-400 space-y-2">No email provided.</div>
+                </div>
+              </div>
+              <div class="p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3 text-xs shadow-inner min-h-[140px] flex flex-col justify-between">
+                <div>
+                  <h5 class="font-bold text-slate-300 uppercase tracking-wider text-[11px] mb-2" data-i18n="sec_permutations">✉️ Probable Email Permutations</h5>
+                  <div id="sbPermutationsBox" class="text-slate-400 font-mono">No permutations calculated.</div>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Section 5: Public Registers & Dorks -->
-          <div class="dossier-section space-y-2 text-xs">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1" data-i18n="sec_dorks_title">
-              4. Public Registries & Document Trails (Registers, Leaks, PDFs)
-            </h4>
-            <div id="sbDorksLinksList" class="flex flex-wrap gap-2 pt-1">
+          <div class="dossier-section pt-8 border-t border-slate-800 space-y-4 text-xs">
+            <div class="border-b border-slate-800 pb-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400" data-i18n="sec_dorks_title">
+                5. Public Registries & Document Trails (Registers, Leaks, PDFs)
+              </h4>
+              <p class="text-xs text-slate-400 mt-1" data-i18n="sec_dorks_sub">
+                Click links below to open direct search queries across registries (North Data, Bundesanzeiger) and public document dumps without bot blocks:
+              </p>
+            </div>
+            <div id="sbDorksLinksList" class="flex flex-wrap gap-2.5 pt-1">
               <!-- Fast dork links -->
             </div>
           </div>
 
           <!-- Section 6: Cleanup Guide (FootprintIQ Inspired) -->
-          <div class="dossier-section space-y-3 pt-3 border-t border-slate-800 text-xs">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1">
+          <div class="dossier-section pt-8 border-t border-slate-800 space-y-5 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
               <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
-                <span data-i18n="sec_cleanup_title">🛡️ 5. Footprint Remediation & Account Deletion (Action Plan)</span>
+                <span data-i18n="sec_cleanup_title">🛡️ 6. Footprint Remediation & Account Deletion (Action Plan)</span>
               </h4>
               <span class="text-[11px] text-slate-400 font-mono" data-i18n="sec_cleanup_sub">Direct account deactivation links</span>
             </div>
             
-            <div id="sbCleanupGuidesList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div id="sbCleanupGuidesList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Cards with direct delete account links -->
             </div>
 
-            <div class="mt-3 p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+            <div class="mt-4 p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
               <span class="font-bold text-white text-[11px] block" data-i18n="broker_title">People Search Engines & Data Broker Opt-Out:</span>
-              <div id="sbDataBrokersList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div id="sbDataBrokersList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
                 <!-- Broker opt out cards -->
               </div>
             </div>
           </div>
 
           <!-- Section 7: GDPR Art. 17 Deletion Letter -->
-          <div class="dossier-section space-y-2 text-xs pt-3 border-t border-slate-800">
-            <div class="flex items-center justify-between">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400" data-i18n="sec_gdpr_title">
-                6. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')
-              </h4>
-              <button onclick="copyGdprTemplate(this)" class="no-print px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px]">
+          <div class="dossier-section pt-8 pb-6 border-t border-slate-800 space-y-4 text-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-800/60">
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-2">
+                  <span>⚖️</span>
+                  <span data-i18n="sec_gdpr_title">7. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')</span>
+                </h4>
+                <p class="text-xs text-slate-400 mt-1 leading-relaxed" data-i18n="gdpr_desc">
+                  Use this legally binding letter to request immediate erasure of your personal data from platform operators, databases, and search engines.
+                </p>
+              </div>
+              <button onclick="copyGdprTemplate(this)" class="no-print px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition shadow flex items-center space-x-1.5 shrink-0 self-start sm:self-auto">
+                <span>📋</span>
                 <span data-i18n="btn_copy_text">Copy Text</span>
               </button>
             </div>
-            <textarea id="repGdprText" readonly rows="5"
-              class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg font-mono text-[11px] text-slate-300 outline-none select-all"></textarea>
-            <div class="text-right text-[11px]">
-              <a href="https://support.google.com/websearch/troubleshooter/3111061" target="_blank" class="text-indigo-400 hover:underline" data-i18n="google_removal_link">
-                Submit official Google Search Removal Request ↗
+            
+            <div class="my-3">
+              <textarea id="repGdprText" rows="9" readonly
+                class="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl font-mono text-xs text-slate-200 outline-none focus:border-indigo-500 leading-relaxed shadow-inner select-all resize-y">To Whom It May Concern,
+
+I am writing to exercise my right to erasure ('Right to be Forgotten') pursuant to Article 17 of the General Data Protection Regulation (GDPR) / applicable privacy legislation.
+
+Please permanently delete and erase all personal data pertaining to me ([Your Name]) stored in your databases, public directories, and web indexes without undue delay.
+
+If you have made this personal data public or disclosed it to third parties, please inform them of this erasure request as required by law.
+
+Please confirm the execution of this deletion in writing.
+
+Sincerely,
+[Your Name]</textarea>
+            </div>
+
+            <div class="pt-2 text-right text-xs">
+              <a href="https://support.google.com/websearch/troubleshooter/3111061" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:text-indigo-300 hover:underline inline-flex items-center space-x-1" data-i18n="google_removal_link">
+                <span>Submit official Google Search Removal Request</span> <span>↗</span>
               </a>
             </div>
           </div>

@@ -60,14 +60,17 @@ const translations = {
     th_bio: "Extracted Bio Snippet / Note",
     th_link: "Profile Link",
     sec_3_title: "3. Forensic Threat Vector Analysis (Social Engineering & Doxing)",
+    sec_comm_title: "4. Communication & Permutation Intelligence",
     sec_phone_recon: "📞 Phone Reputation & Lookup",
     sec_mailing_lists: "📬 Public Mailing Lists",
     sec_permutations: "✉️ Probable Email Permutations",
-    sec_dorks_title: "4. Public Registries & Document Trails (Registers, Leaks, PDFs)",
-    sec_cleanup_title: "🛡️ 5. Footprint Remediation & Account Deletion (Action Plan)",
+    sec_dorks_title: "5. Public Registries & Document Trails (Registers, Leaks, PDFs)",
+    sec_dorks_sub: "Click links below to open direct search queries across registries (North Data, Bundesanzeiger) and public document dumps without bot blocks:",
+    sec_cleanup_title: "🛡️ 6. Footprint Remediation & Account Deletion (Action Plan)",
     sec_cleanup_sub: "Direct account deactivation links",
     broker_title: "People Search Engines & Data Broker Opt-Out:",
-    sec_gdpr_title: "6. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')",
+    sec_gdpr_title: "7. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')",
+    gdpr_desc: "Use this legally binding letter to request immediate erasure of your personal data from platform operators, databases, and search engines.",
     btn_copy_text: "Copy Text",
     google_removal_link: "Submit official Google Search Removal Request ↗",
     exif_title: "Metadata & EXIF Inspector",
@@ -147,14 +150,17 @@ const translations = {
     th_bio: "Gefundener Bio-Auszug / Notiz",
     th_link: "Profil-Link",
     sec_3_title: "3. Forensische Bedrohungsanalyse (Social Engineering & Doxing)",
+    sec_comm_title: "4. Kommunikationskanäle & Namenspermutationen",
     sec_phone_recon: "📞 Rufnummern-Rückwärtssuche",
     sec_mailing_lists: "📬 Öffentliche Mailinglisten",
     sec_permutations: "✉️ Wahrscheinliche E-Mail-Permutationen",
-    sec_dorks_title: "4. Öffentliche Register & Spurensuche (Handelsregister, PDFs, North Data)",
-    sec_cleanup_title: "🛡️ 5. Footprint-Bereinigung & Account-Löschung (Action Plan)",
+    sec_dorks_title: "5. Öffentliche Register & Spurensuche (Handelsregister, PDFs, North Data)",
+    sec_dorks_sub: "Klicke auf die Links, um Suchergebnisse in Registern (North Data, Bundesanzeiger) und Foren ohne Bot-Sperren direkt zu prüfen:",
+    sec_cleanup_title: "🛡️ 6. Footprint-Bereinigung & Account-Löschung (Action Plan)",
     sec_cleanup_sub: "Direkt-Links zur Kontodeaktivierung",
     broker_title: "Personensuchmaschinen & Datenbroker Opt-Out:",
-    sec_gdpr_title: "6. Rechtliche Sofortmaßnahme: Art. 17 DSGVO Löschanforderung",
+    sec_gdpr_title: "7. Rechtliche Sofortmaßnahme: Art. 17 DSGVO Löschanforderung („Recht auf Vergessenwerden“)",
+    gdpr_desc: "Nutze diesen vorgefertigten Rechtstext, um Plattformen, Register und Suchmaschinen zur vollständigen Löschung deiner personenbezogenen Daten nach Art. 17 DSGVO aufzufordern.",
     btn_copy_text: "Text kopieren",
     google_removal_link: "Offiziellen Google-Suchergebnis-Entfernungsantrag einreichen ↗",
     exif_title: "Metadaten- & EXIF-Inspektor",
@@ -188,6 +194,46 @@ const translations = {
   }
 };
 
+// ==================== DEFAULT GDPR TEMPLATES ====================
+const defaultGdprTemplates = {
+  de: `Sehr geehrte Damen und Herren,
+
+hiermit mache ich von meinem Recht auf Löschung („Recht auf Vergessenwerden“) gemäß Art. 17 DSGVO Gebrauch.
+
+Bitte löschen Sie unverzüglich alle personenbezogenen Daten, die zu meiner Person ([Dein Name]) gespeichert sind oder öffentlich im Index bereitgestellt werden.
+
+Falls Sie die Daten an Dritte übermittelt haben, sind Sie nach Art. 17 Abs. 2 DSGVO verpflichtet, auch diese über mein Löschbegehren zu unterrichten.
+
+Bitte bestätigen Sie mir die unverzügliche Löschung schriftlich.
+
+Mit freundlichen Grüßen,
+[Dein Name]`,
+  en: `To Whom It May Concern,
+
+I am writing to exercise my right to erasure ('Right to be Forgotten') pursuant to Article 17 of the General Data Protection Regulation (GDPR) / applicable privacy legislation.
+
+Please permanently delete and erase all personal data pertaining to me ([Your Name]) stored in your databases, public directories, and web indexes without undue delay.
+
+If you have made this personal data public or disclosed it to third parties, please inform them of this erasure request as required by law.
+
+Please confirm the execution of this deletion in writing.
+
+Sincerely,
+[Your Name]`
+};
+
+function updateGdprLetter(targetName) {
+  const gdprEl = document.getElementById('repGdprText');
+  if (!gdprEl) return;
+  const name = (targetName || (lastScanPayload ? lastScanPayload.name : '') || '').trim();
+  const rawTemplate = defaultGdprTemplates[currentLang] || defaultGdprTemplates.en;
+  if (name) {
+    gdprEl.value = rawTemplate.replace(/\[(Dein Name|Your Name)\]/g, name);
+  } else {
+    gdprEl.value = rawTemplate;
+  }
+}
+
 function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('selfscanner_lang', lang);
@@ -215,6 +261,9 @@ function setLanguage(lang) {
       el.textContent = dict[key];
     }
   });
+
+  // Always keep GDPR letter localized
+  updateGdprLetter(lastScanPayload ? lastScanPayload.name : '');
 
   // Re-render report if already generated
   if (lastScanResult && lastScanPayload) {
@@ -599,8 +648,7 @@ function renderFullReport(res, payload) {
   }
 
   // 8. GDPR Letter
-  const gdprText = currentLang === 'de' ? (data.identity_audit.gdpr_template_de || data.identity_audit.gdpr_template) : (data.identity_audit.gdpr_template_en || data.identity_audit.gdpr_template);
-  document.getElementById('repGdprText').value = gdprText || '';
+  updateGdprLetter(payload.name);
 
   // Scroll smoothly down to the dossier
   reportContainer.scrollIntoView({ behavior: 'smooth' });
@@ -836,4 +884,5 @@ async function saveSettings(e) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   setLanguage(currentLang);
+  updateGdprLetter();
 });
