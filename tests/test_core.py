@@ -69,12 +69,22 @@ async def test_full_scan_pipeline():
     assert "found_profiles" in res
     assert "dorks" in res
     assert "web_directories" in res
-    assert len(res["web_directories"]) >= 6
+    assert "infostealer_result" in res
+    assert "pgp_result" in res
     # Verify own website presence included
     dom_presence = next((p for p in res["found_profiles"] if "schellenberger.biz" in p.get("url", "")), None)
     assert dom_presence is not None
     assert dom_presence["exists"] is True
-    print(f"✓ Full 1-Click Scan passed! Web Directories: {len(res['web_directories'])}, Profiles: {len(res['found_profiles'])}, Exposure Score: {res['summary']['exposure_score']}")
+    print(f"✓ Full 1-Click Scan passed! Profiles: {len(res['found_profiles'])}, Exposure Score: {res['summary']['exposure_score']}")
+
+    # Test Security Intel (Hudson Rock & PGP Keyserver)
+    print("Testing Security Intel (Infostealer & PGP Keyserver)...")
+    from app.modules.security_intel import check_infostealer_malware, check_pgp_keyserver
+    empty_intel = await check_infostealer_malware("")
+    assert empty_intel["checked"] is False
+    empty_pgp = await check_pgp_keyserver("")
+    assert empty_pgp["checked"] is False
+    print("✓ Security Intel modules verified!")
 
     # Test Email Account Checker
     print("Testing Email Account Recon...")

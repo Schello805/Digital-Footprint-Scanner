@@ -41,8 +41,9 @@ PLATFORMS: List[Dict[str, Any]] = [
     {"name": "Chess.com", "category": "Gaming", "url": "https://www.chess.com/member/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Lichess", "category": "Gaming", "url": "https://lichess.org/@/{}", "check_type": "status_code", "error_code": 404},
 
-    # Identity, Bio & Funding
+    # Identity, Security & Funding
     {"name": "Keybase", "category": "Security & Identity", "url": "https://keybase.io/{}", "check_type": "status_code", "error_code": 404},
+    {"name": "Bugcrowd", "category": "Security & Bug Bounty", "url": "https://bugcrowd.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Gravatar", "category": "Security & Identity", "url": "https://en.gravatar.com/{}", "check_type": "status_code", "error_code": 404},
     {"name": "Linktree", "category": "Bio Links", "url": "https://linktr.ee/{}", "check_type": "status_code", "error_code": 404},
     {"name": "About.me", "category": "Bio Links", "url": "https://about.me/{}", "check_type": "status_code", "error_code": 404},

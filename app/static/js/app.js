@@ -1076,6 +1076,24 @@ function renderFullReport(res, payload) {
     emailDetail.textContent = payload.email ? 'k-Anonymity / OSINT' : '-';
   }
 
+  const stealerStatus = document.getElementById('sbInfostealerStatus');
+  const stealerDetail = document.getElementById('sbInfostealerDetail');
+  if (stealerStatus && stealerDetail) {
+    if (data.infostealer_result && data.infostealer_result.checked) {
+      if (data.infostealer_result.infected) {
+        stealerStatus.innerHTML = `<span class="text-rose-400">⚠️ ${data.infostealer_result.stealers_count}x ${currentLang === 'de' ? 'INFIZIERT' : 'INFECTED'}</span>`;
+        const fams = (data.infostealer_result.families || []).join(', ');
+        stealerDetail.textContent = fams ? `Trojaner: ${fams}` : (currentLang === 'de' ? 'Passwörter durch Malware erbeutet' : 'Credentials leaked via stealer trojans');
+      } else {
+        stealerStatus.innerHTML = `<span class="text-emerald-400">✓ ${currentLang === 'de' ? 'Sauber (0 Infektionen)' : 'Clean (0 Infections)'}</span>`;
+        stealerDetail.textContent = currentLang === 'de' ? 'Kein Befall durch RedLine/Vidar' : 'Clean in cybercrime stealer DB';
+      }
+    } else {
+      stealerStatus.textContent = payload.email ? (currentLang === 'de' ? 'Geprüft' : 'Audited') : (currentLang === 'de' ? 'Keine E-Mail' : 'No email');
+      stealerDetail.textContent = 'Hudson Rock Cybercrime DB';
+    }
+  }
+
   const domStatus = document.getElementById('sbDomainStatus');
   const domDetail = document.getElementById('sbDomainDetail');
   if (data.domain_result) {

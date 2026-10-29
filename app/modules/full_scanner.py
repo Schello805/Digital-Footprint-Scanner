@@ -11,6 +11,7 @@ from app.modules.dork_builder import generate_dorks
 from app.modules.identity_auditor import audit_identity_profile
 from app.modules.cleanup_guide import get_remediation_guide
 from app.modules.image_recon import collect_discovered_images
+from app.modules.security_intel import check_infostealer_malware, check_pgp_keyserver
 from app.config import settings
 
 FREEMAIL_DOMAINS = {
@@ -216,8 +217,22 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return await check_mailing_lists(email)
     tasks.append(do_mailing_list_check())
 
+    # Infostealer Malware task (Hudson Rock Cybercrime DB)
+    async def do_infostealer_check():
+        if not email:
+            return None
+        return await check_infostealer_malware(email)
+    tasks.append(do_infostealer_check())
+
+    # OpenPGP Keyserver task (Ubuntu Keyserver)
+    async def do_pgp_check():
+        if not email:
+            return None
+        return await check_pgp_keyserver(email)
+    tasks.append(do_pgp_check())
+
     # Execute all concurrently
-    username_results, password_res, email_res, domain_res, mailing_res = await asyncio.gather(*tasks)
+    username_results, password_res, email_res, domain_res, mailing_res, infostealer_res, pgp_res = await asyncio.gather(*tasks)
 
     # Filter & sort username results
     found_profiles = [p for p in username_results if p.get("exists")]
@@ -331,12 +346,51 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "password_breach_count": password_res.get("data", {}).get("count") if password_res and password_res.get("success") else 0,
         "email_breached": email_res.get("data", {}).get("breached") if email_res and email_res.get("success") else None,
         "email_breach_count": email_res.get("data", {}).get("breach_count", 0) if email_res and email_res.get("success") else 0,
+        "infostealer_infected": infostealer_res.get("infected", False) if infostealer_res else False,
+        "infostealer_count": infostealer_res.get("stealers_count", 0) if infostealer_res else 0,
+        "pgp_has_key": pgp_res.get("has_pgp", False) if pgp_res else False,
         "domain_spf_status": domain_res.get("data", {}).get("email_security", {}).get("spf", {}).get("status") if domain_res and domain_res.get("success") else None,
         "domain_dmarc_status": domain_res.get("data", {}).get("email_security", {}).get("dmarc", {}).get("status") if domain_res and domain_res.get("success") else None,
         "exposure_score": audit_data.get("exposure_score", 0),
         "exposure_level": audit_data.get("exposure_level", "GERING"),
         "badge_color": audit_data.get("badge_color", "emerald")
     }
+
+    # Infostealer Malware Alert in Threat Vectors
+    if infostealer_res and infostealer_res.get("infected"):
+        fam_str = ", ".join(infostealer_res.get("families", [])) or "Trojaner"
+        audit_data.setdefault("threat_vectors", []).insert(0, {
+            "title": f"Kritisch: Infostealer-Malware Infektion ({fam_str})",
+            "title_en": f"Critical: Infostealer Malware Infection ({fam_str})",
+            "severity": "CRITICAL",
+            "desc": f"Ein oder mehrere Computer, auf denen {email} angemeldet war, wurden durch Cyberkriminelle mit Infostealer-Malware infiziert. Gespeicherte Passwörter & Sessions wurden abgegriffen.",
+            "desc_en": f"One or more computers authenticated with {email} were infected by infostealer trojans leaking browser passwords & sessions to cybercriminals."
+        })
+        audit_data["exposure_score"] = min(100, audit_data.get("exposure_score", 0) + 35)
+        audit_data["exposure_level"] = "KRITISCH"
+        audit_data["badge_color"] = "rose"
+        summary["exposure_score"] = audit_data["exposure_score"]
+        summary["exposure_level"] = audit_data["exposure_level"]
+        summary["badge_color"] = audit_data["badge_color"]
+
+    # If OpenPGP Key found on Ubuntu / MIT keyserver, insert as verified crypto identity
+    if pgp_res and pgp_res.get("has_pgp"):
+        keys_str = ", ".join(pgp_res.get("keys", []))
+        found_profiles.insert(0, {
+            "platform": "OpenPGP Key Server (Ubuntu)",
+            "category": "Kryptografie & PGP",
+            "url": pgp_res.get("lookup_url", "https://keyserver.ubuntu.com"),
+            "exists": True,
+            "status": "found",
+            "snippet": f"{pgp_res.get('key_count')} verifizierter PGP-Schlüssel ({keys_str[:24]}...)",
+            "match": {
+                "score": 100,
+                "matches": ["Kryptografische PGP E-Mail-Signatur"],
+                "confidence": "high"
+            }
+        })
+        summary["profiles_found"] = len(found_profiles)
+        summary["high_confidence_matches"] += 1
 
     # Collect and aggregate all discovered images & avatars
     session_avatar = data.get("session_avatar") or data.get("avatar_url")
@@ -366,6 +420,8 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "resolved_name": name,
         "password_result": password_res.get("data") if password_res and password_res.get("success") else None,
         "email_result": email_res.get("data") if email_res and email_res.get("success") else None,
+        "infostealer_result": infostealer_res,
+        "pgp_result": pgp_res,
         "mailing_list_result": mailing_res.get("data") if mailing_res and mailing_res.get("success") else None,
         "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
         "phone_result": phone_res,

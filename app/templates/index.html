@@ -493,7 +493,7 @@
             <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1" data-i18n="sec_1_title">
               1. Security Analysis & Breach Status
             </h4>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
               <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                 <span class="text-slate-400 block font-semibold" data-i18n="card_pwd_integrity">🔑 Password Integrity:</span>
                 <span id="sbPwdStatus" class="font-bold text-sm block mt-1">Not tested</span>
@@ -503,6 +503,11 @@
                 <span class="text-slate-400 block font-semibold" data-i18n="card_email_breaches">📬 Email Data Breaches:</span>
                 <span id="sbEmailStatus" class="font-bold text-sm block mt-1">Audited</span>
                 <span id="sbEmailDetail" class="text-[11px] text-slate-500 block mt-0.5">No direct leaks</span>
+              </div>
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <span class="text-slate-400 block font-semibold">🦠 Infostealer Malware:</span>
+                <span id="sbInfostealerStatus" class="font-bold text-sm block mt-1">Audited</span>
+                <span id="sbInfostealerDetail" class="text-[11px] text-slate-500 block mt-0.5">Hudson Rock Cybercrime DB</span>
               </div>
               <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                 <span class="text-slate-400 block font-semibold" data-i18n="card_domain_security">🌐 Domain Mail Spoofing:</span>
