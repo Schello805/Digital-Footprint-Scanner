@@ -130,6 +130,8 @@ def test_auth_and_user_scans_workflow():
     assert user_with_prefill is not None
     assert user_with_prefill["name"] == "Michael Schellenberger"
     assert user_with_prefill["prefill"]["name"] == "Michael Schellenberger"
+    assert user_with_prefill["prefill"]["first_name"] == "Michael"
+    assert user_with_prefill["prefill"]["last_name"] == "Schellenberger"
     assert user_with_prefill["prefill"]["email"] == oauth_email
     assert user_with_prefill["prefill"]["domain"] == "schellenberger.biz"
     assert "michael.schellenberger" in user_with_prefill["prefill"]["username"]

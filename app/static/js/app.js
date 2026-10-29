@@ -32,6 +32,8 @@ const translations = {
     cockpit_desc: "Enter your identifiers once. The scanner concurrently checks social accounts, data breaches, phone reputation, mail spoofing, and automatically filters out coincidental name matches.",
     no_mandatory: "No mandatory fields except Name or Username",
     lbl_name: "Full Name",
+    lbl_first_name: "First Name",
+    lbl_last_name: "Last Name",
     lbl_username: "Username / Handle",
     lbl_email: "Email Address",
     lbl_password: "Password (Leak Check)",
@@ -178,6 +180,8 @@ const translations = {
     cockpit_desc: "Gib einmal deine Daten ein. Der Scanner prüft gleichzeitig Social-Media-Accounts, Datenpannen, Rufnummern, Mail-Spoofing, Register und filtert fremde Namensvetter automatisch aus.",
     no_mandatory: "Keine Pflichtfelder außer Name oder Username",
     lbl_name: "Vor- & Nachname",
+    lbl_first_name: "Vorname",
+    lbl_last_name: "Nachname / Zuname",
     lbl_username: "Benutzername / Alias",
     lbl_email: "E-Mail-Adresse",
     lbl_password: "Passwort (Leak-Check)",
@@ -521,8 +525,21 @@ function switchTab(tabId) {
 async function runFullScan(e) {
   e.preventDefault();
 
+  const firstName = (document.getElementById('fsFirstName')?.value || '').trim();
+  const lastName = (document.getElementById('fsLastName')?.value || '').trim();
+  const combinedName = [firstName, lastName].filter(Boolean).join(' ');
+  const legacyName = (document.getElementById('fsName')?.value || '').trim();
+  const finalName = combinedName || legacyName;
+
+  const fsNameEl = document.getElementById('fsName');
+  if (fsNameEl) {
+    fsNameEl.value = finalName;
+  }
+
   const payload = {
-    name: document.getElementById('fsName').value.trim(),
+    first_name: firstName,
+    last_name: lastName,
+    name: finalName,
     username: document.getElementById('fsUsername').value.trim(),
     email: document.getElementById('fsEmail').value.trim(),
     password: document.getElementById('fsPassword').value,
@@ -533,7 +550,7 @@ async function runFullScan(e) {
   };
 
   if (!payload.name && !payload.username && !payload.email && !payload.phone && !payload.domain) {
-    alert(currentLang === 'de' ? 'Bitte gib mindestens einen Namen, Benutzernamen, eine E-Mail oder Domain an.' : 'Please provide at least a Name, Username, Email, or Domain.');
+    alert(currentLang === 'de' ? 'Bitte gib mindestens einen Vor-/Nachnamen, Benutzernamen, eine E-Mail oder Domain an.' : 'Please provide at least a Name, Username, Email, or Domain.');
     return;
   }
 
@@ -613,6 +630,16 @@ async function runFullScan(e) {
   }
 }
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 let currentWebDirectories = [];
 let activeWebDirCategory = 'all';
 
@@ -638,9 +665,9 @@ function renderWebDirectories(dirs = []) {
       const count = isAll ? dirs.length : dirs.filter(d => d.category === cat).length;
       return `
         <button type="button" onclick="setWebDirCategory('${cat}')" id="pill-webdir-${cat.replace(/\s+/g, '-')}" 
-          class="webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 ${isAll ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-900 border border-slate-700 text-slate-400 hover:text-white'}">
+          class="webdir-pill px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer flex items-center space-x-1 ${isAll ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-900 border border-slate-700 text-slate-400 hover:text-white'}">
           <span>${label}</span>
-          <span class="text-[10px] opacity-75 font-mono">(${count})</span>
+          <span class="text-[9px] opacity-75 font-mono">(${count})</span>
         </button>
       `;
     }).join('');
@@ -652,11 +679,11 @@ function renderWebDirectories(dirs = []) {
 function setWebDirCategory(cat) {
   activeWebDirCategory = cat;
   document.querySelectorAll('.webdir-pill').forEach(btn => {
-    btn.className = 'webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 bg-slate-900 border border-slate-700 text-slate-400 hover:text-white';
+    btn.className = 'webdir-pill px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer flex items-center space-x-1 bg-slate-900 border border-slate-700 text-slate-400 hover:text-white';
   });
   const activeBtn = document.getElementById(`pill-webdir-${cat.replace(/\s+/g, '-')}`);
   if (activeBtn) {
-    activeBtn.className = 'webdir-pill px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center space-x-1 bg-indigo-600 text-white shadow-sm';
+    activeBtn.className = 'webdir-pill px-2 py-0.5 rounded-md text-[10px] font-semibold transition cursor-pointer flex items-center space-x-1 bg-indigo-600 text-white shadow-sm';
   }
   filterWebDirectories();
 }
@@ -705,8 +732,8 @@ function filterWebDirectories() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div class="p-8 text-center text-slate-500 font-mono text-xs space-y-1">
-        <span class="text-xl block">🔍</span>
+      <div class="p-6 text-center text-slate-500 font-mono text-xs space-y-1">
+        <span class="text-lg block">🔍</span>
         <div>${currentLang === 'de' ? 'Keine Webseiten für diesen Filter gefunden.' : 'No websites match this filter.'}</div>
       </div>
     `;
@@ -715,26 +742,30 @@ function filterWebDirectories() {
 
   container.innerHTML = filtered.map(d => {
     const badgeClass = getWebDirCategoryBadge(d.category);
-    const queryTag = d.query ? `<div class="text-[11px] text-slate-400 font-mono flex items-center space-x-1.5"><span class="text-slate-500">${currentLang === 'de' ? 'Suchfokus:' : 'Query:'}</span><span class="text-indigo-400 bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-900/40">${d.query}</span></div>` : '';
-    const openBtnText = currentLang === 'de' ? 'Webseite öffnen' : 'Open Website';
+    const queryTag = d.query ? `
+      <span class="inline-flex items-center gap-1 font-mono text-[10px] text-indigo-300 bg-indigo-950/60 px-1.5 py-0.5 border border-indigo-900/50 rounded max-w-[280px] sm:max-w-[400px] truncate" title="${escapeHtml(d.query)}">
+        <span class="text-slate-500 font-sans">Query:</span>
+        <span class="truncate">${escapeHtml(d.query)}</span>
+      </span>` : '';
+    const openBtnText = currentLang === 'de' ? 'Öffnen' : 'Open';
 
     return `
-      <div class="p-3.5 sm:p-4 hover:bg-slate-900/60 transition flex flex-col md:flex-row md:items-center justify-between gap-3 group">
-        <div class="space-y-1.5 flex-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-base sm:text-lg">${d.icon || '🌐'}</span>
-            <span class="font-bold text-white text-sm tracking-tight">${d.site}</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold font-mono uppercase tracking-wider ${badgeClass}">
-              ${d.category}
+      <div class="px-3 py-2 hover:bg-slate-900/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2 group">
+        <div class="space-y-0.5 flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-sm shrink-0">${d.icon || '🌐'}</span>
+            <span class="font-bold text-white text-xs tracking-tight">${escapeHtml(d.site)}</span>
+            <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold font-mono uppercase tracking-wider ${badgeClass}">
+              ${escapeHtml(d.category)}
             </span>
+            ${queryTag}
           </div>
-          <p class="text-xs text-slate-300 leading-normal">${d.desc}</p>
-          ${queryTag}
+          <p class="text-[11px] text-slate-400 leading-tight">${escapeHtml(d.desc)}</p>
         </div>
-        <div class="shrink-0 flex items-center self-end md:self-center">
-          <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm cursor-pointer">
+        <div class="shrink-0 flex items-center self-end sm:self-center">
+          <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-md text-[11px] font-bold transition flex items-center space-x-1 shadow-sm cursor-pointer whitespace-nowrap">
             <span>${openBtnText}</span>
-            <span>↗</span>
+            <span class="text-[10px]">↗</span>
           </a>
         </div>
       </div>
@@ -2043,6 +2074,8 @@ function getAuthHeaders(extra = {}) {
 
 function prefillScannerWithProfile(prefill) {
   if (!prefill) return;
+  const fsFirstName = document.getElementById('fsFirstName');
+  const fsLastName = document.getElementById('fsLastName');
   const fsName = document.getElementById('fsName');
   const fsUsername = document.getElementById('fsUsername');
   const fsEmail = document.getElementById('fsEmail');
@@ -2051,10 +2084,28 @@ function prefillScannerWithProfile(prefill) {
   const fsEmployer = document.getElementById('fsEmployer');
 
   let filledCount = 0;
-  if (fsName && !fsName.value.trim() && prefill.name) {
-    fsName.value = prefill.name;
+
+  let pFirst = prefill.first_name || '';
+  let pLast = prefill.last_name || '';
+  if (!pFirst && !pLast && prefill.name) {
+    const parts = prefill.name.trim().split(/\s+/);
+    pFirst = parts[0] || '';
+    pLast = parts.slice(1).join(' ') || '';
+  }
+
+  if (fsFirstName && !fsFirstName.value.trim() && pFirst) {
+    fsFirstName.value = pFirst;
     filledCount++;
   }
+  if (fsLastName && !fsLastName.value.trim() && pLast) {
+    fsLastName.value = pLast;
+    filledCount++;
+  }
+  if (fsName) {
+    const combined = [fsFirstName ? fsFirstName.value : '', fsLastName ? fsLastName.value : ''].filter(Boolean).join(' ');
+    fsName.value = combined || prefill.name || '';
+  }
+
   if (fsUsername && !fsUsername.value.trim() && prefill.username) {
     fsUsername.value = prefill.username;
     filledCount++;
@@ -2081,7 +2132,7 @@ function prefillScannerWithProfile(prefill) {
   if (banner && filledCount > 0) {
     banner.classList.remove('hidden');
     if (textEl) {
-      const displayName = prefill.name || prefill.username || prefill.email;
+      const displayName = prefill.name || [pFirst, pLast].filter(Boolean).join(' ') || prefill.username || prefill.email;
       textEl.textContent = currentLang === 'de'
         ? `Angemeldet als ${displayName}: Name, E-Mail & Domain wurden automatisch für den 1-Klick-Scan vorausgefüllt.`
         : `Signed in as ${displayName}: Name, email & domain pre-filled automatically for 1-click scan.`;
@@ -2090,7 +2141,7 @@ function prefillScannerWithProfile(prefill) {
 }
 
 function clearFullScanForm() {
-  ['fsName', 'fsUsername', 'fsEmail', 'fsPassword', 'fsDomain', 'fsPhone', 'fsCity', 'fsEmployer', 'fsKeywords'].forEach(id => {
+  ['fsFirstName', 'fsLastName', 'fsName', 'fsUsername', 'fsEmail', 'fsPassword', 'fsDomain', 'fsPhone', 'fsCity', 'fsEmployer', 'fsKeywords'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });

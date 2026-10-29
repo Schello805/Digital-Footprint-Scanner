@@ -152,6 +152,11 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     to discover connected online handles (@schello805), verified locations, and linked accounts (Duolingo, etc.).
     """
     name = data.get("name", "").strip()
+    if not name:
+        first_name = data.get("first_name", "").strip()
+        last_name = data.get("last_name", "").strip()
+        if first_name or last_name:
+            name = f"{first_name} {last_name}".strip()
     username = data.get("username", "").strip()
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()

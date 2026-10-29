@@ -349,6 +349,16 @@ def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
         city = oauth_dict.get("location") or ""
         employer = oauth_dict.get("company") or ""
 
+        # Extract first & last name for 1-click cockpit prefill
+        first_name = oauth_dict.get("given_name") or ""
+        last_name = oauth_dict.get("family_name") or ""
+        if (not first_name or not last_name) and name:
+            parts = name.strip().split(None, 1)
+            if not first_name and len(parts) > 0:
+                first_name = parts[0]
+            if not last_name and len(parts) > 1:
+                last_name = parts[1]
+
         return {
             "id": row["id"],
             "email": email,
@@ -356,6 +366,8 @@ def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
             "avatar_url": avatar_url,
             "prefill": {
                 "name": name,
+                "first_name": first_name,
+                "last_name": last_name,
                 "email": email,
                 "username": username,
                 "domain": domain,
