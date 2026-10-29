@@ -238,6 +238,7 @@ html.theme-light nav {
   border: 2px solid #334155;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
   position: relative;
+  transition: all 0.25s ease;
 }
 
 .dossier-stamp {
@@ -248,6 +249,94 @@ html.theme-light nav {
   letter-spacing: 0.15em;
   transform: rotate(-4deg);
   display: inline-block;
+  transition: all 0.25s ease;
+}
+
+/* ==================== COMPACT MODE (HIGH DENSITY VIEW) ==================== */
+.dossier-sheet.compact-mode {
+  padding: 1.25rem !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.25) !important;
+  background-color: #0b1120 !important;
+}
+
+/* Reduce vertical spacing between all sections */
+.dossier-sheet.compact-mode.space-y-8 > :not([hidden]) ~ :not([hidden]),
+.dossier-sheet.compact-mode .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.85rem !important;
+}
+
+.dossier-sheet.compact-mode .dossier-section {
+  padding-top: 0.65rem !important;
+  margin-top: 0.65rem !important;
+}
+
+/* Hide large full header ribbon in compact mode */
+.dossier-sheet.compact-mode .dossier-header-ribbon {
+  display: none !important;
+}
+
+/* Show sleek 1-line compact header */
+.dossier-sheet.compact-mode .compact-only-header {
+  display: flex !important;
+}
+
+/* Compact Target Profile Header */
+.dossier-sheet.compact-mode .dossier-head-grid {
+  padding-bottom: 0.65rem !important;
+  gap: 0.85rem !important;
+}
+
+.dossier-sheet.compact-mode #sbAvatarPlaceholder,
+.dossier-sheet.compact-mode #sbAvatarImg {
+  width: 3.5rem !important;
+  height: 3.5rem !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.dossier-sheet.compact-mode #sbReverseImageSection {
+  display: none !important;
+}
+
+.dossier-sheet.compact-mode .dossier-stamp {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border-width: 2px !important;
+  transform: none !important;
+}
+
+/* Compact Section 1 Cards */
+.dossier-sheet.compact-mode .sec-1-card {
+  padding: 0.5rem 0.65rem !important;
+}
+.dossier-sheet.compact-mode .sec-1-card span {
+  font-size: 11px !important;
+}
+
+/* Compact Tables */
+.dossier-sheet.compact-mode table th,
+.dossier-sheet.compact-mode table td {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  font-size: 11px !important;
+}
+
+/* Compact Media Cloud */
+.dossier-sheet.compact-mode #sbMediaCloudContainer {
+  padding: 0.65rem !important;
+  min-height: unset !important;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+  gap: 0.5rem !important;
+}
+
+/* Compact Dorks & Cleanup */
+.dossier-sheet.compact-mode #sbCleanupGuidesList,
+.dossier-sheet.compact-mode #sbDorksLinksList {
+  font-size: 11px !important;
 }
 
 /* Perfect DIN A4 Print Layout */

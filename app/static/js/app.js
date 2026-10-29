@@ -1108,12 +1108,21 @@ function renderFullReport(res, payload) {
   const targetName = payload.name || resolvedName || (resolvedHandle ? `@${resolvedHandle}` : (currentLang === 'de' ? 'UNBEKANNTE ZIELPERSON' : 'UNKNOWN TARGET'));
   document.getElementById('sbTargetNameTop').textContent = targetName;
   
+  const compactName = document.getElementById('compactTargetName');
+  if (compactName) compactName.textContent = targetName;
+
   if (payload.username) {
     document.getElementById('sbTargetAliasTop').textContent = `@${payload.username}`;
+    const compactAlias = document.getElementById('compactTargetAlias');
+    if (compactAlias) compactAlias.textContent = `@${payload.username}`;
   } else if (resolvedHandle) {
     document.getElementById('sbTargetAliasTop').innerHTML = `<span class="text-indigo-400 font-bold">@${resolvedHandle}</span> <span class="text-[10px] text-slate-400">(via OSINT)</span>`;
+    const compactAlias = document.getElementById('compactTargetAlias');
+    if (compactAlias) compactAlias.textContent = `@${resolvedHandle}`;
   } else {
     document.getElementById('sbTargetAliasTop').textContent = payload.name ? `${payload.name}` : '-';
+    const compactAlias = document.getElementById('compactTargetAlias');
+    if (compactAlias) compactAlias.textContent = payload.name || '-';
   }
 
   // Feature 3: Avatar- & Foto-Forensik (Reverse Image OSINT)
@@ -1172,6 +1181,12 @@ function renderFullReport(res, payload) {
     stamp.className = 'dossier-stamp p-3 rounded-lg text-center border-amber-500 text-amber-500';
   } else {
     stamp.className = 'dossier-stamp p-3 rounded-lg text-center border-emerald-500 text-emerald-500';
+  }
+
+  const compactRiskStamp = document.getElementById('compactRiskStamp');
+  if (compactRiskStamp) {
+    compactRiskStamp.textContent = `EXPOSURE: ${s.exposure_score}% (${riskTranslated})`;
+    compactRiskStamp.className = `px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-${s.badge_color || 'emerald'}-400 font-bold`;
   }
 
   // 2. Sicherheitsstatus (Section 1)
@@ -1482,15 +1497,33 @@ function renderFullReport(res, payload) {
   reportContainer.scrollIntoView({ behavior: 'smooth' });
 }
 
+let isCompactDossier = false;
+
 function toggleDossierView() {
   const dossier = document.getElementById('dossierSheet');
-  const btn = document.getElementById('toggleViewBtn');
-  if (dossier.classList.contains('border-indigo-500')) {
-    dossier.classList.remove('border-indigo-500');
-    btn.textContent = currentLang === 'de' ? 'Kompakt-Modus' : 'Compact View';
+  const btnText = document.getElementById('toggleViewText');
+  const btnIcon = document.getElementById('toggleViewIcon');
+  const badge = document.getElementById('activeModeBadge');
+  if (!dossier) return;
+
+  isCompactDossier = !isCompactDossier;
+
+  if (isCompactDossier) {
+    dossier.classList.add('compact-mode');
+    if (btnText) btnText.textContent = currentLang === 'de' ? 'Dossier-Modus (Vollansicht)' : 'Dossier View (Full)';
+    if (btnIcon) btnIcon.textContent = '📄';
+    if (badge) {
+      badge.textContent = currentLang === 'de' ? '🗜️ Kompakt-Modus (Aktiv)' : '🗜️ Compact View (Active)';
+      badge.className = 'ml-2 text-[10px] font-mono uppercase font-bold px-2.5 py-1 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800 shadow-sm';
+    }
   } else {
-    dossier.classList.add('border-indigo-500');
-    btn.textContent = currentLang === 'de' ? 'Dossier-Modus' : 'Dossier View';
+    dossier.classList.remove('compact-mode');
+    if (btnText) btnText.textContent = currentLang === 'de' ? 'Kompakt-Modus' : 'Compact View';
+    if (btnIcon) btnIcon.textContent = '🗜️';
+    if (badge) {
+      badge.textContent = currentLang === 'de' ? '📄 Dossier-Modus (DIN A4)' : '📄 Dossier Mode (DIN A4)';
+      badge.className = 'ml-2 text-[10px] font-mono uppercase font-bold px-2.5 py-1 rounded-md bg-indigo-950 text-indigo-400 border border-indigo-800 shadow-sm';
+    }
   }
 }
 
