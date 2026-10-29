@@ -316,7 +316,55 @@ function renderFullReport(res, payload) {
     });
   });
 
-  // 7. GDPR Letter
+  // 7. Remediation & Cleanup Plan (FootprintIQ Inspired)
+  const cleanupBox = document.getElementById('sbCleanupGuidesList');
+  cleanupBox.innerHTML = '';
+  const rem = data.remediation_guide || { account_guides: [], data_brokers: [] };
+  
+  if (rem.account_guides.length === 0) {
+    cleanupBox.innerHTML = '<div class="col-span-2 text-slate-500 text-[11px]">Keine spezifischen Löschleitfäden für diese Accounts hinterlegt.</div>';
+  } else {
+    rem.account_guides.forEach(g => {
+      const c = document.createElement('div');
+      c.className = 'p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start justify-between gap-3';
+      c.innerHTML = `
+        <div>
+          <span class="font-bold text-white text-xs block">${g.platform} Konto löschen</span>
+          <span class="text-[11px] text-slate-400 block mt-0.5 leading-relaxed">${g.instructions}</span>
+        </div>
+        <a href="${g.delete_url}" target="_blank" class="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded text-[11px] font-medium shrink-0 transition">
+          Löschen ↗
+        </a>
+      `;
+      cleanupBox.appendChild(c);
+    });
+  }
+
+  // Data Brokers Opt-Out
+  const brokerBox = document.getElementById('sbDataBrokersList');
+  brokerBox.innerHTML = '';
+  if (rem.data_brokers.length === 0) {
+    brokerBox.innerHTML = '<div class="col-span-2 text-slate-500 text-[11px]">Kein Name zur Personensuchmaschinen-Abfrage angegeben.</div>';
+  } else {
+    rem.data_brokers.forEach(b => {
+      const d = document.createElement('div');
+      d.className = 'p-2.5 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between gap-2';
+      d.innerHTML = `
+        <div class="truncate">
+          <span class="font-bold text-slate-200 block truncate">${b.name}</span>
+          <span class="text-[10px] text-slate-500 block truncate">${b.desc}</span>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <a href="${b.search_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">Suchen ↗</a>
+          <span class="text-slate-600">|</span>
+          <a href="${b.opt_out_url}" target="_blank" class="text-[10px] text-rose-400 hover:underline font-semibold">Opt-Out ↗</a>
+        </div>
+      `;
+      brokerBox.appendChild(d);
+    });
+  }
+
+  // 8. GDPR Letter
   document.getElementById('repGdprText').value = data.identity_audit.gdpr_template || '';
 
   // Scroll smoothly down to the dossier

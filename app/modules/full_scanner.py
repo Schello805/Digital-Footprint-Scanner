@@ -7,6 +7,7 @@ from app.modules.phone_recon import analyze_phone_number
 from app.modules.mailing_list_checker import check_mailing_lists
 from app.modules.dork_builder import generate_dorks
 from app.modules.identity_auditor import audit_identity_profile
+from app.modules.cleanup_guide import get_remediation_guide
 from app.config import settings
 
 async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -102,6 +103,9 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         email=email
     )
 
+    # Remediation & Cleanup Guide (FootprintIQ inspiration)
+    remediation_guide = get_remediation_guide(found_profiles, name=name, email=email)
+
     # Aggregated Summary Stats
     summary = {
         "profiles_checked": len(username_results),
@@ -134,5 +138,6 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "mailing_list_result": mailing_res.get("data") if mailing_res and mailing_res.get("success") else None,
         "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
         "phone_result": phone_res,
-        "dorks": dorks
+        "dorks": dorks,
+        "remediation_guide": remediation_guide
     }
