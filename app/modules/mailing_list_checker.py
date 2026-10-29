@@ -42,21 +42,28 @@ async def check_mailing_lists(email: str) -> Dict[str, Any]:
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
             })
             if response.status_code == 200:
-                raw_lists = re.findall(r'<a\s+href=["\']\?l=([a-zA-Z0-9_\-\.]+)[^"\']*["\']>([^<]+)</a>', response.text)
-                seen = set()
-                for slug, display_name in raw_lists:
-                    slug_clean = slug.strip().lower()
-                    if slug_clean not in seen and len(slug_clean) > 2:
-                        seen.add(slug_clean)
-                        # Build standard mailing list target address (e.g. list@domain or list)
-                        target_addr = f"{slug_clean}@{domain}" if "@" not in slug_clean else slug_clean
-                        found_lists.append({
-                            "name": display_name.strip() or slug_clean,
-                            "slug": slug_clean,
-                            "identifier": target_addr,
-                            "archive_url": f"https://marc.info/?l={slug_clean}",
-                            "source": "MARC Public Mailing List Archive"
-                        })
+                html = response.text
+                # Crucial fix: marc.info displays the default index of ALL 3800 lists when 0 hits match!
+                # Genuine search results have '<title>... author - MARC</title>'
+                is_actual_search_result = (
+                    "<title>MARC: Mailing list ARChives</title>" not in html 
+                    and ("author - MARC" in html or "thread - MARC" in html)
+                )
+                if is_actual_search_result:
+                    raw_lists = re.findall(r'<a\s+href=["\']\?l=([a-zA-Z0-9_\-\.]+)[^"\']*["\']>([^<]+)</a>', html)
+                    seen = set()
+                    for slug, display_name in raw_lists:
+                        slug_clean = slug.strip().lower()
+                        # Never append the user's personal domain to an external mailing list!
+                        if slug_clean not in seen and len(slug_clean) > 2 and slug_clean != domain:
+                            seen.add(slug_clean)
+                            found_lists.append({
+                                "name": display_name.strip() or slug_clean,
+                                "slug": slug_clean,
+                                "identifier": slug_clean,
+                                "archive_url": f"https://marc.info/?l={slug_clean}",
+                                "source": "MARC Public Mailing List Archive"
+                            })
     except Exception:
         # Graceful fallback if network archive is unreachable
         pass

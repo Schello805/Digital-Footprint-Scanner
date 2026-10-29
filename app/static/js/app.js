@@ -513,12 +513,6 @@ function switchTab(tabId) {
       if (nameInput && !nameInput.value.trim() && lastScanPayload.name) nameInput.value = lastScanPayload.name;
     }
     renderFoundListsInUnsubTab();
-    // Auto-fill target field if currently empty and found lists exist
-    const targetInput = document.getElementById('unsubTargetInput');
-    if (targetInput && !targetInput.value.trim() && lastScanResult && lastScanResult.mailing_list_result && lastScanResult.mailing_list_result.found_lists && lastScanResult.mailing_list_result.found_lists.length > 0) {
-      const firstList = lastScanResult.mailing_list_result.found_lists[0];
-      targetInput.value = firstList.identifier || firstList.name;
-    }
   }
 }
 
@@ -1264,18 +1258,21 @@ function openUnsubscribeForEmail(targetList = null) {
 
   const targetInput = document.getElementById('unsubTargetInput');
   if (targetList) {
-    if (targetInput) targetInput.value = targetList;
-  } else if (lastScanResult && lastScanResult.mailing_list_result && lastScanResult.mailing_list_result.found_lists && lastScanResult.mailing_list_result.found_lists.length > 0) {
-    // Automatically pre-fill with the first detected mailing list from scan
-    const first = lastScanResult.mailing_list_result.found_lists[0];
-    if (targetInput) targetInput.value = first.identifier || first.name;
+    // Only pre-fill if explicitly passed and not the user's own domain
+    const userDomain = (lastScanPayload && lastScanPayload.email && lastScanPayload.email.includes('@'))
+      ? lastScanPayload.email.split('@')[1].toLowerCase()
+      : '';
+    const targetDomain = (targetList.includes('@')) ? targetList.split('@')[1].toLowerCase() : '';
+    if (!userDomain || userDomain !== targetDomain) {
+      if (targetInput) targetInput.value = targetList;
+    }
   }
 
   switchTab('unsubscribe');
   goToUnsubStep(1);
   renderFoundListsInUnsubTab();
 
-  // If both target input and email are pre-filled, immediately run Step 1 analysis!
+  // If a valid target input and email are pre-filled, advance to Step 2
   if (targetInput && targetInput.value.trim() && lastScanPayload && lastScanPayload.email) {
     handleStep1Submit(null, 2);
   } else if (targetInput) {
@@ -1432,6 +1429,8 @@ async function handleStep1Submit(e, targetStep = 2) {
       currentUnsubData = json.data;
       renderUnsubSteps(currentUnsubData);
       goToUnsubStep(targetStep);
+    } else {
+      alert(json.error || (currentLang === 'de' ? 'Fehler bei der Analyse des Verteilers.' : 'Failed to analyze list target.'));
     }
   } catch (err) {
     console.error('Failed to generate unsubscribe analysis:', err);

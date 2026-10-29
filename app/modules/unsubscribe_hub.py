@@ -83,6 +83,19 @@ def generate_unsubscribe_package(
     clean_email = user_email.strip().lower()
     name_str = user_name.strip() or ("Betroffene Person" if lang == "de" else "Concerned Individual")
 
+    # Guard: Prevent sending GDPR objection to the user's own domain
+    if "@" in clean_target and "@" in clean_email:
+        target_domain = clean_target.split("@")[1]
+        user_domain = clean_email.split("@")[1]
+        if user_domain and target_domain and user_domain == target_domain:
+            msg_de = f"Die Zieladresse ({clean_target}) liegt auf deiner eigenen Domain ({user_domain}). Ein Werbewiderspruch an sich selbst ist nicht sinnvoll."
+            msg_en = f"The target address ({clean_target}) belongs to your own domain ({user_domain}). You cannot send a GDPR objection to yourself."
+            return {
+                "success": False,
+                "error": msg_de if lang == "de" else msg_en,
+                "is_own_domain": True
+            }
+
     local_part = ""
     domain = ""
     
