@@ -1,7 +1,7 @@
 import unittest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.modules.unsubscribe_hub import generate_unsubscribe_package, MARKETING_LIST_BROKERS
+from app.modules.unsubscribe_hub import generate_unsubscribe_package, generate_batch_broker_optout_package, MARKETING_LIST_BROKERS
 
 class TestUnsubscribeHub(unittest.TestCase):
     def setUp(self):
@@ -67,6 +67,35 @@ class TestUnsubscribeHub(unittest.TestCase):
         broker_names = [b["name"] for b in brokers]
         self.assertTrue(any("Schober" in name for name in broker_names))
         self.assertTrue(any("Acxiom" in name for name in broker_names))
+
+    def test_generate_batch_broker_optout_package(self):
+        pkg = generate_batch_broker_optout_package(
+            user_email="victim@privacy.org",
+            user_name="Target Person",
+            user_phone="+49170111222",
+            user_city="Berlin",
+            lang="de"
+        )
+        self.assertTrue(pkg["success"])
+        data = pkg["data"]
+        self.assertGreaterEqual(data["brokers_count"], 7)
+        self.assertIn("bcc=", data["batch_mailto"])
+        self.assertIn("victim@privacy.org", data["body"])
+        self.assertIn("Target Person", data["body"])
+        self.assertIn("+49170111222", data["body"])
+        self.assertIn("Berlin", data["body"])
+
+    def test_api_batch_brokers_endpoint(self):
+        response = self.client.post("/api/unsubscribe/batch-brokers", json={
+            "user_email": "test.user@company.de",
+            "user_name": "Test User",
+            "lang": "en"
+        })
+        self.assertEqual(response.status_code, 200)
+        res_json = response.json()
+        self.assertTrue(res_json["success"])
+        self.assertIn("batch_mailto", res_json["data"])
+        self.assertIn("test.user@company.de", res_json["data"]["body"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,7 +17,7 @@ from app.modules.phone_recon import analyze_phone_number
 from app.modules.mailing_list_checker import check_mailing_lists
 from app.modules.identity_auditor import audit_identity_profile
 from app.modules.full_scanner import execute_full_scan
-from app.modules.unsubscribe_hub import generate_unsubscribe_package, MARKETING_LIST_BROKERS
+from app.modules.unsubscribe_hub import generate_unsubscribe_package, generate_batch_broker_optout_package, MARKETING_LIST_BROKERS
 
 app = FastAPI(
     title=settings.app_name,
@@ -181,6 +181,25 @@ async def api_generate_unsubscribe(req: UnsubscribeRequest):
 @app.get("/api/unsubscribe/brokers")
 async def api_get_marketing_brokers():
     return {"success": True, "data": MARKETING_LIST_BROKERS, "brokers": MARKETING_LIST_BROKERS}
+
+class BatchBrokerOptOutRequest(BaseModel):
+    user_email: str
+    user_name: Optional[str] = ""
+    user_phone: Optional[str] = ""
+    user_city: Optional[str] = ""
+    lang: Optional[str] = "en"
+
+@app.post("/api/unsubscribe/batch-brokers")
+async def api_generate_batch_brokers(req: BatchBrokerOptOutRequest):
+    if not req.user_email:
+        raise HTTPException(status_code=400, detail="E-Mail-Adresse erforderlich.")
+    return generate_batch_broker_optout_package(
+        user_email=req.user_email,
+        user_name=req.user_name or "",
+        user_phone=req.user_phone or "",
+        user_city=req.user_city or "",
+        lang=req.lang or "en"
+    )
 
 # --- 7. Breach Checkers ---
 class PasswordCheckRequest(BaseModel):

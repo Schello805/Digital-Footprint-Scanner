@@ -396,7 +396,13 @@
             </div>
 
             <div class="mt-4 p-5 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-              <span class="font-bold text-white text-[11px] block" data-i18n="broker_title">People Search Engines & Data Broker Opt-Out:</span>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                <span class="font-bold text-white text-[11px] block" data-i18n="broker_title">People Search Engines & Data Broker Opt-Out:</span>
+                <button type="button" onclick="dispatchBatchBrokerOptOutFromDossier()" class="no-print py-1.5 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-bold transition flex items-center space-x-1.5 cursor-pointer">
+                  <span>🚀</span>
+                  <span data-i18n="btn_batch_optout_short">Alle Datenbroker auf einmal anschreiben (1-Klick)</span>
+                </button>
+              </div>
               <div id="sbDataBrokersList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
                 <!-- Broker opt out cards -->
               </div>
@@ -653,6 +659,53 @@ Sincerely,
 
       <!-- ==================== SCHRITT 1: EINGABE ==================== -->
       <div id="unsubStep1" class="unsub-step-pane space-y-6">
+
+        <!-- 1-Click Multi-Broker Batch Opt-Out Card -->
+        <div class="bg-gradient-to-r from-slate-900 via-rose-950/40 to-slate-900 border border-rose-900/60 rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div>
+              <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-rose-950 text-rose-300 text-[10px] font-bold border border-rose-800 mb-1">
+                <span>⚡ 1-KLICK MASSEN-AUSTRAGUNG</span>
+              </div>
+              <h3 class="font-bold text-white text-base flex items-center space-x-2">
+                <span>🏢</span>
+                <span data-i18n="batch_broker_title">Alle 7 Datenbroker auf einmal anschreiben</span>
+              </h3>
+              <p class="text-xs text-slate-300 mt-0.5" data-i18n="batch_broker_sub">
+                Erzeugt eine vertrauliche BCC-E-Mail an alle Datenschutzbeauftragten (Schober, microm, Acxiom, LiveRamp, Criteo, Experian, Yasni) gleichzeitig.
+              </p>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-xs text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800 font-mono">
+                7 DPO-Kontakte
+              </span>
+            </div>
+          </div>
+
+          <!-- Included Broker Badges -->
+          <div class="flex flex-wrap gap-1.5 text-[11px] pt-0.5">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">Schober</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">microm</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">Acxiom</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">LiveRamp</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">Criteo</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">Experian</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-medium">Yasni</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button type="button" onclick="dispatchBatchBrokerOptOut()" id="btnBatchMailto" class="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-rose-600/20 cursor-pointer">
+              <span>🚀</span>
+              <span data-i18n="btn_batch_mailto">1-Klick Sammel-E-Mail öffnen (BCC)</span>
+            </button>
+            <button type="button" onclick="markAllBrokersSent()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+              <span>✅</span>
+              <span data-i18n="btn_mark_all_sent">Alle 7 als 'Anfrage gesendet' markieren</span>
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           <!-- Option A: Manuelle Eingabe -->

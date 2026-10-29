@@ -57,9 +57,10 @@
   - **Art. 17 GDPR Erasure Request:** Ready-to-send legal notice exercising the *Right to be Forgotten* plus links to official search removal request tools.
 
 ### 📬 Incogni-Style Mailing List & Marketing Opt-Out Hub
+- **⚡ 1-Click Multi-Broker Batch Opt-Out:** Send a confidential multi-recipient (BCC) statutory objection and erasure request (Art. 21(2) & Art. 17 GDPR) to all 7 major data brokers and address aggregators simultaneously (*Schober, microm, Acxiom, LiveRamp, Criteo, Experian, Yasni*).
 - **1-Click RFC 2369 & Mailman Daemon Command:** Automatically generates `mailto:<list>-request@<domain>?subject=unsubscribe` links for instant de-registration from standard mailing lists without manual review.
 - **GDPR Art. 21 Direct Marketing Objection:** Generates legally binding opt-out and erasure notices (Art. 21(2) & Art. 17 GDPR) with 1-click `mailto:` dispatch from your local email client.
-- **Top Marketing Broker Directory:** Curated opt-out directory for major DACH and global marketing data brokers and aggregators (*Schober Information Group, microm, Acxiom, LiveRamp, Criteo, Experian*) with direct opt-out portals and privacy contact emails.
+- **Top Marketing Broker Directory & Status Tracker:** Curated opt-out directory for major DACH and global marketing data brokers with direct opt-out portals, privacy contact emails, and local removal status logging.
 
 ### 🌐 Bilingual Interface (English & German)
 - **English is default**, with a 1-click language switcher (`[ EN | DE ]`) in the navigation bar.

@@ -57,6 +57,15 @@ MARKETING_LIST_BROKERS: List[Dict[str, Any]] = [
         "opt_out_url": "https://www.experian.de/service/datenschutz",
         "privacy_email": "datenschutz@experian.de",
         "method": "email"
+    },
+    {
+        "name": "Yasni (People Search Directory)",
+        "category": "People Search & Web Directory",
+        "desc_de": "Aggregiert Webseiten, Profile und Personendaten unter deinem Klarnamen.",
+        "desc_en": "Aggregates web pages, public records, and directories under real names.",
+        "opt_out_url": "https://www.yasni.de/kontakt",
+        "privacy_email": "info@yasni.de",
+        "method": "email_and_web"
     }
 ]
 
@@ -197,5 +206,92 @@ Sincerely,
             "gdpr_body": gdpr_body,
             "gdpr_mailto": gdpr_mailto,
             "marketing_brokers": MARKETING_LIST_BROKERS
+        }
+    }
+
+def generate_batch_broker_optout_package(
+    user_email: str,
+    user_name: str = "",
+    user_phone: str = "",
+    user_city: str = "",
+    lang: str = "de"
+) -> Dict[str, Any]:
+    """
+    Generates a 1-click batch opt-out package to contact all curated data brokers simultaneously
+    using a multi-recipient BCC email pursuant to Art. 21(2) & Art. 17 GDPR.
+    """
+    clean_email = user_email.strip().lower()
+    name_str = user_name.strip() or ("Betroffene Person" if lang == "de" else "Concerned Individual")
+    clean_phone = user_phone.strip()
+    clean_city = user_city.strip()
+
+    # Collect all broker privacy contacts
+    email_brokers = [b for b in MARKETING_LIST_BROKERS if b.get("privacy_email")]
+    broker_emails = [b["privacy_email"] for b in email_brokers]
+
+    if not broker_emails:
+        primary_to = ""
+        bcc_list = []
+    else:
+        primary_to = broker_emails[0]
+        bcc_list = broker_emails[1:]
+
+    phone_line_de = f"\n- Telefon / Mobilfunk: {clean_phone}" if clean_phone else ""
+    city_line_de = f"\n- Wohnort / Region: {clean_city}" if clean_city else ""
+    
+    phone_line_en = f"\n- Phone Number: {clean_phone}" if clean_phone else ""
+    city_line_en = f"\n- City / Region: {clean_city}" if clean_city else ""
+
+    if lang == "de":
+        subject = f"Widerspruch gem. Art. 21 Abs. 2 DSGVO & Löschung gem. Art. 17 DSGVO ({clean_email})"
+        body = f"""Sehr geehrte Damen und Herren Datenschutzbeauftragte,
+
+hiermit widerspreche ich gemäß Art. 21 Abs. 2 DSGVO bei allen angeschriebenen Auskunfteien, Adress- und Datenbrokern der Verarbeitung und Nutzung meiner personenbezogenen Daten für Zwecke der Direktwerbung, des Adresshandels, der Profilbildung und des Marketings.
+
+Zu meiner Person gehören folgende Identifikatoren:
+- E-Mail-Adresse: {clean_email}
+- Name: {name_str}{phone_line_de}{city_line_de}
+
+Ich fordere Sie hiermit auf:
+1. Meine personenbezogenen Daten unverzüglich aus all Ihren Datenbanken, Profilen, Verteilerlisten und Scoringsystemen zu löschen (Art. 17 Abs. 1 lit. c DSGVO).
+2. Etwaige Datenempfänger, an die meine Daten übermittelt wurden, unverzüglich über dieses Löschbegehren zu unterrichten (Art. 17 Abs. 2 DSGVO).
+3. Mir die vollständige Durchführung der Löschung schriftlich innerhalb der gesetzlichen Frist von einem Monat (Art. 12 Abs. 3 DSGVO) zu bestätigen.
+
+Mit freundlichen Grüßen,
+{name_str}"""
+    else:
+        subject = f"Multi-Broker Opt-Out under Art. 21(2) & Erasure under Art. 17 GDPR ({clean_email})"
+        body = f"""To Whom It May Concern (Data Protection Officers),
+
+Pursuant to Article 21(2) of the General Data Protection Regulation (GDPR) and applicable privacy legislation, I hereby object to the processing of my personal data for direct marketing, consumer profiling, address brokering, and commercial distribution across all contacted data brokers.
+
+My personal identifying records are:
+- Email Address: {clean_email}
+- Full Name: {name_str}{phone_line_en}{city_line_en}
+
+I hereby demand that you:
+1. Permanently erase all my personal data from your databases, marketing lists, audience segments, and web indexes without undue delay (Art. 17(1)(c) GDPR).
+2. Notify all third-party recipients to whom my personal data was disclosed of this erasure request (Art. 17(2) GDPR).
+3. Confirm the complete execution of this erasure in writing within the statutory deadline of one month (Art. 12(3) GDPR).
+
+Sincerely,
+{name_str}"""
+
+    bcc_param = f"&bcc={urllib.parse.quote(','.join(bcc_list))}" if bcc_list else ""
+    batch_mailto = f"mailto:{primary_to}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}{bcc_param}"
+
+    return {
+        "success": True,
+        "data": {
+            "user_email": clean_email,
+            "user_name": name_str,
+            "primary_to": primary_to,
+            "bcc_emails": bcc_list,
+            "all_broker_emails": broker_emails,
+            "brokers_count": len(email_brokers),
+            "brokers_included": email_brokers,
+            "subject": subject,
+            "body": body,
+            "batch_mailto": batch_mailto
         }
     }

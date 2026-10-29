@@ -146,7 +146,12 @@ const translations = {
     act_copy_title: "3. Copy Letter",
     status_tracker_title: "Incogni-Style Status Tracker for this Request:",
     btn_back_step2: "⬅ Back to Step 2 (Info)",
-    btn_new_unsub: "Unsubscribe another list or broker"
+    btn_new_unsub: "Unsubscribe another list or broker",
+    batch_broker_title: "Contact All 7 Data Brokers in 1 Click",
+    batch_broker_sub: "Generates a confidential BCC email to all data protection officers (Schober, microm, Acxiom, LiveRamp, Criteo, Experian, Yasni) simultaneously.",
+    btn_batch_mailto: "Open 1-Click Multi-Broker Email (BCC)",
+    btn_mark_all_sent: "Mark all 7 as 'Request Dispatched'",
+    btn_batch_optout_short: "Contact all Data Brokers in 1 Click (Batch Opt-Out)"
   },
   de: {
     app_title: "Digital Footprint Scanner",
@@ -282,7 +287,12 @@ const translations = {
     act_copy_title: "3. Text kopieren",
     status_tracker_title: "Incogni-Style Status-Tracker für diese Austragung:",
     btn_back_step2: "⬅ Zurück zu Schritt 2 (Info)",
-    btn_new_unsub: "Weitere Liste / Weiteren Broker abmelden"
+    btn_new_unsub: "Weitere Liste / Weiteren Broker abmelden",
+    batch_broker_title: "Alle 7 Datenbroker mit 1 Klick anschreiben",
+    batch_broker_sub: "Erzeugt eine vertrauliche BCC-E-Mail an alle Datenschutzbeauftragten (Schober, microm, Acxiom, LiveRamp, Criteo, Experian, Yasni) gleichzeitig.",
+    btn_batch_mailto: "1-Klick Sammel-E-Mail öffnen (BCC)",
+    btn_mark_all_sent: "Alle 7 als 'Anfrage gesendet' markieren",
+    btn_batch_optout_short: "Alle Datenbroker auf einmal anschreiben (1-Klick)"
   }
 };
 
@@ -1380,6 +1390,88 @@ function copyUnsubLetter() {
   });
 }
 
+async function dispatchBatchBrokerOptOut() {
+  const userEmailInput = document.getElementById('unsubUserEmail');
+  const userNameInput = document.getElementById('unsubUserName');
+
+  let email = (userEmailInput ? userEmailInput.value.trim() : '') || (lastScanPayload ? lastScanPayload.email : '');
+  let name = (userNameInput ? userNameInput.value.trim() : '') || (lastScanPayload ? lastScanPayload.name : '');
+  let phone = lastScanPayload ? (lastScanPayload.phone || '') : '';
+  let city = lastScanPayload ? (lastScanPayload.city || '') : '';
+
+  if (!email) {
+    alert(currentLang === 'de' 
+      ? 'Bitte trage zuerst deine E-Mail-Adresse ein, die bei den Brokern gelöscht werden soll.' 
+      : 'Please enter your email address that should be deleted across all brokers.');
+    if (userEmailInput) userEmailInput.focus();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/unsubscribe/batch-brokers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_email: email,
+        user_name: name,
+        user_phone: phone,
+        user_city: city,
+        lang: currentLang
+      })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      window.location.href = json.data.batch_mailto;
+      setTimeout(() => {
+        markAllBrokersSent(false);
+        alert(currentLang === 'de' 
+          ? `✓ Sammel-E-Mail mit ${json.data.brokers_count} Datenschutzbeauftragten (BCC) im Mailprogramm geöffnet!\nAlle ${json.data.brokers_count} Broker wurden im Tracker als 'Anfrage gesendet' markiert.` 
+          : `✓ Multi-broker email with ${json.data.brokers_count} DPOs (BCC) opened in mail client!\nAll ${json.data.brokers_count} brokers marked as 'Request Dispatched'.`);
+      }, 300);
+    }
+  } catch (err) {
+    console.error('Failed to trigger batch broker opt-out:', err);
+    alert(currentLang === 'de' ? 'Fehler beim Öffnen der Sammel-Austragung.' : 'Failed to launch batch broker opt-out.');
+  }
+}
+
+async function dispatchBatchBrokerOptOutFromDossier() {
+  if (!lastScanPayload || !lastScanPayload.email) {
+    switchTab('unsubscribe');
+    goToUnsubStep(1);
+    alert(currentLang === 'de' ? 'Bitte gib deine E-Mail-Adresse im Unsubscribe Hub an.' : 'Please enter your email in the Unsubscribe Hub.');
+    return;
+  }
+  await dispatchBatchBrokerOptOut();
+}
+
+async function markAllBrokersSent(showAlert = true) {
+  try {
+    if (!cachedMarketingBrokers) {
+      const res = await fetch('/api/unsubscribe/brokers');
+      const json = await res.json();
+      if (json.success && (json.brokers || json.data)) {
+        cachedMarketingBrokers = json.brokers || json.data;
+      }
+    }
+    if (cachedMarketingBrokers) {
+      cachedMarketingBrokers.forEach(b => {
+        const key = b.privacy_email || b.name;
+        removalStatusStore[key] = 'sent';
+      });
+      localStorage.setItem('selfscanner_unsub_statuses', JSON.stringify(removalStatusStore));
+      fetchAndRenderMarketingBrokers();
+      if (showAlert) {
+        alert(currentLang === 'de' 
+          ? '✓ Alle 7 Datenbroker wurden als "Anfrage gesendet" markiert!' 
+          : '✓ All 7 data brokers marked as "Request Dispatched"!');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to mark all brokers sent:', err);
+  }
+}
+
 async function fetchAndRenderMarketingBrokers() {
   const container = document.getElementById('quickSelectBrokersGrid');
   if (!container) return;
@@ -1398,14 +1490,20 @@ async function fetchAndRenderMarketingBrokers() {
     container.innerHTML = cachedMarketingBrokers.map(b => {
       const desc = currentLang === 'de' ? b.desc_de : b.desc_en;
       const targetParam = b.privacy_email || b.name;
-      const isSaved = removalStatusStore[targetParam] === 'completed';
+      const savedStatus = removalStatusStore[targetParam];
+      let statusBadge = `<span class="text-[9px] text-slate-400 bg-slate-900 px-1 py-0.5 rounded">${b.category.split('&')[0]}</span>`;
+      if (savedStatus === 'completed') {
+        statusBadge = `<span class="text-[9px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">${currentLang === 'de' ? '✓ Ausgetragen' : '✓ Erased'}</span>`;
+      } else if (savedStatus === 'sent') {
+        statusBadge = `<span class="text-[9px] text-amber-400 bg-amber-950 px-1.5 py-0.5 rounded border border-amber-800">${currentLang === 'de' ? '📨 Versendet' : '📨 Dispatched'}</span>`;
+      }
 
       return `
         <div onclick="selectBrokerQuick('${b.name}', '${b.privacy_email || ''}', '${b.opt_out_url || ''}')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-indigo-600 rounded-xl cursor-pointer transition flex flex-col justify-between space-y-1.5 group shadow-sm">
           <div>
             <div class="flex items-center justify-between">
               <span class="font-bold text-white text-xs group-hover:text-indigo-300 transition">${b.name}</span>
-              ${isSaved ? '<span class="text-[9px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">✓ Ausgetragen</span>' : `<span class="text-[9px] text-slate-400 bg-slate-900 px-1 py-0.5 rounded">${b.category.split('&')[0]}</span>`}
+              ${statusBadge}
             </div>
             <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">${desc}</p>
           </div>
