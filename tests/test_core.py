@@ -86,6 +86,27 @@ async def test_full_scan_pipeline():
     assert empty_pgp["checked"] is False
     print("✓ Security Intel modules verified!")
 
+    # Test Live Web Search & Smart Entity Filter
+    print("Testing Smart Entity Disambiguation (Namensvetter-Filter)...")
+    from app.modules.live_web_search import filter_search_results
+    mock_raw = [
+        {
+            "title": "Dr. Michael Schellenberger - CMS Hasche Sigle",
+            "href": "https://cms.law/de/personen/michael-schellenberger",
+            "body": "Rechtsanwalt für Vermögensstrukturierung und Stiftungen."
+        },
+        {
+            "title": "Michael Schellenberger, Bechhofen - North Data",
+            "href": "https://www.northdata.de/Schellenberger,+Michael,+Bechhofen/vhh",
+            "body": "Firmenbekanntmachungen und Netzwerk zu Michael Schellenberger in Bechhofen."
+        }
+    ]
+    filtered_hits = filter_search_results(mock_raw, "Michael Schellenberger", ["Bechhofen", "Digitalcoach"])
+    assert len(filtered_hits) == 1
+    assert "northdata.de" in filtered_hits[0]["url"]
+    assert "Bechhofen" in filtered_hits[0]["matched_signals"]
+    print("✓ Smart Entity Disambiguation verified: Namesake CMS lawyer filtered out, genuine Bechhofen hit retained!")
+
     # Test Email Account Checker
     print("Testing Email Account Recon...")
     invalid_res = await check_email_accounts("invalid-email")

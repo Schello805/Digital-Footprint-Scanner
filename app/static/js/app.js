@@ -995,6 +995,53 @@ function renderInfraProjects(infra) {
   }
 }
 
+function renderLiveWebResults(results) {
+  const section = document.getElementById('sbLiveWebSection');
+  if (!section) return;
+
+  if (!results || results.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  const badge = document.getElementById('sbLiveWebCountBadge');
+  if (badge) {
+    badge.textContent = currentLang === 'de'
+      ? `${results.length} ${results.length === 1 ? 'bestätigte Fundstelle' : 'bestätigte Fundstellen'}`
+      : `${results.length} ${results.length === 1 ? 'verified hit' : 'verified hits'}`;
+  }
+
+  const tbody = document.getElementById('sbLiveWebTableBody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    results.forEach(item => {
+      const tr = document.createElement('tr');
+      const sigs = (item.matched_signals || []).map(s => 
+        `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-mono">✓ ${escapeHtml(s)}</span>`
+      ).join(' ');
+
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 font-bold text-white max-w-xs truncate" title="${escapeHtml(item.title)}">
+          <div class="flex items-center space-x-1.5">
+            <span>🌐</span>
+            <span>${escapeHtml(item.title)}</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-normal block font-mono truncate">${escapeHtml(item.url)}</span>
+        </td>
+        <td class="py-2.5 px-3 whitespace-nowrap">
+          <div class="flex flex-wrap gap-1">${sigs || '<span class="text-slate-400">-</span>'}</div>
+        </td>
+        <td class="py-2.5 px-3 text-slate-300 italic max-w-sm truncate" title="${escapeHtml(item.snippet)}">${escapeHtml(item.snippet)}</td>
+        <td class="py-2.5 px-3 text-right whitespace-nowrap">
+          <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">${currentLang === 'de' ? 'Webseite ↗' : 'Visit ↗'}</a>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
 function openMediaLightbox(index) {
   const img = currentMediaImages[index];
   if (!img) return;
@@ -1241,6 +1288,9 @@ function renderFullReport(res, payload) {
 
   // 3b. Server-Infrastruktur & Verbundene Web-Projekte (Co-Hosted Domains & Subdomains)
   renderInfraProjects(data.infra_result);
+
+  // 3c. Verifizierte Web-Fundstellen (Suchmaschinen-Index mit Namensvetter-Filter)
+  renderLiveWebResults(data.live_web_results);
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
   const threatsBox = document.getElementById('sbThreatsContainer');

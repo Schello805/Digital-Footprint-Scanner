@@ -665,6 +665,43 @@
               </div>
             </div>
 
+            <!-- Teil 2d: Verifizierte Web-Fundstellen (Suchmaschinen-Index mit Namensvetter-Filter) -->
+            <div id="sbLiveWebSection" class="hidden pt-4 border-t border-slate-800 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h5 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-1.5">
+                    <span>🔍</span>
+                    <span>Verifizierte Web-Fundstellen (Suchmaschinen-Index mit Namensvetter-Filter)</span>
+                  </h5>
+                  <p class="text-[11px] text-slate-400 mt-0.5">
+                    Live-Suchergebnisse im Web, die forensisch mit deinem Namen und deinen Kontextdaten (Ort, Firma, Domain) abgeglichen wurden. Namensvettern werden automatisch herausgefiltert.
+                  </p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-md" id="sbLiveWebCountBadge">
+                    0 Treffer
+                  </span>
+                </div>
+              </div>
+
+              <!-- Tabelle der verifizierten Web-Treffer -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border border-slate-800 rounded-lg">
+                  <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono">
+                    <tr>
+                      <th class="py-2 px-3">Gefundene Webseite</th>
+                      <th class="py-2 px-3">Kontext-Verifikation</th>
+                      <th class="py-2 px-3">Textauszug (Snippet)</th>
+                      <th class="py-2 px-3 text-right">Direktlink</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sbLiveWebTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
+                    <!-- Injected Verified Live Web Results -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
 
           <!-- Section 3: Threat Vectors -->

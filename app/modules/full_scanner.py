@@ -17,6 +17,7 @@ from app.modules.identity_auditor import audit_identity_profile
 from app.modules.cleanup_guide import get_remediation_guide
 from app.modules.image_recon import collect_discovered_images
 from app.modules.security_intel import check_infostealer_malware, check_pgp_keyserver
+from app.modules.live_web_search import search_web_with_entity_filter
 from app.config import settings
 
 FREEMAIL_DOMAINS = {
@@ -267,8 +268,22 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return await check_pgp_keyserver(email)
     tasks.append(do_pgp_check())
 
+    # Live Web Search with Smart Entity Filter task
+    async def do_live_web_search():
+        if not name and not username:
+            return []
+        return await search_web_with_entity_filter(
+            name=name,
+            city=city,
+            employer=employer,
+            domain=target_domain_input,
+            username=username,
+            keywords=keywords
+        )
+    tasks.append(do_live_web_search())
+
     # Execute all concurrently
-    username_results, password_res, email_res, domain_res, personal_sites_res, infra_res, mailing_res, infostealer_res, pgp_res = await asyncio.gather(*tasks)
+    username_results, password_res, email_res, domain_res, personal_sites_res, infra_res, mailing_res, infostealer_res, pgp_res, live_web_res = await asyncio.gather(*tasks)
 
     # Filter & sort username results
     found_profiles = [p for p in username_results if p.get("exists")]
@@ -292,6 +307,40 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
                     }
                 })
                 existing_urls.add(acc["profile_url"])
+
+    # Merge verified web search results into found_profiles (e.g. LinkedIn, Xing, North Data)
+    if live_web_res:
+        existing_profile_urls = {p.get("url") for p in found_profiles}
+        for hit in live_web_res:
+            hit_url = hit.get("url", "")
+            if hit_url and hit_url not in existing_profile_urls:
+                cat = "Web-Erwähnung"
+                plat = "Webseite"
+                if "linkedin.com" in hit_url:
+                    plat = "LinkedIn"
+                    cat = "Berufs- & Karriereprofil"
+                elif "xing.com" in hit_url:
+                    plat = "Xing"
+                    cat = "Berufs- & Karriereprofil"
+                elif "northdata.de" in hit_url or "companyhouse.de" in hit_url:
+                    plat = "Handelsregister / Wirtschaft"
+                    cat = "Wirtschaft & Firmenregister"
+
+                matched_sig_str = ", ".join(hit.get("matched_signals", []))
+                found_profiles.append({
+                    "platform": plat,
+                    "category": cat,
+                    "url": hit_url,
+                    "exists": True,
+                    "status": "found",
+                    "snippet": f"{hit['title']} (Verifiziert: {matched_sig_str})",
+                    "match": {
+                        "score": 95,
+                        "matches": [f"Kontext: {matched_sig_str}"],
+                        "confidence": "high"
+                    }
+                })
+                existing_profile_urls.add(hit_url)
 
     def sort_key(p):
         conf = p.get("match", {}).get("confidence", "")
@@ -477,6 +526,7 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
         "infra_result": infra_res,
         "personal_sites": personal_sites_res,
+        "live_web_results": live_web_res,
         "phone_result": phone_res,
         "dorks": dorks,
         "web_directories": web_directories,
