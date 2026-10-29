@@ -507,30 +507,58 @@
             </div>
           </div>
 
-          <!-- Section 2: Discovered Profiles & Verified Accounts -->
-          <div class="dossier-section space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400" data-i18n="sec_2_title">
-                2. Discovered Profiles & Online Accounts (Platform Recon)
-              </h4>
-              <span class="text-xs font-mono text-slate-400" id="sbProfilesCountText">0 Accounts</span>
+          <!-- Section 2: Webseiten & Profile, auf denen du erscheinst -->
+          <div class="dossier-section space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-2 gap-2">
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400" data-i18n="sec_2_title">
+                  2. Webseiten & Online-Präsenzen, auf denen du erscheinst
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">
+                  Vollständige Übersicht aller verifizierten Accounts, persönlichen Web-Auftritte und indexierten Verzeichnisse im Internet.
+                </p>
+              </div>
+              <span class="text-xs font-mono text-slate-300 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg shrink-0" id="sbProfilesCountText">0 Treffer</span>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs border border-slate-800 rounded-lg">
-                <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono">
-                  <tr>
-                    <th class="py-2 px-3" data-i18n="th_platform">Platform</th>
-                    <th class="py-2 px-3" data-i18n="th_category">Category</th>
-                    <th class="py-2 px-3" data-i18n="th_verification">Verification Status</th>
-                    <th class="py-2 px-3" data-i18n="th_bio">Extracted Bio Snippet / Note</th>
-                    <th class="py-2 px-3 text-right" data-i18n="th_link">Profile Link</th>
-                  </tr>
-                </thead>
-                <tbody id="sbProfilesTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
-                  <!-- Injected Profile Rows -->
-                </tbody>
-              </table>
+
+            <!-- Teil 2a: Bestätigte Accounts & Eigene Domains -->
+            <div class="space-y-2">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                <span>👤</span>
+                <span>Bestätigte Accounts & Web-Präsenzen:</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border border-slate-800 rounded-lg">
+                  <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono">
+                    <tr>
+                      <th class="py-2 px-3" data-i18n="th_platform">Webseite / Plattform</th>
+                      <th class="py-2 px-3" data-i18n="th_category">Kategorie</th>
+                      <th class="py-2 px-3" data-i18n="th_verification">Verifikationsstatus</th>
+                      <th class="py-2 px-3" data-i18n="th_bio">Gefundene Notiz / Bio</th>
+                      <th class="py-2 px-3 text-right" data-i18n="th_link">Direktlink</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sbProfilesTableBody" class="divide-y divide-slate-800 font-mono text-slate-300">
+                    <!-- Injected Profile Rows -->
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            <!-- Teil 2b: Öffentliche Webseiten & Verzeichnisse (Wo dein Name im Netz geführt wird) -->
+            <div id="sbWebDirectoriesSection" class="pt-3 border-t border-slate-800/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                  <span>🌐</span>
+                  <span>Öffentliche Webseiten & Suchmaschinen-Einträge für deine Person:</span>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono">1-Klick Live-Prüfung</span>
+              </div>
+              <div id="sbWebDirectoriesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <!-- Dynamically injected directory cards -->
+              </div>
+            </div>
+
           </div>
 
           <!-- Section 3: Threat Vectors -->

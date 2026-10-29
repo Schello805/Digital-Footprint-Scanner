@@ -59,7 +59,8 @@ async def test_full_scan_pipeline():
         "email": "michael.schmidt@test.com",
         "city": "Berlin",
         "employer": "Siemens",
-        "phone": "0171 1234567"
+        "phone": "0171 1234567",
+        "domain": "schellenberger.biz"
     }
     res = await execute_full_scan(scan_input)
     assert res["success"] is True
@@ -67,8 +68,13 @@ async def test_full_scan_pipeline():
     assert "identity_audit" in res
     assert "found_profiles" in res
     assert "dorks" in res
-    assert "email_accounts" in res
-    print(f"✓ Full 1-Click Scan passed! Exposure Score: {res['summary']['exposure_score']}, Dorks: {len(res['dorks'])}")
+    assert "web_directories" in res
+    assert len(res["web_directories"]) >= 8
+    # Verify own website presence included
+    dom_presence = next((p for p in res["found_profiles"] if "schellenberger.biz" in p.get("url", "")), None)
+    assert dom_presence is not None
+    assert dom_presence["exists"] is True
+    print(f"✓ Full 1-Click Scan passed! Web Directories: {len(res['web_directories'])}, Profiles: {len(res['found_profiles'])}, Exposure Score: {res['summary']['exposure_score']}")
 
     # Test Email Account Checker
     print("Testing Email Account Recon...")

@@ -56,7 +56,7 @@ const translations = {
     card_pwd_integrity: "🔑 Password Integrity:",
     card_email_breaches: "📬 Email Data Breaches:",
     card_domain_security: "🌐 Domain Mail Spoofing:",
-    sec_2_title: "2. Discovered Profiles & Online Accounts (Platform Recon)",
+    sec_2_title: "2. Websites & Online Presences Where You Appear",
     th_platform: "Platform",
     th_category: "Category",
     th_verification: "Verification Status",
@@ -202,7 +202,7 @@ const translations = {
     card_pwd_integrity: "🔑 Passwort-Integrität:",
     card_email_breaches: "📬 E-Mail Datenpannen:",
     card_domain_security: "🌐 Domain Mail-Spoofing:",
-    sec_2_title: "2. Aufgedeckte Profile & Digitale Präsenz (Plattform-Abgleich)",
+    sec_2_title: "2. Webseiten & Online-Präsenzen, auf denen du erscheinst",
     th_platform: "Plattform",
     th_category: "Kategorie",
     th_verification: "Verifikations-Status",
@@ -778,16 +778,19 @@ function renderFullReport(res, payload) {
     domDetail.textContent = currentLang === 'de' ? 'Nicht analysiert' : 'Not analyzed';
   }
 
-  // 3. Entdeckte Profile Tabelle (Section 2)
+  // 3. Webseiten & Profile (Section 2)
+  const webDirs = data.web_directories || [];
+  const verifiedCount = s.high_confidence_matches || 0;
+
   document.getElementById('sbProfilesCountText').textContent = currentLang === 'de' 
-    ? `${fullScanProfiles.length} gefundene Accounts (${s.high_confidence_matches} verifiziert)`
-    : `${fullScanProfiles.length} discovered accounts (${s.high_confidence_matches} verified)`;
+    ? `${fullScanProfiles.length} Accounts & ${webDirs.length} Web-Fundstellen`
+    : `${fullScanProfiles.length} Accounts & ${webDirs.length} Web Matches`;
 
   const tbody = document.getElementById('sbProfilesTableBody');
   tbody.innerHTML = '';
 
   if (fullScanProfiles.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">${currentLang === 'de' ? 'Keine Accounts unter diesem Benutzernamen identifiziert.' : 'No accounts identified under this handle.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">${currentLang === 'de' ? 'Keine registrierten Accounts unter diesem Benutzernamen identifiziert. Siehe die Webseiten-Fundstellen unten.' : 'No registered accounts identified under this handle. See web directory entries below.'}</td></tr>`;
   } else {
     fullScanProfiles.forEach(p => {
       const isHigh = p.match && (p.match.confidence === 'high' || p.match.confidence === 'medium');
@@ -799,20 +802,55 @@ function renderFullReport(res, payload) {
       }
 
       const noteText = p.snippet ? `"${p.snippet}"` : (p.match && p.match.matches && p.match.matches.length > 0 ? p.match.matches.join(', ') : '-');
+      const linkLabel = p.category === 'Eigene Web-Präsenz' ? (currentLang === 'de' ? 'Webseite ↗' : 'Website ↗') : (currentLang === 'de' ? 'Profil ↗' : 'Profile ↗');
 
       const tr = document.createElement('tr');
       tr.className = isHigh ? 'bg-indigo-950/20' : '';
       tr.innerHTML = `
-        <td class="py-2 px-3 font-bold text-white">${p.platform}</td>
+        <td class="py-2 px-3 font-bold text-white flex items-center space-x-1.5">
+          <span>${p.category === 'Eigene Web-Präsenz' ? '🌐' : '👤'}</span>
+          <span>${p.platform}</span>
+        </td>
         <td class="py-2 px-3 text-slate-400">${p.category}</td>
         <td class="py-2 px-3">${matchBadge}</td>
         <td class="py-2 px-3 text-slate-300 italic max-w-xs truncate">${noteText}</td>
         <td class="py-2 px-3 text-right">
-          <a href="${p.url}" target="_blank" class="text-cyan-400 hover:underline">${currentLang === 'de' ? 'Profil ↗' : 'Profile ↗'}</a>
+          <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">${linkLabel}</a>
         </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  // 3b. Öffentliche Webseiten & Verzeichnisse Grid
+  const dirsGrid = document.getElementById('sbWebDirectoriesGrid');
+  if (dirsGrid) {
+    if (webDirs.length === 0) {
+      dirsGrid.innerHTML = `<div class="col-span-full text-slate-500 text-center py-3 text-xs">${currentLang === 'de' ? 'Gib einen Namen oder Handle ein, um Webseiten-Fundstellen zu durchsuchen.' : 'Provide a name or handle to generate web directory search links.'}</div>`;
+    } else {
+      dirsGrid.innerHTML = webDirs.map(d => `
+        <div class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-600/60 rounded-xl flex flex-col justify-between gap-2.5 transition group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="font-bold text-white text-xs flex items-center space-x-1.5 truncate">
+                <span>${d.icon || '🌐'}</span>
+                <span class="truncate">${d.site}</span>
+              </span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 shrink-0">
+                ${d.category}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug line-clamp-2">${d.desc}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-900 flex justify-end">
+            <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 hover:text-white rounded-lg text-[10px] font-semibold transition flex items-center space-x-1 cursor-pointer">
+              <span>${currentLang === 'de' ? 'Webseite öffnen' : 'Open Website'}</span>
+              <span>↗</span>
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
   }
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)

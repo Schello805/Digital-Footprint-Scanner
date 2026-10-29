@@ -1,4 +1,5 @@
 import asyncio
+import urllib.parse
 from typing import Dict, Any, Optional, List
 from app.modules.username_checker import scan_usernames_fast
 from app.modules.breach_checker import check_password_pwned, check_email_breach
@@ -10,6 +11,121 @@ from app.modules.dork_builder import generate_dorks
 from app.modules.identity_auditor import audit_identity_profile
 from app.modules.cleanup_guide import get_remediation_guide
 from app.config import settings
+
+def generate_web_directories(
+    name: str = "",
+    username: str = "",
+    email: str = "",
+    city: str = "",
+    employer: str = "",
+    domain: str = ""
+) -> List[Dict[str, Any]]:
+    """
+    Generates a curated list of public websites, directories, and registries
+    where the target person appears or is publicly indexed.
+    """
+    dirs = []
+    clean_name = name.strip()
+    target_q = f'"{clean_name}"' if clean_name else (f'"{username.strip()}"' if username.strip() else "")
+    if not target_q and email:
+        target_q = f'"{email.strip()}"'
+        
+    if not target_q:
+        return []
+
+    # 1. Google Webindex
+    dirs.append({
+        "site": "Google Webindex",
+        "icon": "🌐",
+        "category": "Suchmaschinen-Index",
+        "desc": f"Alle indexierten Webseiten und Fundstellen für {clean_name or target_q}",
+        "url": f"https://www.google.com/search?q={urllib.parse.quote(target_q)}"
+    })
+
+    # 2. LinkedIn
+    dirs.append({
+        "site": "LinkedIn",
+        "icon": "💼",
+        "category": "Berufs- & Karriereprofil",
+        "desc": "Öffentlich indexierte Profile, berufliche Stationen und Arbeitgeber",
+        "url": f"https://www.google.com/search?q={urllib.parse.quote(f'site:linkedin.com/in/ {target_q}')}"
+    })
+
+    # 3. XING
+    dirs.append({
+        "site": "XING",
+        "icon": "👥",
+        "category": "Business-Netzwerk DACH",
+        "desc": "Öffentliche Profile im deutschsprachigen Wirtschaftsraum",
+        "url": f"https://www.google.com/search?q={urllib.parse.quote(f'site:xing.com/profile/ {target_q}')}"
+    })
+
+    # 4. North Data
+    if clean_name:
+        dirs.append({
+            "site": "North Data",
+            "icon": "🏢",
+            "category": "Handelsregister & Wirtschaft",
+            "desc": "Offizielle Firmendaten, Gesellschafter, Geschäftsführungen und Bilanzen",
+            "url": f"https://www.northdata.de?q={urllib.parse.quote(clean_name)}"
+        })
+
+    # 5. Bundesanzeiger & Unternehmensregister
+    if clean_name:
+        dirs.append({
+            "site": "Unternehmensregister / Bundesanzeiger",
+            "icon": "🏛️",
+            "category": "Amtliche Bekanntmachungen",
+            "desc": "Offizielle Bekanntmachungen, Gesellschafterlisten und Firmenverflechtungen",
+            "url": f"https://www.google.com/search?q={urllib.parse.quote(f'(site:unternehmensregister.de OR site:bundesanzeiger.de) {target_q}')}"
+        })
+
+    # 6. Das Örtliche / Telefonbuch
+    if clean_name:
+        loc_param = f"&ci={urllib.parse.quote(city.strip())}" if city.strip() else ""
+        dirs.append({
+            "site": "Das Örtliche / Telefonbuch",
+            "icon": "📖",
+            "category": "Telefon- & Adressverzeichnis",
+            "desc": "Öffentlich geführte Telefonnummern, Anschriften und Festnetzdaten",
+            "url": f"https://www.dasoertliche.de/?zvo_ok=0&bu_ok=0&form_name=search_nat&kw={urllib.parse.quote(clean_name)}{loc_param}"
+        })
+
+    # 7. Yasni Personensuche
+    if clean_name:
+        dirs.append({
+            "site": "Yasni Personensuchmaschine",
+            "icon": "🔍",
+            "category": "Aggregierte Personenprofile",
+            "desc": "Web-Aggregator für Personen, Bilder, Erwähnungen und Social-Media",
+            "url": f"https://www.yasni.de/{urllib.parse.quote(clean_name)}/person+information"
+        })
+
+    # 8. Google News
+    if clean_name:
+        dirs.append({
+            "site": "Google News",
+            "icon": "📰",
+            "category": "Presse & Medien",
+            "desc": "Pressemitteilungen, redaktionelle Berichte und Veröffentlichungen",
+            "url": f"https://news.google.com/search?q={urllib.parse.quote(target_q)}"
+        })
+
+    # 9. Eigene Website (falls Domain angegeben)
+    if domain:
+        clean_dom = domain.strip().lower()
+        if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]
+        if clean_dom.startswith("https://"): clean_dom = clean_dom[8:]
+        clean_dom = clean_dom.split("/")[0]
+        dirs.insert(1, {
+            "site": f"Eigene Website ({clean_dom})",
+            "icon": "🌐",
+            "category": "Persönlicher Web-Auftritt",
+            "desc": f"Direkte Domain https://{clean_dom}",
+            "url": f"https://{clean_dom}"
+        })
+
+    return dirs
 
 async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -56,7 +172,18 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         if not username:
             return []
         ctx = {"name": name, "city": city, "employer": employer, "keywords": keywords}
-        return await scan_usernames_fast(username, context=ctx)
+        res = await scan_usernames_fast(username, context=ctx)
+        # Check dotless/normalized variant if dots exist (e.g. michael.schellenberger -> michaelschellenberger)
+        if "." in username:
+            alt_user = username.replace(".", "")
+            if alt_user and alt_user != username:
+                alt_res = await scan_usernames_fast(alt_user, context=ctx)
+                existing_urls = {p.get("url") for p in res if p.get("exists")}
+                for p in alt_res:
+                    if p.get("exists") and p.get("url") not in existing_urls:
+                        res.append(p)
+                        existing_urls.add(p.get("url"))
+        return res
     tasks.append(do_username_scan())
 
     # Password task
@@ -121,6 +248,27 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return 2
     found_profiles.sort(key=sort_key)
 
+    # Insert own website/domain as active verified web presence if provided
+    if domain:
+        clean_dom = domain.strip().lower()
+        if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]
+        if clean_dom.startswith("https://"): clean_dom = clean_dom[8:]
+        clean_dom = clean_dom.split("/")[0]
+        dom_url = f"https://{clean_dom}"
+        found_profiles.insert(0, {
+            "platform": f"Website ({clean_dom})",
+            "category": "Eigene Web-Präsenz",
+            "url": dom_url,
+            "exists": True,
+            "status": "found",
+            "snippet": f"Offizielle Domain / Web-Auftritt ({name or clean_dom})",
+            "match": {
+                "score": 100,
+                "matches": ["Eigene Domain / DNS"],
+                "confidence": "high"
+            }
+        })
+
     # Phone Recon (fast sync)
     phone_res = analyze_phone_number(phone) if phone else None
 
@@ -131,6 +279,16 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         company=employer,
         username=username,
         email=email
+    )
+
+    # Curated Web Directories & Public Appearances
+    web_directories = generate_web_directories(
+        name=name,
+        username=username,
+        email=email,
+        city=city,
+        employer=employer,
+        domain=domain
     )
 
     # Remediation & Cleanup Guide
@@ -195,5 +353,6 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
         "phone_result": phone_res,
         "dorks": dorks,
+        "web_directories": web_directories,
         "remediation_guide": remediation_guide
     }
