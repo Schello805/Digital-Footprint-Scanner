@@ -45,6 +45,12 @@ def test_static_files():
     assert res_favicon.status_code == 200
     print(f"✓ favicon.png served ({len(res_favicon.content)} bytes)")
 
+    # Test root /favicon.ico route
+    res_ico = client.get("/favicon.ico")
+    assert res_ico.status_code == 200
+    assert len(res_ico.content) > 500
+    print(f"✓ /favicon.ico served directly ({len(res_ico.content)} bytes)")
+
 if __name__ == "__main__":
     test_static_files()
     print("🎉 All static assets verified successfully!")

@@ -2,7 +2,7 @@ import json
 import asyncio
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, Response
+from fastapi.responses import HTMLResponse, StreamingResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -26,6 +26,10 @@ app = FastAPI(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def serve_favicon():
+    return FileResponse("app/static/img/favicon.ico")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():

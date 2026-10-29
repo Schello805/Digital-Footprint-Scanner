@@ -4,7 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Digital Footprint Scanner – All-in-One OSINT Suite</title>
-  <link rel="icon" type="image/png" href="/static/img/favicon.png" />
+  
+  <!-- High-Res Multi-Format Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png?v=3" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png?v=3" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3" />
   
   <!-- Local Tailwind CSS & Custom Theme -->
   <link rel="stylesheet" href="/static/css/tailwind.min.css" />
@@ -16,16 +21,16 @@
 <body class="bg-[#0b0f19] text-slate-200 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
 
   <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-900 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <img src="/static/img/logo.png" alt="Digital Footprint Scanner Logo" class="w-10 h-10 rounded-xl object-cover shadow-lg border border-indigo-500/40" />
+  <header class="border-b border-slate-800 bg-slate-900 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <img src="/static/img/logo.png" alt="Digital Footprint Scanner Logo" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-2xl border-2 border-indigo-500/50 hover:scale-105 transition-transform" />
         <div>
-          <div class="flex items-center space-x-2">
-            <span class="text-lg font-bold tracking-tight text-white" data-i18n="app_title">Digital Footprint Scanner</span>
-            <span class="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full" data-i18n="app_subtitle">All-in-One OSINT Suite</span>
+          <div class="flex items-center space-x-2.5">
+            <span class="text-xl sm:text-2xl font-black tracking-tight text-white" data-i18n="app_title">Digital Footprint Scanner</span>
+            <span class="hidden sm:inline-block px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full" data-i18n="app_subtitle">All-in-One OSINT Suite</span>
           </div>
-          <p class="text-xs text-slate-400" data-i18n="tagline">Holistic digital footprint reconnaissance without detours</p>
+          <p class="text-xs sm:text-sm text-slate-400 mt-0.5" data-i18n="tagline">Holistic digital footprint reconnaissance without detours</p>
         </div>
       </div>
 
@@ -198,20 +203,20 @@
         <div id="dossierSheet" class="dossier-sheet rounded-2xl p-6 sm:p-10 border border-slate-700 text-slate-200 space-y-8">
           
           <!-- Dossier Header Ribbon -->
-          <div class="border-b-2 border-slate-700 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center space-x-3">
-              <img src="/static/img/logo.png" alt="Digital Footprint Scanner" class="w-12 h-12 rounded-xl object-cover shadow-lg border border-slate-700" />
+          <div class="border-b-2 border-slate-700 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+              <img src="/static/img/logo.png" alt="Digital Footprint Scanner" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-2xl border-2 border-indigo-500/50" />
               <div>
-                <div class="text-[11px] font-mono tracking-widest text-indigo-400 uppercase font-black" id="dossierClassification">
+                <div class="text-xs sm:text-sm font-mono tracking-widest text-indigo-400 uppercase font-black" id="dossierClassification">
                   OSINT PRIVACY AUDIT // PERSONAL INTELLIGENCE DOSSIER
                 </div>
-                <div class="text-xs text-slate-400 font-mono" id="dossierAktenzeichen">
+                <div class="text-xs text-slate-400 font-mono mt-0.5" id="dossierAktenzeichen">
                   FILE REFERENCE: AZ-OSINT-2026-X
                 </div>
               </div>
             </div>
             <div class="text-right">
-              <span class="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-rose-950 text-rose-400 border border-rose-800 font-mono" id="dossierConfidentialTag">
+              <span class="text-[10px] sm:text-xs uppercase font-bold tracking-widest px-3 py-1.5 rounded bg-rose-950 text-rose-400 border border-rose-800 font-mono shadow-sm" id="dossierConfidentialTag">
                 CONFIDENTIAL // PRIVATE SECURITY AUDIT USE ONLY
               </span>
             </div>
