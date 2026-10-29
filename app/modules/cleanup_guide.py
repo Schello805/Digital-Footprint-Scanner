@@ -3,110 +3,133 @@ from typing import Dict, Any, List
 PLATFORM_CLEANUP_DIRECTORIES: Dict[str, Dict[str, str]] = {
     "GitHub": {
         "delete_url": "https://github.com/settings/admin",
-        "instructions": "Navigiere ganz nach unten zu 'Danger Zone' und klicke auf 'Delete your account'."
+        "instructions": "Navigate to the bottom 'Danger Zone' and click 'Delete your account'.",
+        "instructions_de": "Navigiere ganz nach unten zu 'Danger Zone' und klicke auf 'Delete your account'."
     },
     "Reddit": {
         "delete_url": "https://www.reddit.com/settings/account",
-        "instructions": "Ganz nach unten scrollen und auf den roten Link 'Account löschen' (Delete account) klicken."
+        "instructions": "Scroll to the bottom and click 'Delete account'.",
+        "instructions_de": "Ganz nach unten scrollen und auf 'Account löschen' (Delete account) klicken."
     },
     "Twitter / X": {
         "delete_url": "https://x.com/settings/deactivate",
-        "instructions": "Wähle 'Dein Account' -> 'Meinen Account deaktivieren'. Nach 30 Tagen wird das Konto dauerhaft gelöscht."
+        "instructions": "Select 'Your account' -> 'Deactivate your account'. Permanently deleted after 30 days.",
+        "instructions_de": "Wähle 'Dein Account' -> 'Meinen Account deaktivieren'. Nach 30 Tagen wird das Konto dauerhaft gelöscht."
     },
     "Medium": {
         "delete_url": "https://medium.com/me/settings/security",
-        "instructions": "Unter 'Security' ganz nach unten scrollen zu 'Delete account'."
+        "instructions": "Under 'Security', scroll down to 'Delete account'.",
+        "instructions_de": "Unter 'Security' ganz nach unten scrollen zu 'Delete account'."
     },
     "Pinterest": {
         "delete_url": "https://www.pinterest.com/settings/account-settings/",
-        "instructions": "Klicke ganz unten unter 'Kontoverwaltung' auf 'Konto löschen'."
+        "instructions": "At the bottom of Account management, click 'Delete account'.",
+        "instructions_de": "Klicke ganz unten unter 'Kontoverwaltung' auf 'Konto löschen'."
     },
     "Steam": {
-        "delete_url": "https://help.steampowered.com/de/wizard/HelpDeleteAccount",
-        "instructions": "Support-Assistenten zur dauerhaften Kontolöschung durchlaufen."
+        "delete_url": "https://help.steampowered.com/en/wizard/HelpDeleteAccount",
+        "instructions": "Follow the official Steam support account deletion wizard.",
+        "instructions_de": "Support-Assistenten zur dauerhaften Kontolöschung durchlaufen."
     },
     "Spotify": {
-        "delete_url": "https://support.spotify.com/de/article/close-account/",
-        "instructions": "Folge dem offiziellen Kündigungs- und Kontoschließungsassistenten."
+        "delete_url": "https://support.spotify.com/en/article/close-account/",
+        "instructions": "Follow the official account closure instructions.",
+        "instructions_de": "Folge dem offiziellen Kündigungs- und Kontoschließungsassistenten."
     },
     "Dev.to": {
         "delete_url": "https://dev.to/settings/misc",
-        "instructions": "Ganz unten unter 'Danger Zone' auf 'Delete Account' klicken."
+        "instructions": "Under 'Danger Zone' at the bottom, click 'Delete Account'.",
+        "instructions_de": "Ganz unten unter 'Danger Zone' auf 'Delete Account' klicken."
     },
     "GitLab": {
         "delete_url": "https://gitlab.com/-/profile/account",
-        "instructions": "Unter 'Delete account' auf den roten Bestätigungs-Button klicken."
+        "instructions": "Under 'Delete account', click the confirmation button.",
+        "instructions_de": "Unter 'Delete account' auf den roten Bestätigungs-Button klicken."
     },
     "Gravatar": {
         "delete_url": "https://en.gravatar.com/profiles/edit/#account-deactivation",
-        "instructions": "Profil-Avatar entfernen und Deaktivierung auswählen."
+        "instructions": "Remove profile avatar and select account deactivation.",
+        "instructions_de": "Profil-Avatar entfernen und Deaktivierung auswählen."
     },
     "Linktree": {
         "delete_url": "https://linktr.ee/admin/my-account",
-        "instructions": "Unten auf 'Delete account' klicken."
+        "instructions": "Click 'Delete account' at the bottom of the page.",
+        "instructions_de": "Unten auf 'Delete account' klicken."
     },
     "About.me": {
         "delete_url": "https://about.me/settings/account",
-        "instructions": "Unter Account Settings ganz unten 'Delete your account' wählen."
+        "instructions": "Under Account Settings, choose 'Delete your account'.",
+        "instructions_de": "Unter Account Settings ganz unten 'Delete your account' wählen."
     },
     "BuyMeACoffee": {
         "delete_url": "https://www.buymeacoffee.com/settings",
-        "instructions": "In den Account Settings ganz unten 'Delete account' wählen."
+        "instructions": "Under Account Settings, choose 'Delete account'.",
+        "instructions_de": "In den Account Settings ganz unten 'Delete account' wählen."
     },
     "Patreon": {
         "delete_url": "https://www.patreon.com/settings/account",
-        "instructions": "Unter Kontoeinstellungen ganz unten 'Konto löschen' wählen."
+        "instructions": "Under Account Settings, select 'Delete account'.",
+        "instructions_de": "Unter Kontoeinstellungen ganz unten 'Konto löschen' wählen."
     },
     "Tumblr": {
         "delete_url": "https://www.tumblr.com/settings/account",
-        "instructions": "Ganz unten auf 'Account löschen' klicken."
+        "instructions": "Click 'Delete account' at the bottom of the settings.",
+        "instructions_de": "Ganz unten auf 'Account löschen' klicken."
     },
     "Vimeo": {
         "delete_url": "https://vimeo.com/settings/account",
-        "instructions": "Unter 'Account' ganz unten 'Delete account' wählen."
+        "instructions": "Under 'Account', choose 'Delete account'.",
+        "instructions_de": "Unter 'Account' ganz unten 'Delete account' wählen."
     },
     "SoundCloud": {
         "delete_url": "https://soundcloud.com/settings",
-        "instructions": "Am Seitenende auf 'Delete account' klicken."
+        "instructions": "Click 'Delete account' at the end of the settings page.",
+        "instructions_de": "Am Seitenende auf 'Delete account' klicken."
     }
 }
 
-DATA_BROKERS_DACH: List[Dict[str, str]] = [
+DATA_BROKERS: List[Dict[str, str]] = [
     {
-        "name": "Yasni.de (Personensuchmaschine)",
-        "search_url_template": "https://www.yasni.de/personensuche/{}",
+        "name": "Yasni (People Search Directory)",
+        "search_url_template": "https://www.yasni.com/index.php?action=websearch&query={}",
         "opt_out_url": "https://www.yasni.de/hilfe/eintrag-entfernen",
-        "desc": "Aggregiert Webseiten, Foren und Social Accounts unter deinem Klarnamen.",
-        "action": "Eintrag auf Yasni aufrufen und über den Feedback-/Entfernen-Button löschen lassen."
+        "desc": "Aggregates web pages, profiles, and directories under real names.",
+        "desc_de": "Aggregiert Webseiten, Foren und Profile unter deinem Klarnamen.",
+        "action": "Open listing and click 'Remove entry / Feedback'.",
+        "action_de": "Eintrag auf Yasni aufrufen und über den Feedback-/Entfernen-Button löschen lassen."
     },
     {
-        "name": "Das Örtliche & Das Telefonbuch",
-        "search_url_template": "https://www.dasoertliche.de/?kw={}",
-        "opt_out_url": "https://www.dastelefonbuch.de/service/austragung",
-        "desc": "Öffentliche Festnetz- und Mobilfunkverzeichnisse mit Anschriften.",
-        "action": "Austragungsantrag beim eigenen Telefonanbieter oder direkt beim Verzeichnisdienst stellen."
-    },
-    {
-        "name": "11880.com (Auskunft & Verzeichnis)",
-        "search_url_template": "https://www.11880.com/suche/{}",
-        "opt_out_url": "https://www.11880.com/datenschutz",
-        "desc": "Telefon- und Branchenverzeichnis mit Adressdaten.",
-        "action": "Widerspruch gegen Veröffentlichung per Mail an datenschutz@11880.com."
-    },
-    {
-        "name": "Radaris / PeekYou (Internationale Personensuchmaschinen)",
+        "name": "Radaris / Whitepages (People Search)",
         "search_url_template": "https://radaris.com/p/{}/",
         "opt_out_url": "https://radaris.com/control/result",
-        "desc": "US- und weltweite Aggregatoren für E-Mails, Wohnsitze und Telefonnummern.",
-        "action": "Profil aufrufen und den offiziellen Radaris Removal Link nutzen."
+        "desc": "Public data broker indexing personal records, locations, and phones.",
+        "desc_de": "Öffentlicher Datenaggregator für Kontaktdaten und Telefonnummern.",
+        "action": "Search your record and submit official opt-out request.",
+        "action_de": "Profil aufrufen und den offiziellen Removal-Link nutzen."
+    },
+    {
+        "name": "Das Örtliche & Das Telefonbuch (DACH)",
+        "search_url_template": "https://www.dasoertliche.de/?kw={}",
+        "opt_out_url": "https://www.dastelefonbuch.de/service/austragung",
+        "desc": "German directory containing landlines, mobile numbers, and addresses.",
+        "desc_de": "Öffentliche Festnetz- und Mobilfunkverzeichnisse mit Anschriften.",
+        "action": "Request unlisting directly or through telecom provider.",
+        "action_de": "Austragungsantrag beim Telefonanbieter oder Verzeichnis stellen."
+    },
+    {
+        "name": "11880.com (DACH Directory)",
+        "search_url_template": "https://www.11880.com/suche/{}",
+        "opt_out_url": "https://www.11880.com/datenschutz",
+        "desc": "Public directory with personal and company addresses.",
+        "desc_de": "Telefon- und Branchenverzeichnis mit Adressdaten.",
+        "action": "Send removal notice to privacy team.",
+        "action_de": "Widerspruch gegen Veröffentlichung per E-Mail einreichen."
     }
 ]
 
 def get_remediation_guide(found_platforms: List[Dict[str, Any]], name: str = "", email: str = "") -> Dict[str, Any]:
     """
-    Inspired by FootprintIQ's LENSiQ cleanup workflow:
-    Produces concrete, actionable deactivation steps, direct opt-out links for data brokers,
-    and a prioritized digital hygiene checklist.
+    Produces actionable account deletion steps and direct opt-out links for data brokers.
     """
     account_guides = []
     for p in found_platforms:
@@ -118,20 +141,22 @@ def get_remediation_guide(found_platforms: List[Dict[str, Any]], name: str = "",
                 "profile_url": p.get("url", ""),
                 "delete_url": info["delete_url"],
                 "instructions": info["instructions"],
+                "instructions_de": info.get("instructions_de", info["instructions"]),
                 "match_score": p.get("match", {}).get("score", 0)
             })
 
-    # Data brokers customized with name
     brokers = []
     if name:
-        for b in DATA_BROKERS_DACH:
+        for b in DATA_BROKERS:
             clean_n = name.strip().replace(" ", "+")
             brokers.append({
                 "name": b["name"],
                 "search_url": b["search_url_template"].format(clean_n),
                 "opt_out_url": b["opt_out_url"],
                 "desc": b["desc"],
-                "action": b["action"]
+                "desc_de": b.get("desc_de", b["desc"]),
+                "action": b["action"],
+                "action_de": b.get("action_de", b["action"])
             })
 
     return {

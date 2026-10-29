@@ -1,11 +1,226 @@
-// Global State
+// Global State & i18n
+let currentLang = localStorage.getItem('selfscanner_lang') || 'en';
 let currentTab = 'fullscan';
 let fullScanProfiles = [];
+let lastScanResult = null;
+let lastScanPayload = null;
 let usernameEventSource = null;
 let currentResults = [];
 let leafletMap = null;
 let leafletMarker = null;
 let currentSelectedFile = null;
+
+// ==================== I18N DICTIONARY ====================
+const translations = {
+  en: {
+    app_title: "Selfscanner",
+    app_subtitle: "All-in-One OSINT Suite",
+    tagline: "Holistic digital footprint reconnaissance without detours",
+    fullscan_cockpit: "🚀 Full Scan Cockpit",
+    api_keys: "⚙️ API Keys",
+    tab_fullscan: "🚀 Full Scan (All-in-One)",
+    tab_exif: "📸 EXIF Photo Inspector",
+    tab_username: "👤 Username Recon",
+    tab_domain: "🌐 Domain & DNS Security",
+    tab_breach: "🛡️ Password & Breach Check",
+    tab_dorks: "🔎 Google Dorking",
+    cockpit_title: "Automated Full Scan",
+    cockpit_badge: "1-Click Full Audit",
+    cockpit_desc: "Enter your identifiers once. The scanner concurrently checks social accounts, data breaches, phone reputation, mail spoofing, and automatically filters out coincidental name matches.",
+    no_mandatory: "No mandatory fields except Name or Username",
+    lbl_name: "Full Name",
+    lbl_username: "Username / Handle",
+    lbl_email: "Email Address",
+    lbl_password: "Password (Leak Check)",
+    lbl_city: "City / Location",
+    lbl_employer: "Company / Employer",
+    lbl_phone: "Phone / Mobile",
+    lbl_domain: "Domain (Mail Security)",
+    cockpit_footer_note: "Concurrently queries k-Anonymity hashes, 40+ platforms, mail spoofing & dorks.",
+    btn_start_fullscan: "🚀 Start Full Scan (Audit Everything)",
+    dossier_created_title: "Complete Intelligence Dossier Generated",
+    btn_print_dossier: "📄 Print DIN A4 Dossier / PDF",
+    btn_toggle_view: "Toggle View",
+    sec_profile_sheet: "📋 Target Profile Sheet",
+    field_name: "Full Name:",
+    field_city: "City / Region:",
+    field_employer: "Employer / Org:",
+    field_email: "Primary Email:",
+    field_phone: "Phone / Carrier:",
+    field_domain: "Personal Domain:",
+    stamp_subtext: "Calculated via OSINT attack surface",
+    sec_1_title: "1. Security Analysis & Breach Status",
+    card_pwd_integrity: "🔑 Password Integrity:",
+    card_email_breaches: "📬 Email Data Breaches:",
+    card_domain_security: "🌐 Domain Mail Spoofing:",
+    sec_2_title: "2. Discovered Profiles & Online Accounts (Platform Recon)",
+    th_platform: "Platform",
+    th_category: "Category",
+    th_verification: "Verification Status",
+    th_bio: "Extracted Bio Snippet / Note",
+    th_link: "Profile Link",
+    sec_3_title: "3. Forensic Threat Vector Analysis (Social Engineering & Doxing)",
+    sec_phone_recon: "📞 Phone Reputation & Lookup",
+    sec_mailing_lists: "📬 Public Mailing Lists",
+    sec_permutations: "✉️ Probable Email Permutations",
+    sec_dorks_title: "4. Public Registries & Document Trails (Registers, Leaks, PDFs)",
+    sec_cleanup_title: "🛡️ 5. Footprint Remediation & Account Deletion (Action Plan)",
+    sec_cleanup_sub: "Direct account deactivation links",
+    broker_title: "People Search Engines & Data Broker Opt-Out:",
+    sec_gdpr_title: "6. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')",
+    btn_copy_text: "Copy Text",
+    google_removal_link: "Submit official Google Search Removal Request ↗",
+    exif_title: "Metadata & EXIF Inspector",
+    exif_desc: "Upload a photo. We analyze hidden GPS coordinates, camera models, timestamps and provide a 1-click privacy sanitizer.",
+    exif_drop_text: "Drop photo here or click to browse",
+    btn_sanitize_download: "🛡️ Clean Image & Download without EXIF",
+    exif_risk_assessment: "Privacy Risk Assessment",
+    exif_loc_found: "📍 Exposed Capture Location",
+    sensitive_data: "Sensitive Data",
+    exif_tags_title: "Extracted Metadata Tags",
+    th_property: "Property",
+    th_value: "Value",
+    user_recon_title: "Single Username Recon (Sherlock)",
+    user_recon_desc: "Search for a single username handle across 40+ platforms.",
+    btn_start_scan: "Start Scan",
+    dom_title: "Domain & Mail Security Audit",
+    btn_scan_domain: "Scan Domain",
+    pwd_check_title: "Password Leak Check (k-Anonymity)",
+    btn_check: "Check",
+    email_check_title: "Email Data Breach Check",
+    dorks_title: "Google Dorking Generator",
+    btn_generate_dorks: "Generate Queries",
+    settings_title: "⚙️ Optional API Keys",
+    settings_desc: "All core features run 100% free. If you have an official HaveIBeenPwned API key or Google Custom Search key, configure them here.",
+    btn_save: "Save Settings",
+    classification_tag: "OSINT PRIVACY AUDIT // PERSONAL INTELLIGENCE DOSSIER",
+    confidential_tag: "CONFIDENTIAL // PRIVATE SECURITY AUDIT USE ONLY",
+    file_ref_prefix: "FILE REFERENCE: AZ-OSINT-2026-",
+    audit_result_label: "AUDIT RESULT",
+    risk_label_prefix: "RISK: "
+  },
+  de: {
+    app_title: "Selfscanner",
+    app_subtitle: "All-in-One OSINT Suite",
+    tagline: "Ganzheitlicher digitaler Fußabdruck-Scan ohne Umwege",
+    fullscan_cockpit: "🚀 Vollscan Cockpit",
+    api_keys: "⚙️ API-Keys",
+    tab_fullscan: "🚀 Vollscan (Alles auf einmal)",
+    tab_exif: "📸 EXIF-Foto-Inspektor",
+    tab_username: "👤 Einzelner Username-Check",
+    tab_domain: "🌐 Domain & DNS-Security",
+    tab_breach: "🛡️ Passwort- & Breach-Check",
+    tab_dorks: "🔎 Google Dorking",
+    cockpit_title: "Automatisierter Vollscan",
+    cockpit_badge: "1-Klick Komplett-Audit",
+    cockpit_desc: "Gib einmal deine Daten ein. Der Scanner prüft gleichzeitig Social-Media-Accounts, Datenpannen, Rufnummern, Mail-Spoofing, Register und filtert fremde Namensvetter automatisch aus.",
+    no_mandatory: "Keine Pflichtfelder außer Name oder Username",
+    lbl_name: "Vor- & Nachname",
+    lbl_username: "Benutzername / Alias",
+    lbl_email: "E-Mail-Adresse",
+    lbl_password: "Passwort (Leak-Check)",
+    lbl_city: "Wohnort / Stadt",
+    lbl_employer: "Firma / Arbeitgeber",
+    lbl_phone: "Telefon / Handy",
+    lbl_domain: "Eigene Domain (Mail-Security)",
+    cockpit_footer_note: "Prüft k-Anonymity Hashes, 40+ Social-Netzwerke, Mail-Spoofing & Dorks gleichzeitig.",
+    btn_start_fullscan: "🚀 Vollscan starten (Alles prüfen)",
+    dossier_created_title: "Vollständiges Personen-Dossier erstellt",
+    btn_print_dossier: "📄 Als DIN A4 Steckbrief drucken / PDF",
+    btn_toggle_view: "Ansicht umschalten",
+    sec_profile_sheet: "📋 Stammdatenblatt",
+    field_name: "Klarname:",
+    field_city: "Wohnort / Region:",
+    field_employer: "Firma / Arbeitgeber:",
+    field_email: "Primäre E-Mail:",
+    field_phone: "Rufnummer / Netz:",
+    field_domain: "Eigene Domain:",
+    stamp_subtext: "Berechnet nach OWASP/OSINT Angriffsfläche",
+    sec_1_title: "1. Sicherheitsanalyse & Kompromittierungs-Status (Breaches)",
+    card_pwd_integrity: "🔑 Passwort-Integrität:",
+    card_email_breaches: "📬 E-Mail Datenpannen:",
+    card_domain_security: "🌐 Domain Mail-Spoofing:",
+    sec_2_title: "2. Aufgedeckte Profile & Digitale Präsenz (Plattform-Abgleich)",
+    th_platform: "Plattform",
+    th_category: "Kategorie",
+    th_verification: "Verifikations-Status",
+    th_bio: "Gefundener Bio-Auszug / Notiz",
+    th_link: "Profil-Link",
+    sec_3_title: "3. Forensische Bedrohungsanalyse (Social Engineering & Doxing)",
+    sec_phone_recon: "📞 Rufnummern-Rückwärtssuche",
+    sec_mailing_lists: "📬 Öffentliche Mailinglisten",
+    sec_permutations: "✉️ Wahrscheinliche E-Mail-Permutationen",
+    sec_dorks_title: "4. Öffentliche Register & Spurensuche (Handelsregister, PDFs, North Data)",
+    sec_cleanup_title: "🛡️ 5. Footprint-Bereinigung & Account-Löschung (Action Plan)",
+    sec_cleanup_sub: "Direkt-Links zur Kontodeaktivierung",
+    broker_title: "Personensuchmaschinen & Datenbroker Opt-Out:",
+    sec_gdpr_title: "6. Rechtliche Sofortmaßnahme: Art. 17 DSGVO Löschanforderung",
+    btn_copy_text: "Text kopieren",
+    google_removal_link: "Offiziellen Google-Suchergebnis-Entfernungsantrag einreichen ↗",
+    exif_title: "Metadaten- & EXIF-Inspektor",
+    exif_desc: "Lade ein Foto hoch. Wir analysieren GPS-Koordinaten, Kameramodell und bieten dir einen 1-Klick-Datenschutz-Bereiniger.",
+    exif_drop_text: "Foto hier hineinziehen oder klicken",
+    btn_sanitize_download: "🛡️ Bild bereinigen & ohne EXIF herunterladen",
+    exif_risk_assessment: "Datenschutz-Bewertung",
+    exif_loc_found: "📍 Aufgedeckter Aufnahmeort",
+    sensitive_data: "Sensible Daten",
+    exif_tags_title: "Gefundene Metadaten-Tags",
+    th_property: "Eigenschaft",
+    th_value: "Wert",
+    user_recon_title: "Einzelne Username-Suche (Sherlock)",
+    user_recon_desc: "Prüfe gezielt einen einzelnen Benutzernamen über 40+ Plattformen.",
+    btn_start_scan: "Scan starten",
+    dom_title: "Domain- & Mail-Security-Audit",
+    btn_scan_domain: "Domain scannen",
+    pwd_check_title: "Passwort-Leak-Prüfung (k-Anonymity)",
+    btn_check: "Prüfen",
+    email_check_title: "E-Mail Datenpannen-Check",
+    dorks_title: "Google Dorking Generator",
+    btn_generate_dorks: "Abfragen generieren",
+    settings_title: "⚙️ Optionale API-Keys",
+    settings_desc: "Die Kernfunktionen laufen standardmäßig 100% kostenlos und ohne API-Keys. Optional können HIBP- oder Google Keys hinterlegt werden.",
+    btn_save: "Einstellungen speichern",
+    classification_tag: "OSINT PRIVACY AUDIT // PERSÖNLICHES PERSONENDOSSIER",
+    confidential_tag: "VERTRAULICH // NUR ZUR PRIVATEN SICHERHEITSAUDITIERUNG",
+    file_ref_prefix: "AKTENZEICHEN: AZ-OSINT-2026-",
+    audit_result_label: "AUDIT RESULTAT",
+    risk_label_prefix: "RISIKO: "
+  }
+};
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('selfscanner_lang', lang);
+
+  // Update button active states
+  const btnEn = document.getElementById('lang-btn-en');
+  const btnDe = document.getElementById('lang-btn-de');
+  if (btnEn && btnDe) {
+    if (lang === 'en') {
+      btnEn.className = 'px-2 py-0.5 rounded text-xs font-bold bg-indigo-600 text-white transition';
+      btnDe.className = 'px-2 py-0.5 rounded text-xs font-medium text-slate-400 hover:text-white transition';
+      document.documentElement.lang = 'en';
+    } else {
+      btnDe.className = 'px-2 py-0.5 rounded text-xs font-bold bg-indigo-600 text-white transition';
+      btnEn.className = 'px-2 py-0.5 rounded text-xs font-medium text-slate-400 hover:text-white transition';
+      document.documentElement.lang = 'de';
+    }
+  }
+
+  // Update DOM elements with data-i18n
+  const dict = translations[lang] || translations.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key]) {
+      el.textContent = dict[key];
+    }
+  });
+
+  // Re-render report if already generated
+  if (lastScanResult && lastScanPayload) {
+    renderFullReport(lastScanResult, lastScanPayload);
+  }
+}
 
 // --- Tab Navigation ---
 function switchTab(tabId) {
@@ -46,9 +261,11 @@ async function runFullScan(e) {
   };
 
   if (!payload.name && !payload.username && !payload.email && !payload.phone && !payload.domain) {
-    alert('Bitte gib mindestens einen Namen, Benutzernamen, eine E-Mail oder Domain an.');
+    alert(currentLang === 'de' ? 'Bitte gib mindestens einen Namen, Benutzernamen, eine E-Mail oder Domain an.' : 'Please provide at least a Name, Username, Email, or Domain.');
     return;
   }
+
+  lastScanPayload = payload;
 
   const btn = document.getElementById('fsSubmitBtn');
   const btnText = document.getElementById('fsBtnText');
@@ -60,21 +277,21 @@ async function runFullScan(e) {
 
   btn.disabled = true;
   spinner.classList.remove('hidden');
-  btnText.textContent = 'Scanne gesamte Präsenz...';
+  btnText.textContent = currentLang === 'de' ? 'Scanne gesamte Präsenz...' : 'Auditing digital footprint...';
   progressBox.classList.remove('hidden');
   reportBox.classList.add('hidden');
 
   progressBar.style.width = '30%';
-  progressStep.textContent = '1/3: Prüfe k-Anonymity Hashes & Identitätsvektoren...';
+  progressStep.textContent = currentLang === 'de' ? '1/3: Prüfe k-Anonymity Hashes & Identitätsvektoren...' : '1/3: Checking k-Anonymity hashes & threat vectors...';
 
   const t1 = setTimeout(() => {
     progressBar.style.width = '65%';
-    progressStep.textContent = '2/3: Durchsuche 40+ Social-Media & Tech-Plattformen...';
+    progressStep.textContent = currentLang === 'de' ? '2/3: Durchsuche 40+ Social-Media & Tech-Plattformen...' : '2/3: Auditing 40+ platforms with bio-matching...';
   }, 900);
 
   const t2 = setTimeout(() => {
     progressBar.style.width = '88%';
-    progressStep.textContent = '3/3: Analysiere Domain-Security & erstelle DIN A4 Dossier...';
+    progressStep.textContent = currentLang === 'de' ? '3/3: Analysiere Domain-Security & erstelle DIN A4 Dossier...' : '3/3: Analyzing domain security & compiling dossier...';
   }, 1900);
 
   try {
@@ -89,21 +306,22 @@ async function runFullScan(e) {
     clearTimeout(t2);
 
     if (json.success) {
+      lastScanResult = json;
       progressBar.style.width = '100%';
-      progressStep.textContent = '✓ Vollscan abgeschlossen! DIN A4 Steckbrief erstellt.';
+      progressStep.textContent = currentLang === 'de' ? '✓ Vollscan abgeschlossen! DIN A4 Steckbrief erstellt.' : '✓ Full scan complete! Dossier generated.';
       setTimeout(() => progressBox.classList.add('hidden'), 800);
       renderFullReport(json, payload);
     } else {
-      alert('Fehler: ' + (json.error || 'Vollscan fehlgeschlagen'));
+      alert('Error: ' + (json.error || 'Full scan failed'));
     }
   } catch (err) {
     clearTimeout(t1);
     clearTimeout(t2);
-    alert('Fehler beim Vollscan: ' + err.message);
+    alert('Error during full scan: ' + err.message);
   } finally {
     btn.disabled = false;
     spinner.classList.add('hidden');
-    btnText.textContent = '🚀 Vollscan starten (Alles prüfen)';
+    btnText.textContent = translations[currentLang].btn_start_fullscan;
   }
 }
 
@@ -111,20 +329,26 @@ function renderFullReport(res, payload) {
   const data = res;
   const s = data.summary;
   fullScanProfiles = data.found_profiles || [];
+  const t = translations[currentLang] || translations.en;
 
   const reportContainer = document.getElementById('fullReportContainer');
   reportContainer.classList.remove('hidden');
 
   // Set Timestamp & Dossier Az
   const now = new Date();
-  document.getElementById('dossierTimestamp').textContent = `Erstellt am: ${now.toLocaleDateString('de-DE')} um ${now.toLocaleTimeString('de-DE')} Uhr`;
+  const dateStr = currentLang === 'de' ? now.toLocaleDateString('de-DE') : now.toLocaleDateString('en-US');
+  const timeStr = currentLang === 'de' ? now.toLocaleTimeString('de-DE') : now.toLocaleTimeString('en-US');
+  document.getElementById('dossierTimestamp').textContent = `${currentLang === 'de' ? 'Erstellt am' : 'Generated'}: ${dateStr} ${timeStr}`;
+  
   const randNum = Math.floor(1000 + Math.random() * 9000);
-  document.getElementById('dossierAktenzeichen').textContent = `AKTENZEICHEN: AZ-OSINT-2026-${randNum}`;
+  document.getElementById('dossierAktenzeichen').textContent = `${t.file_ref_prefix}${randNum}`;
+  document.getElementById('dossierClassification').textContent = t.classification_tag;
+  document.getElementById('dossierConfidentialTag').textContent = t.confidential_tag;
 
   // 1. Steckbrief-Kopf
-  const targetName = payload.name || payload.username || 'UNBEKANNTE ZIELPERSON';
+  const targetName = payload.name || payload.username || (currentLang === 'de' ? 'UNBEKANNTE ZIELPERSON' : 'UNKNOWN TARGET');
   document.getElementById('sbTargetNameTop').textContent = targetName;
-  document.getElementById('sbTargetAliasTop').textContent = payload.username ? `@${payload.username}` : (payload.name ? `Namensabfrage: ${payload.name}` : '-');
+  document.getElementById('sbTargetAliasTop').textContent = payload.username ? `@${payload.username}` : (payload.name ? `${payload.name}` : '-');
 
   // Stammdaten-Tabelle
   document.getElementById('sbName').textContent = payload.name || '-';
@@ -141,7 +365,13 @@ function renderFullReport(res, payload) {
 
   // Exposure Stamp
   document.getElementById('sbExposureVal').textContent = `${s.exposure_score}%`;
-  document.getElementById('sbExposureLevel').textContent = `RISIKO: ${s.exposure_level}`;
+  
+  let riskTranslated = s.exposure_level;
+  if (currentLang === 'en') {
+    const map = { 'KRITISCH': 'CRITICAL', 'HOCH': 'HIGH', 'MODERAT': 'MODERATE', 'GERING': 'LOW' };
+    riskTranslated = map[s.exposure_level] || s.exposure_level;
+  }
+  document.getElementById('sbExposureLevel').textContent = `${t.risk_label_prefix}${riskTranslated}`;
   
   const stamp = document.getElementById('sbDossierStamp');
   if (s.exposure_score >= 70) {
@@ -156,29 +386,29 @@ function renderFullReport(res, payload) {
   const pwdStatus = document.getElementById('sbPwdStatus');
   const pwdDetail = document.getElementById('sbPwdDetail');
   if (s.password_pwned === true) {
-    pwdStatus.innerHTML = `<span class="text-rose-400">⚠️ ${s.password_breach_count.toLocaleString()}x GELEAKT!</span>`;
-    pwdDetail.textContent = 'Passwort ist öffentlich kompromittiert!';
+    pwdStatus.innerHTML = `<span class="text-rose-400">⚠️ ${s.password_breach_count.toLocaleString()}x ${currentLang === 'de' ? 'GELEAKT!' : 'LEAKED!'}</span>`;
+    pwdDetail.textContent = currentLang === 'de' ? 'Passwort ist öffentlich kompromittiert!' : 'Password compromised in known breaches!';
   } else if (s.password_pwned === false) {
-    pwdStatus.innerHTML = `<span class="text-emerald-400">✓ Sicher (Kein Leak)</span>`;
-    pwdDetail.textContent = 'In 800M+ Datensätzen sauber';
+    pwdStatus.innerHTML = `<span class="text-emerald-400">✓ ${currentLang === 'de' ? 'Sicher (Kein Leak)' : 'Safe (No breach)'}</span>`;
+    pwdDetail.textContent = currentLang === 'de' ? 'In 800M+ Datensätzen sauber' : 'Clean in 800M+ leaked records';
   } else {
-    pwdStatus.textContent = 'Nicht getestet';
-    pwdDetail.textContent = 'Kein Passwort übermittelt';
+    pwdStatus.textContent = currentLang === 'de' ? 'Nicht getestet' : 'Not tested';
+    pwdDetail.textContent = currentLang === 'de' ? 'Kein Passwort übermittelt' : 'No password provided';
   }
 
   const emailStatus = document.getElementById('sbEmailStatus');
   const emailDetail = document.getElementById('sbEmailDetail');
   if (data.email_result) {
     if (data.email_result.breached) {
-      emailStatus.innerHTML = `<span class="text-rose-400">⚠️ In ${data.email_result.breach_count} Datenlecks</span>`;
+      emailStatus.innerHTML = `<span class="text-rose-400">⚠️ ${currentLang === 'de' ? `In ${data.email_result.breach_count} Datenlecks` : `In ${data.email_result.breach_count} data breaches`}</span>`;
       const names = (data.email_result.breach_names || []).slice(0, 3).join(', ');
-      emailDetail.textContent = names ? `${names}... (${data.email_result.source.split(' ')[0]})` : 'Betroffen von Sicherheitsvorfällen';
+      emailDetail.textContent = names ? `${names}...` : (currentLang === 'de' ? 'Betroffen von Sicherheitsvorfällen' : 'Affected by data leaks');
     } else {
-      emailStatus.innerHTML = `<span class="text-emerald-400">✓ Keine direkten Leaks</span>`;
-      emailDetail.textContent = `Geprüft via ${data.email_result.source.split(' ')[0]}`;
+      emailStatus.innerHTML = `<span class="text-emerald-400">✓ ${currentLang === 'de' ? 'Keine direkten Leaks' : 'No direct breaches'}</span>`;
+      emailDetail.textContent = currentLang === 'de' ? 'Keine Treffer in Standard-Indizes' : 'Clean across breach directories';
     }
   } else {
-    emailStatus.textContent = payload.email ? 'Geprüft' : 'Keine E-Mail angegeben';
+    emailStatus.textContent = payload.email ? (currentLang === 'de' ? 'Geprüft' : 'Audited') : (currentLang === 'de' ? 'Keine E-Mail angegeben' : 'No email provided');
     emailDetail.textContent = payload.email ? 'k-Anonymity / OSINT' : '-';
   }
 
@@ -188,32 +418,35 @@ function renderFullReport(res, payload) {
     const spf = data.domain_result.email_security.spf.status;
     const dmarc = data.domain_result.email_security.dmarc.status;
     if (spf === 'secure' && dmarc === 'secure') {
-      domStatus.innerHTML = `<span class="text-emerald-400">✓ Gesichert</span>`;
-      domDetail.textContent = 'Strikter SPF- und DMARC-Schutz';
+      domStatus.innerHTML = `<span class="text-emerald-400">✓ ${currentLang === 'de' ? 'Gesichert' : 'Secure'}</span>`;
+      domDetail.textContent = currentLang === 'de' ? 'Strikter SPF- und DMARC-Schutz' : 'Strict SPF & DMARC protection';
     } else {
-      domStatus.innerHTML = `<span class="text-amber-400">⚠️ Schwachstelle (${spf})</span>`;
+      domStatus.innerHTML = `<span class="text-amber-400">⚠️ ${currentLang === 'de' ? `Schwachstelle (${spf})` : `Vulnerable (${spf})`}</span>`;
       domDetail.textContent = data.domain_result.email_security.dmarc.assessment;
     }
   } else {
-    domStatus.textContent = 'Keine Domain';
-    domDetail.textContent = 'Nicht analysiert';
+    domStatus.textContent = currentLang === 'de' ? 'Keine Domain' : 'No domain';
+    domDetail.textContent = currentLang === 'de' ? 'Nicht analysiert' : 'Not analyzed';
   }
 
   // 3. Entdeckte Profile Tabelle (Section 2)
-  document.getElementById('sbProfilesCountText').textContent = `${fullScanProfiles.length} gefundene Accounts (${s.high_confidence_matches} verifiziert)`;
+  document.getElementById('sbProfilesCountText').textContent = currentLang === 'de' 
+    ? `${fullScanProfiles.length} gefundene Accounts (${s.high_confidence_matches} verifiziert)`
+    : `${fullScanProfiles.length} discovered accounts (${s.high_confidence_matches} verified)`;
+
   const tbody = document.getElementById('sbProfilesTableBody');
   tbody.innerHTML = '';
 
   if (fullScanProfiles.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Keine Accounts unter diesem Benutzernamen identifiziert (oder kein Benutzername angegeben).</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">${currentLang === 'de' ? 'Keine Accounts unter diesem Benutzernamen identifiziert.' : 'No accounts identified under this handle.'}</td></tr>`;
   } else {
     fullScanProfiles.forEach(p => {
       const isHigh = p.match && (p.match.confidence === 'high' || p.match.confidence === 'medium');
-      let matchBadge = '<span class="text-slate-500">⚪ Namensvetter</span>';
+      let matchBadge = `<span class="text-slate-500">⚪ ${currentLang === 'de' ? 'Namensvetter' : 'Coincidental'}</span>`;
       if (p.match && p.match.confidence === 'high') {
         matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">🟢 ${p.match.score}% MATCH</span>`;
       } else if (p.match && p.match.confidence === 'medium') {
-        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-950 text-yellow-400 border border-yellow-800">🟡 ${p.match.score}% Treffer</span>`;
+        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-950 text-yellow-400 border border-yellow-800">🟡 ${p.match.score}% ${currentLang === 'de' ? 'Treffer' : 'Likely'}</span>`;
       }
 
       const noteText = p.snippet ? `"${p.snippet}"` : (p.match && p.match.matches ? p.match.matches.join(', ') : '-');
@@ -226,7 +459,7 @@ function renderFullReport(res, payload) {
         <td class="py-2 px-3">${matchBadge}</td>
         <td class="py-2 px-3 text-slate-300 italic max-w-xs truncate">${noteText}</td>
         <td class="py-2 px-3 text-right">
-          <a href="${p.url}" target="_blank" class="text-cyan-400 hover:underline">Profil ↗</a>
+          <a href="${p.url}" target="_blank" class="text-cyan-400 hover:underline">${currentLang === 'de' ? 'Profil ↗' : 'Profile ↗'}</a>
         </td>
       `;
       tbody.appendChild(tr);
@@ -238,7 +471,7 @@ function renderFullReport(res, payload) {
   threatsBox.innerHTML = '';
   const threats = data.identity_audit.threat_vectors || [];
   if (threats.length === 0) {
-    threatsBox.innerHTML = '<p class="text-slate-400">Keine direkten Identitätskonflikte oder kritischen Risikoverknüpfungen festgestellt.</p>';
+    threatsBox.innerHTML = `<p class="text-slate-400">${currentLang === 'de' ? 'Keine direkten Identitätskonflikte oder Risikoverknüpfungen festgestellt.' : 'No direct high-risk identity cross-correlations detected.'}</p>`;
   } else {
     threats.forEach(tv => {
       const div = document.createElement('div');
@@ -254,7 +487,7 @@ function renderFullReport(res, payload) {
     });
   }
 
-  // 5. Phone & Permutations (Section 4)
+  // 5. Phone & Mailing Lists & Permutations (Section 4)
   const phoneBox = document.getElementById('sbPhoneReconBox');
   if (data.phone_result) {
     const pr = data.phone_result;
@@ -265,25 +498,24 @@ function renderFullReport(res, payload) {
       </div>
     `;
   } else {
-    phoneBox.textContent = 'Keine Rufnummer zur Analyse angegeben.';
+    phoneBox.textContent = currentLang === 'de' ? 'Keine Rufnummer angegeben.' : 'No phone number provided.';
   }
 
-  // Mailing List Recon Box
   const mlBox = document.getElementById('sbMailingListBox');
   if (data.mailing_list_result) {
     const ml = data.mailing_list_result;
     if (ml.found_in_marc) {
       mlBox.innerHTML = `
-        <div class="text-rose-400 font-bold">⚠️ ${ml.marc_hit_count} Treffer auf MARC.info</div>
-        <div class="text-[10px] text-slate-300">Listen: ${ml.detected_lists.slice(0, 3).join(', ')}</div>
+        <div class="text-rose-400 font-bold">⚠️ ${ml.marc_hit_count} ${currentLang === 'de' ? 'Treffer auf MARC.info' : 'hits on MARC.info'}</div>
+        <div class="text-[10px] text-slate-300">Lists: ${ml.detected_lists.slice(0, 3).join(', ')}</div>
         <div class="pt-1 flex flex-wrap gap-1">
-          <a href="${ml.marc_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">MARC Archiv ↗</a>
+          <a href="${ml.marc_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">MARC Archive ↗</a>
           <a href="${ml.specialized_searches[0].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">The Mail Archive ↗</a>
         </div>
       `;
     } else {
       mlBox.innerHTML = `
-        <div class="text-emerald-400 font-medium">Keine MARC-Treffer</div>
+        <div class="text-emerald-400 font-medium">${currentLang === 'de' ? 'Keine MARC-Treffer' : 'Clean on MARC.info'}</div>
         <div class="flex flex-wrap gap-1 pt-0.5">
           <a href="${ml.specialized_searches[0].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">Mail Archive ↗</a>
           <a href="${ml.specialized_searches[1].url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline">Pipermail ↗</a>
@@ -291,7 +523,7 @@ function renderFullReport(res, payload) {
       `;
     }
   } else {
-    mlBox.textContent = 'Keine E-Mail angegeben.';
+    mlBox.textContent = currentLang === 'de' ? 'Keine E-Mail angegeben.' : 'No email provided.';
   }
 
   const permBox = document.getElementById('sbPermutationsBox');
@@ -299,7 +531,7 @@ function renderFullReport(res, payload) {
   if (perms.length > 0) {
     permBox.innerHTML = perms.slice(0, 8).map(em => `<span class="inline-block bg-slate-900 px-2 py-0.5 rounded border border-slate-800 mr-1 mb-1 text-[11px] text-slate-300">${em}</span>`).join('');
   } else {
-    permBox.textContent = 'Keine Permutationen berechnet.';
+    permBox.textContent = currentLang === 'de' ? 'Keine Permutationen berechnet.' : 'No permutations calculated.';
   }
 
   // 6. Register & Dorks (Section 5)
@@ -322,18 +554,19 @@ function renderFullReport(res, payload) {
   const rem = data.remediation_guide || { account_guides: [], data_brokers: [] };
   
   if (rem.account_guides.length === 0) {
-    cleanupBox.innerHTML = '<div class="col-span-2 text-slate-500 text-[11px]">Keine spezifischen Löschleitfäden für diese Accounts hinterlegt.</div>';
+    cleanupBox.innerHTML = `<div class="col-span-2 text-slate-500 text-[11px]">${currentLang === 'de' ? 'Keine spezifischen Löschleitfäden für diese Accounts hinterlegt.' : 'No direct deactivation guides found for these specific accounts.'}</div>`;
   } else {
     rem.account_guides.forEach(g => {
+      const instr = currentLang === 'de' ? g.instructions_de : g.instructions;
       const c = document.createElement('div');
       c.className = 'p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start justify-between gap-3';
       c.innerHTML = `
         <div>
-          <span class="font-bold text-white text-xs block">${g.platform} Konto löschen</span>
-          <span class="text-[11px] text-slate-400 block mt-0.5 leading-relaxed">${g.instructions}</span>
+          <span class="font-bold text-white text-xs block">${g.platform} - ${currentLang === 'de' ? 'Konto löschen' : 'Delete Account'}</span>
+          <span class="text-[11px] text-slate-400 block mt-0.5 leading-relaxed">${instr}</span>
         </div>
         <a href="${g.delete_url}" target="_blank" class="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded text-[11px] font-medium shrink-0 transition">
-          Löschen ↗
+          ${currentLang === 'de' ? 'Löschen ↗' : 'Delete ↗'}
         </a>
       `;
       cleanupBox.appendChild(c);
@@ -344,18 +577,19 @@ function renderFullReport(res, payload) {
   const brokerBox = document.getElementById('sbDataBrokersList');
   brokerBox.innerHTML = '';
   if (rem.data_brokers.length === 0) {
-    brokerBox.innerHTML = '<div class="col-span-2 text-slate-500 text-[11px]">Kein Name zur Personensuchmaschinen-Abfrage angegeben.</div>';
+    brokerBox.innerHTML = `<div class="col-span-2 text-slate-500 text-[11px]">${currentLang === 'de' ? 'Kein Name zur Personensuchmaschinen-Abfrage angegeben.' : 'No full name provided for data broker check.'}</div>`;
   } else {
     rem.data_brokers.forEach(b => {
+      const descText = currentLang === 'de' ? b.desc_de : b.desc;
       const d = document.createElement('div');
       d.className = 'p-2.5 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between gap-2';
       d.innerHTML = `
         <div class="truncate">
           <span class="font-bold text-slate-200 block truncate">${b.name}</span>
-          <span class="text-[10px] text-slate-500 block truncate">${b.desc}</span>
+          <span class="text-[10px] text-slate-500 block truncate">${descText}</span>
         </div>
         <div class="flex items-center space-x-1.5 shrink-0">
-          <a href="${b.search_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">Suchen ↗</a>
+          <a href="${b.search_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">${currentLang === 'de' ? 'Suchen ↗' : 'Search ↗'}</a>
           <span class="text-slate-600">|</span>
           <a href="${b.opt_out_url}" target="_blank" class="text-[10px] text-rose-400 hover:underline font-semibold">Opt-Out ↗</a>
         </div>
@@ -365,7 +599,8 @@ function renderFullReport(res, payload) {
   }
 
   // 8. GDPR Letter
-  document.getElementById('repGdprText').value = data.identity_audit.gdpr_template || '';
+  const gdprText = currentLang === 'de' ? (data.identity_audit.gdpr_template_de || data.identity_audit.gdpr_template) : (data.identity_audit.gdpr_template_en || data.identity_audit.gdpr_template);
+  document.getElementById('repGdprText').value = gdprText || '';
 
   // Scroll smoothly down to the dossier
   reportContainer.scrollIntoView({ behavior: 'smooth' });
@@ -376,10 +611,10 @@ function toggleDossierView() {
   const btn = document.getElementById('toggleViewBtn');
   if (dossier.classList.contains('border-indigo-500')) {
     dossier.classList.remove('border-indigo-500');
-    btn.textContent = 'Kompakt-Modus';
+    btn.textContent = currentLang === 'de' ? 'Kompakt-Modus' : 'Compact View';
   } else {
     dossier.classList.add('border-indigo-500');
-    btn.textContent = 'Dossier-Modus';
+    btn.textContent = currentLang === 'de' ? 'Dossier-Modus' : 'Dossier View';
   }
 }
 
@@ -389,7 +624,7 @@ function copyGdprTemplate(btn) {
   if (!text) return;
   navigator.clipboard.writeText(text).then(() => {
     const orig = btn.textContent;
-    btn.textContent = '✓ Kopiert!';
+    btn.textContent = currentLang === 'de' ? '✓ Kopiert!' : '✓ Copied!';
     setTimeout(() => btn.textContent = orig, 1800);
   });
 }
@@ -408,7 +643,7 @@ function startUsernameScan(e) {
 
   const btn = document.getElementById('usernameScanBtn');
   btn.disabled = true;
-  btn.textContent = 'Scanne...';
+  btn.textContent = currentLang === 'de' ? 'Scanne...' : 'Scanning...';
 
   const url = `/api/scan/username/stream?username=${encodeURIComponent(username)}`;
   usernameEventSource = new EventSource(url);
@@ -417,7 +652,7 @@ function startUsernameScan(e) {
     const data = JSON.parse(event.data);
     if (data.event === 'done') {
       btn.disabled = false;
-      btn.textContent = 'Scan starten';
+      btn.textContent = translations[currentLang].btn_start_scan;
       usernameEventSource.close();
       return;
     }
@@ -435,7 +670,7 @@ function startUsernameScan(e) {
           <span class="font-bold text-white text-xs block">${data.platform}</span>
           <span class="text-[10px] text-slate-400">${data.category}</span>
         </div>
-        <a href="${data.url}" target="_blank" class="text-xs text-cyan-400 hover:underline">Öffnen ↗</a>
+        <a href="${data.url}" target="_blank" class="text-xs text-cyan-400 hover:underline">${currentLang === 'de' ? 'Öffnen ↗' : 'Open ↗'}</a>
       `;
       document.getElementById('usernameResultsGrid').appendChild(card);
     }
@@ -443,7 +678,7 @@ function startUsernameScan(e) {
 
   usernameEventSource.onerror = function() {
     btn.disabled = false;
-    btn.textContent = 'Scan starten';
+    btn.textContent = translations[currentLang].btn_start_scan;
     if (usernameEventSource) usernameEventSource.close();
   };
 }
@@ -472,7 +707,7 @@ async function handleFileSelect(file) {
     const json = await res.json();
     if (json.success) renderExifResults(json.data);
   } catch (err) {
-    alert('Fehler: ' + err.message);
+    alert('Error: ' + err.message);
   }
 }
 
@@ -482,7 +717,7 @@ function renderExifResults(data) {
   document.getElementById('exifTableContainer').classList.remove('hidden');
 
   const badge = document.getElementById('exifRiskBadge');
-  badge.textContent = `Risiko: ${data.risk_level}`;
+  badge.textContent = `${currentLang === 'de' ? 'Risiko' : 'Risk'}: ${data.risk_level}`;
   badge.className = 'text-xs px-2.5 py-1 rounded font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800';
 
   const reasons = document.getElementById('exifRiskReasons');
@@ -549,10 +784,10 @@ async function checkPassword(e) {
   r.classList.remove('hidden');
   if (json.data.pwned) {
     r.className = 'mt-4 p-4 rounded-xl border bg-rose-950 text-rose-300';
-    r.innerHTML = `⚠️ Gefunden in ${json.data.count.toLocaleString()} Leaks!`;
+    r.innerHTML = `⚠️ ${currentLang === 'de' ? `Gefunden in ${json.data.count.toLocaleString()} Leaks!` : `Found in ${json.data.count.toLocaleString()} breaches!`}`;
   } else {
     r.className = 'mt-4 p-4 rounded-xl border bg-emerald-950 text-emerald-300';
-    r.innerHTML = `✓ Kein Leak gefunden.`;
+    r.innerHTML = `✓ ${currentLang === 'de' ? 'Kein Leak gefunden.' : 'No breach found.'}`;
   }
 }
 
@@ -563,7 +798,7 @@ async function checkEmail(e) {
   const json = await res.json();
   const r = document.getElementById('emailResult');
   r.classList.remove('hidden');
-  r.innerHTML = `<div class="p-3 bg-slate-950 rounded border border-slate-800 text-xs">${json.data.message || 'Geprüft'}</div>`;
+  r.innerHTML = `<div class="p-3 bg-slate-950 rounded border border-slate-800 text-xs">${json.data.message || (currentLang === 'de' ? 'Geprüft' : 'Audited')}</div>`;
 }
 
 // ==================== 5. DORKS ====================
@@ -595,5 +830,10 @@ async function saveSettings(e) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ hibp_api_key: document.getElementById('hibpApiKeyInput').value })
   });
-  alert('Einstellungen gespeichert!');
+  alert(currentLang === 'de' ? 'Einstellungen gespeichert!' : 'Settings saved successfully!');
 }
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  setLanguage(currentLang);
+});

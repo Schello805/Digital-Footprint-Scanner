@@ -91,8 +91,8 @@ def audit_identity_profile(data: Dict[str, Any]) -> Dict[str, Any]:
         level = "GERING"
         color = "emerald"
 
-    # GDPR Deletion Template (DSGVO Art. 17 Recht auf Vergessenwerden)
-    gdpr_template = f"""Sehr geehrte Damen und Herren,
+    # GDPR Deletion Templates (EN & DE)
+    gdpr_template_de = f"""Sehr geehrte Damen und Herren,
 
 hiermit mache ich von meinem Recht auf Löschung („Recht auf Vergessenwerden“) gemäß Art. 17 DSGVO Gebrauch.
 
@@ -105,6 +105,19 @@ Bitte bestätigen Sie mir die unverzügliche Löschung schriftlich.
 Mit freundlichen Grüßen,
 {full_name or '[Dein Name]'}"""
 
+    gdpr_template_en = f"""To Whom It May Concern,
+
+I am writing to exercise my right to erasure ('Right to be Forgotten') pursuant to Article 17 of the General Data Protection Regulation (GDPR) / applicable privacy legislation.
+
+Please permanently delete and erase all personal data pertaining to me ({full_name or '[Your Name]'}) stored in your databases, public directories, and web indexes without undue delay.
+
+If you have made this personal data public or disclosed it to third parties, please inform them of this erasure request as required by law.
+
+Please confirm the execution of this deletion in writing.
+
+Sincerely,
+{full_name or '[Your Name]'}"""
+
     return {
         "success": True,
         "data": {
@@ -115,7 +128,9 @@ Mit freundlichen Grüßen,
             "email_permutations": email_permutations,
             "phone_analyses": phone_analyses,
             "dorks": dorks,
-            "gdpr_template": gdpr_template,
+            "gdpr_template": gdpr_template_en,
+            "gdpr_template_de": gdpr_template_de,
+            "gdpr_template_en": gdpr_template_en,
             "google_removal_url": "https://support.google.com/websearch/troubleshooter/3111061"
         }
     }

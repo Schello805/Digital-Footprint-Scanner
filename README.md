@@ -1,59 +1,130 @@
-# 🔍 Selfscanner – Digital Footprint & OSINT Privacy Auditor
+# 🔍 Digital Footprint Scanner (Selfscanner)
 
-**Selfscanner** ist ein modulares Open-Source-Intelligence-Tool (OSINT) zur automatisierten Überprüfung, Korrelation und Absicherung des eigenen digitalen Fußabdrucks im Internet.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3-38B2AC.svg)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![OSINT Privacy](https://img.shields.io/badge/Privacy-by--Design-green.svg)]()
 
-> **Das Problem:** Ein Name alleine (wie *Michael Schmidt* oder *Max Müller*) liefert im Internet Hunderte von Namensvettern und False Positives.  
-> **Die Lösung:** Selfscanner korreliert Name, Wohnort, Arbeitgeber, Aliase, Telefon und E-Mail zu einem ganzheitlichen Personenprofil und filtert fremde Namensvetter über intelligente Bio- und Inhaltsanalysen heraus.
-
----
-
-## 🚀 Kernfunktionen & Module
-
-### 1. 🎯 Identitäts- & Footprint-Audit (Multi-Target Correlation)
-- **Ganzheitliche Angriffsflächen-Berechnung:** Berechnet den **Digital Exposure Index (0–100)** basierend auf Kombinationen aus Name + Wohnort + Arbeitgeber + Telefon.
-- **Bedrohungsvektoren-Analyse:** Erkennt Risiken für Spear Phishing, Doxing, Meldeadress-Rückschlüsse und SIM-Swapping.
-- **DSGVO Art. 17 Generator:** Erzeugt mit einem Klick rechtssichere Musterschreiben auf Löschung („Recht auf Vergessenwerden“) sowie Direktlinks zum Google-Entfernungsantrag.
-
-### 2. 👤 Smarter Username-Scanner mit Bio-Matching
-- **Anti-False-Positive Filter:** Durchsucht über 40 Plattformen parallel (GitHub, Reddit, Twitter, Medium, Steam, Dev.to etc.) und extrahiert den Bio-Text der Seite.
-- **Kontext-Scoring:** Prüft, ob im Profil dein echter Name, dein Wohnort oder deine Interessen auftauchen:
-  - 🟢 **Hohe Wahrscheinlichkeit (z. B. 95% Match):** Dein Name & Wohnort wurden im Profil gefunden.
-  - 🟡 **Möglicher Treffer:** Einzelne Keywords stimmen überein.
-  - ⚪ **Namensvetter:** Keine Kontextübereinstimmung.
-- **Filter-Funktion:** Ermöglicht das sofortige Ausblenden unzutreffender Namensvetter.
-
-### 3. 📬 E-Mail-Permutator & Breach-Check
-- Generiert realistische Firmen- und Privat-E-Mail-Permutationen (`vorname.nachname@...`, `v.nachname@...`, `vorname@...`).
-- 1-Klick-Übergabe an den **HaveIBeenPwned k-Anonymity Scanner** zum Aufdecken vergessener Accounts in Datenpannen.
-
-### 4. 📞 Rufnummern-Reconnaissance
-- Erkennt Vorwahlen, Ortsnetze (z. B. *089 München*, *030 Berlin*) und Mobilfunkanbieter (*Telekom, Vodafone, O2, 1&1*).
-- Generiert zielgerichtete Abfragen für Spam-Verzeichnisse (*Tellows*), Telefonbücher (*Das Örtliche*) und ungeschützte Webseiten.
-
-### 5. 📸 EXIF- & Metadaten-Inspektor (GPS-Tracker & Privacy Sanitizer)
-- Liest versteckte Kameradaten, Objektiv und Zeitstempel aus Fotos aus.
-- **GPS-Mapping:** Konvertiert geographische GPS-Koordinaten und zeigt den Aufnahmeort auf einer **OpenStreetMap-Karte** an.
-- **1-Klick-Bereiniger:** Entfernt sämtliche Metadaten restlos für sicheres Teilen.
-
-### 6. 🌐 Domain- & E-Mail-Sicherheits-Audit
-- Prüft **SPF** und **DMARC** auf Mail-Spoofing-Schwachstellen (Schutz vor Phishing im eigenen Namen).
-- Identifiziert DNS- und Mail-Provider (*Cloudflare, Google Workspace, Microsoft 365, ProtonMail*).
-
-### 7. 🔎 Google Dorking Generator
-- Erstellt strukturierte Präzisionsabfragen für Handelsregister (*North Data*, *Unternehmensregister*), offene PDF-Dokumente und Paste-Dumps (*Pastebin*).
+> **An ethical, automated Digital Footprint & OSINT Privacy Suite** designed to audit, correlate, and remediate personal exposures across the public internet.
 
 ---
 
-## 🛠️ Schnellstart
+## 🌟 Key Highlights
 
+### 🚀 1-Click Automated Full Scan (All-in-One Cockpit)
+- No need to click through multiple tabs.
+- Enter your identifiers once (**Full Name, Handle/Username, Email, Phone, Location, Employer, Domain, or Password**) and trigger an **orchestrated concurrent audit in ~2 seconds**.
+
+### 📄 DIN A4 Confidential Dossier / Printable Fact Sheet
+- Formatted as an executive **OSINT Intelligence Dossier**:
+  - File Reference Number, Timestamp, Silhouette, and Official Risk Stamp.
+  - Profile attribute sheet, breach status, and verified platforms table.
+  - Forensic threat vector analysis and direct data broker removal links.
+- **Optimized for DIN A4 Print & PDF Export** (`@media print` clean contrast layout).
+
+### 👤 Handle Recon with Smart Bio-Matching (Anti-False-Positive)
+- Inspired by tools like *Sherlock* and *FootprintIQ's LENSiQ™* engine.
+- Queries **40+ platforms** (GitHub, Reddit, Twitter/X, Medium, Steam, Dev.to, Pinterest, etc.).
+- **Content & Bio Scraping:** Inspects page title and meta description to match your real name or location.
+- **Confidence Scoring:** Categorizes findings into 🟢 **High Match (e.g. 95%)**, 🟡 **Likely**, or ⚪ **Coincidental Name** (filters out same-name strangers).
+
+### 🛡️ Zero-Knowledge Password & Free Breach Engine
+- **k-Anonymity SHA-1 Model:** Your password **never** leaves your local machine. Only the first 5 characters of the hash are checked against over **800 million known leaked passwords**.
+- **Automatic Free Breach Intelligence:** Integrates the **XposedOrNot OSINT API** for instant, free breach lookups without mandatory paid keys, while fully supporting official **HaveIBeenPwned v3 API keys** if provided.
+
+### 📬 Public Mailing List Recon (GNU Mailman & MARC)
+- Queries **MARC.info** (Mailing List ARChives with over 1,500 public lists) live to uncover archived emails.
+- Generates precision dorks for **GNU Mailman / Pipermail directories** (`inurl:pipermail`), *The Mail Archive*, *Google Groups*, and developer lists (Debian, Ubuntu, Apache).
+
+### 🌐 Domain & Email Spoofing Audit (SPF / DMARC)
+- Audits SPF records (`-all` vs `~all` vs permissive) and DMARC policies (`p=reject`, `p=quarantine`, `p=none`) to check whether attackers can impersonate you or send phishing emails in your name.
+- Identifies infrastructure providers (Cloudflare, Google Workspace, Microsoft 365, ProtonMail).
+
+### 📸 EXIF & Geolocation Metadata Inspector
+- Inspects hidden camera metadata, lens, software, and creation timestamps in photos.
+- **GPS Mapping:** Converts EXIF GPS rational coordinates into decimal latitude/longitude and visualizes the capture location on an interactive **OpenStreetMap (Leaflet.js)** map.
+- **1-Click Privacy Sanitizer:** Strips all metadata completely and exports a sanitized image for safe sharing.
+
+### 🛡️ Remediation Plan & Data Broker Opt-Out (FootprintIQ Inspired)
+- Moves from diagnosis to solution:
+  - **Direct Deactivation Links:** 1-click links to the exact account deletion pages of found platforms (GitHub, Reddit, Twitter, Medium, Steam, etc.).
+  - **Data Broker Opt-Out:** Direct removal guides for people-search directories (*Yasni, Das Örtliche, 11880, Radaris*).
+  - **Art. 17 GDPR Erasure Request:** Ready-to-send legal notice exercising the *Right to be Forgotten* plus links to official search removal request tools.
+
+### 🌐 Bilingual Interface (English & German)
+- **English is default**, with a 1-click language switcher (`[ EN | DE ]`) in the navigation bar.
+
+---
+
+## 🛠️ Quickstart
+
+### Prerequisites
+- Python 3.10 or newer
+
+### 1. Clone & Setup Virtual Environment
 ```bash
-cd /Users/michael/Programmerierung/Selfscanner
-./venv/bin/python run.py
+git clone https://github.com/Schello805/Digital-Footprint-Scanner.git
+cd Digital-Footprint-Scanner
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Öffne im Browser: **[http://localhost:8000](http://localhost:8000)**
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the Application
+```bash
+python3 run.py
+```
+
+Open your browser at: **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
-## 🔐 Datenschutz
-Alle Analysen (EXIF, DNS, k-Anonymity) laufen lokal oder über mathematische Hashes. Es werden keine Daten auf externen Servern gespeichert.
+## 📁 Repository Structure
+
+```
+Digital-Footprint-Scanner/
+├── app/
+│   ├── config.py                 # Application settings & optional API keys
+│   ├── main.py                   # FastAPI application, routing & API endpoints
+│   ├── modules/
+│   │   ├── full_scanner.py       # Orchestrated 1-Click full audit pipeline
+│   │   ├── username_checker.py   # Sherlock-style handle scanner with bio-matcher
+│   │   ├── breach_checker.py     # k-Anonymity password check & free breach intelligence
+│   │   ├── mailing_list_checker.py # MARC.info & GNU Mailman archive checker
+│   │   ├── domain_recon.py       # DNS resolver & SPF/DMARC mail security audit
+│   │   ├── phone_recon.py        # Carrier, area code & reputation lookup
+│   │   ├── exif_inspector.py     # Image metadata, GPS mapping & EXIF scrubber
+│   │   ├── cleanup_guide.py      # Direct account deletion & data broker opt-out guides
+│   │   ├── identity_auditor.py   # Multi-attribute threat vector analysis & GDPR generator
+│   │   ├── email_permutator.py   # Probable corporate & personal email generator
+│   │   └── dork_builder.py       # Precision Google dorking query builder
+│   ├── static/
+│   │   ├── css/
+│   │   │   ├── tailwind.min.css  # Standalone local Tailwind CSS bundle
+│   │   │   ├── custom.css        # Cyber theme & DIN A4 printable dossier styling
+│   │   │   └── leaflet.css       # Local Leaflet map styles
+│   │   └── js/
+│   │       ├── app.js            # Reactive UI, i18n engine (EN/DE) & SSE client
+│   │       └── leaflet.js        # Local Leaflet map library
+│   └── templates/
+│       └── index.html            # Main web cockpit & DIN A4 dossier template
+├── tests/
+│   ├── test_core.py              # Unit & integration test suite
+│   └── test_server.py            # Static asset delivery verification
+├── requirements.txt              # Production dependencies
+├── run.py                        # Entrypoint script (Uvicorn server)
+└── README.md                     # Documentation (English)
+```
+
+---
+
+## 🔐 Privacy & Ethical Boundaries
+Selfscanner operates strictly on the principle of **Ethical OSINT**:
+- All analyses query publicly accessible metadata and open records.
+- No logins are bypassed, no credentials are stolen, and no private data is collected or transmitted to third parties.
+- All password checks utilize mathematically proven **k-Anonymity** where plaintext passwords are never transmitted.
