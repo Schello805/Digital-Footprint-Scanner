@@ -92,38 +92,38 @@ DATA_BROKERS: List[Dict[str, str]] = [
     {
         "name": "Yasni (People Search Directory)",
         "search_url_template": "https://www.yasni.com/index.php?action=websearch&query={}",
-        "opt_out_url": "https://www.yasni.de/hilfe/eintrag-entfernen",
+        "opt_out_url": "https://www.yasni.de/kontakt",
         "desc": "Aggregates web pages, profiles, and directories under real names.",
         "desc_de": "Aggregiert Webseiten, Foren und Profile unter deinem Klarnamen.",
-        "action": "Open listing and click 'Remove entry / Feedback'.",
-        "action_de": "Eintrag auf Yasni aufrufen und über den Feedback-/Entfernen-Button löschen lassen."
+        "action": "Submit profile deletion request to support (info@yasni.de / contact form).",
+        "action_de": "Löschanfrage mit Profil-Link an den Support (info@yasni.de oder Kontaktformular) senden."
     },
     {
-        "name": "Radaris / Whitepages (People Search)",
+        "name": "Radaris (Public Records & People Search)",
         "search_url_template": "https://radaris.com/p/{}/",
-        "opt_out_url": "https://radaris.com/control/result",
+        "opt_out_url": "https://radaris.com/control-privacy",
         "desc": "Public data broker indexing personal records, locations, and phones.",
         "desc_de": "Öffentlicher Datenaggregator für Kontaktdaten und Telefonnummern.",
-        "action": "Search your record and submit official opt-out request.",
-        "action_de": "Profil aufrufen und den offiziellen Removal-Link nutzen."
+        "action": "Open Control-Privacy, paste your profile URL and confirm removal via email.",
+        "action_de": "Control-Privacy aufrufen, Profil-URL einfügen und Löschung per E-Mail bestätigen."
     },
     {
-        "name": "Das Örtliche & Das Telefonbuch (DACH)",
+        "name": "Das Örtliche & Das Telefonbuch (DTM Portal)",
         "search_url_template": "https://www.dasoertliche.de/?kw={}",
-        "opt_out_url": "https://www.dastelefonbuch.de/service/austragung",
+        "opt_out_url": "https://www.dtme.de/ihr-eintrag/ihr-privater-eintrag/",
         "desc": "German directory containing landlines, mobile numbers, and addresses.",
         "desc_de": "Öffentliche Festnetz- und Mobilfunkverzeichnisse mit Anschriften.",
-        "action": "Request unlisting directly or through telecom provider.",
-        "action_de": "Austragungsantrag beim Telefonanbieter oder Verzeichnis stellen."
+        "action": "Submit official deletion form via Deutsche Tele Medien portal.",
+        "action_de": "Offizielles Online-Austragungsformular der Deutschen Tele Medien (DTM) absenden."
     },
     {
-        "name": "11880.com (DACH Directory)",
+        "name": "11880.com (DACH Directory Services)",
         "search_url_template": "https://www.11880.com/suche/{}",
-        "opt_out_url": "https://www.11880.com/datenschutz",
+        "opt_out_url": "https://unternehmen.11880.com/kontakt",
         "desc": "Public directory with personal and company addresses.",
         "desc_de": "Telefon- und Branchenverzeichnis mit Adressdaten.",
-        "action": "Send removal notice to privacy team.",
-        "action_de": "Widerspruch gegen Veröffentlichung per E-Mail einreichen."
+        "action": "Submit entry deletion notice via official customer contact form.",
+        "action_de": "Löschungsantrag für Verzeichniseintrag über das 11880-Kontaktformular einreichen."
     }
 ]
 
