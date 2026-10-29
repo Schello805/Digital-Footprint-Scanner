@@ -81,6 +81,17 @@ def init_db():
             );
             """)
 
+            # Schema Migrations
+            for col_def in [
+                ("name", "TEXT"),
+                ("avatar_url", "TEXT"),
+                ("oauth_data", "TEXT")
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE users ADD COLUMN {col_def[0]} {col_def[1]};")
+                except Exception:
+                    pass
+
             # Migration: Encrypt any existing plaintext scans
             try:
                 from app.modules.crypto import encrypt_payload
@@ -150,27 +161,44 @@ def register_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], 
     finally:
         conn.close()
 
-def get_or_create_oauth_user(email: str, provider: str, oauth_id: str = "") -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+def get_or_create_oauth_user(
+    email: str, 
+    provider: str, 
+    oauth_id: str = "",
+    name: str = "",
+    avatar_url: str = "",
+    oauth_data: Optional[Dict[str, Any]] = None
+) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
     """
-    Finds or creates a user account authenticated via Google or GitHub OAuth.
+    Finds or creates a user account authenticated via Google or GitHub OAuth,
+    storing verified profile data for automated scanner prefilling.
     Returns: (user_dict, session_token, error_message)
     """
     email_clean = email.strip().lower()
     if not email_clean or "@" not in email_clean:
         return None, None, "Ungültige E-Mail-Adresse vom OAuth-Provider."
 
+    oauth_json = json.dumps(oauth_data or {}, ensure_ascii=False)
     conn = get_db_connection()
     try:
-        user = conn.execute("SELECT id, email FROM users WHERE email = ?", (email_clean,)).fetchone()
+        user = conn.execute("SELECT id, email, name, avatar_url FROM users WHERE email = ?", (email_clean,)).fetchone()
         if user:
             user_id = user["id"]
+            with conn:
+                conn.execute("""
+                    UPDATE users 
+                    SET name = CASE WHEN ? != '' THEN ? ELSE name END,
+                        avatar_url = CASE WHEN ? != '' THEN ? ELSE avatar_url END,
+                        oauth_data = ?
+                    WHERE id = ?
+                """, (name, name, avatar_url, avatar_url, oauth_json, user_id))
         else:
             salt_hex = os.urandom(16).hex()
             pwd_hash = f"OAUTH_{provider.upper()}_{secrets.token_hex(16)}"
             with conn:
                 cursor = conn.execute(
-                    "INSERT INTO users (email, password_hash, salt) VALUES (?, ?, ?)",
-                    (email_clean, pwd_hash, salt_hex)
+                    "INSERT INTO users (email, password_hash, salt, name, avatar_url, oauth_data) VALUES (?, ?, ?, ?, ?, ?)",
+                    (email_clean, pwd_hash, salt_hex, name, avatar_url, oauth_json)
                 )
                 user_id = cursor.lastrowid
 
@@ -183,7 +211,7 @@ def get_or_create_oauth_user(email: str, provider: str, oauth_id: str = "") -> T
                 (token, user_id, expires_at)
             )
 
-        return {"id": user_id, "email": email_clean}, token, None
+        return {"id": user_id, "email": email_clean, "name": name, "avatar_url": avatar_url}, token, None
     except Exception as e:
         return None, None, f"OAuth-Fehler: {str(e)}"
     finally:
@@ -277,13 +305,13 @@ def login_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], Opt
         conn.close()
 
 def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
-    """Resolves a session token to the corresponding user account."""
+    """Resolves a session token to the corresponding user account with prefill profile data."""
     if not token:
         return None
     conn = get_db_connection()
     try:
         row = conn.execute("""
-            SELECT u.id, u.email, s.expires_at 
+            SELECT u.*, s.expires_at 
             FROM sessions s 
             JOIN users u ON s.user_id = u.id 
             WHERE s.token = ?
@@ -298,7 +326,35 @@ def get_user_from_token(token: str) -> Optional[Dict[str, Any]]:
                 conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
             return None
 
-        return {"id": row["id"], "email": row["email"]}
+        keys = row.keys()
+        email = row["email"]
+        name = row["name"] if ("name" in keys and row["name"]) else ""
+        avatar_url = row["avatar_url"] if ("avatar_url" in keys and row["avatar_url"]) else ""
+        raw_oauth = row["oauth_data"] if ("oauth_data" in keys and row["oauth_data"]) else ""
+        oauth_dict = json.loads(raw_oauth) if raw_oauth else {}
+
+        # Infer prefill details from Google / GitHub data
+        domain = ""
+        if "@" in email:
+            domain = email.split("@")[1].strip()
+        username = oauth_dict.get("login") or (email.split("@")[0].strip() if "@" in email else "")
+        city = oauth_dict.get("location") or ""
+        employer = oauth_dict.get("company") or ""
+
+        return {
+            "id": row["id"],
+            "email": email,
+            "name": name,
+            "avatar_url": avatar_url,
+            "prefill": {
+                "name": name,
+                "email": email,
+                "username": username,
+                "domain": domain,
+                "city": city,
+                "employer": employer,
+            }
+        }
     finally:
         conn.close()
 

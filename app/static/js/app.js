@@ -593,7 +593,8 @@ async function runFullScan(e) {
   try {
     const res = await fetch('/api/scan/full', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'include',
       body: JSON.stringify(payload)
     });
     const json = await res.json();
@@ -1247,7 +1248,10 @@ async function loadSettings() {
   const inputGoogleCx = document.getElementById('googleCxInput');
 
   try {
-    const res = await fetch('/api/settings');
+    const res = await fetch('/api/settings', {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     const data = await res.json();
 
     if (badgeHibp) {
@@ -1302,7 +1306,8 @@ async function saveSettings(e) {
   try {
     const res = await fetch('/api/settings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'include',
       body: JSON.stringify(payload)
     });
     const json = await res.json();
@@ -2004,6 +2009,72 @@ function setGateAuthMode(mode) {
   }
 }
 
+function getAuthHeaders(extra = {}) {
+  const headers = { ...extra };
+  const token = localStorage.getItem('session_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+function prefillScannerWithProfile(prefill) {
+  if (!prefill) return;
+  const fsName = document.getElementById('fsName');
+  const fsUsername = document.getElementById('fsUsername');
+  const fsEmail = document.getElementById('fsEmail');
+  const fsDomain = document.getElementById('fsDomain');
+  const fsCity = document.getElementById('fsCity');
+  const fsEmployer = document.getElementById('fsEmployer');
+
+  let filledCount = 0;
+  if (fsName && !fsName.value.trim() && prefill.name) {
+    fsName.value = prefill.name;
+    filledCount++;
+  }
+  if (fsUsername && !fsUsername.value.trim() && prefill.username) {
+    fsUsername.value = prefill.username;
+    filledCount++;
+  }
+  if (fsEmail && !fsEmail.value.trim() && prefill.email) {
+    fsEmail.value = prefill.email;
+    filledCount++;
+  }
+  if (fsDomain && !fsDomain.value.trim() && prefill.domain) {
+    fsDomain.value = prefill.domain;
+    filledCount++;
+  }
+  if (fsCity && !fsCity.value.trim() && prefill.city) {
+    fsCity.value = prefill.city;
+    filledCount++;
+  }
+  if (fsEmployer && !fsEmployer.value.trim() && prefill.employer) {
+    fsEmployer.value = prefill.employer;
+    filledCount++;
+  }
+
+  const banner = document.getElementById('prefillProfileBanner');
+  const textEl = document.getElementById('prefillProfileText');
+  if (banner && filledCount > 0) {
+    banner.classList.remove('hidden');
+    if (textEl) {
+      const displayName = prefill.name || prefill.username || prefill.email;
+      textEl.textContent = currentLang === 'de'
+        ? `Angemeldet als ${displayName}: Name, E-Mail & Domain wurden automatisch für den 1-Klick-Scan vorausgefüllt.`
+        : `Signed in as ${displayName}: Name, email & domain pre-filled automatically for 1-click scan.`;
+    }
+  }
+}
+
+function clearFullScanForm() {
+  ['fsName', 'fsUsername', 'fsEmail', 'fsPassword', 'fsDomain', 'fsPhone', 'fsCity', 'fsEmployer', 'fsKeywords'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const banner = document.getElementById('prefillProfileBanner');
+  if (banner) banner.classList.add('hidden');
+}
+
 async function handleGateAuthSubmit(e) {
   e.preventDefault();
   const emailInput = document.getElementById('gateAuthEmail');
@@ -2032,6 +2103,9 @@ async function handleGateAuthSubmit(e) {
     const json = await res.json();
 
     if (json.success) {
+      if (json.token) {
+        localStorage.setItem('session_token', json.token);
+      }
       if (pwdInput) pwdInput.value = '';
       await checkAuthStatus();
     } else {
@@ -2053,11 +2127,27 @@ async function handleGateAuthSubmit(e) {
 
 async function checkAuthStatus() {
   try {
-    const res = await fetch('/api/auth/me');
+    // Check if token was provided in URL callback (e.g. from OAuth redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryAuthToken = urlParams.get('auth_token');
+    if (queryAuthToken) {
+      localStorage.setItem('session_token', queryAuthToken);
+      urlParams.delete('auth_token');
+      urlParams.delete('login_success');
+      const cleanSearch = urlParams.toString() ? '?' + urlParams.toString() : '';
+      const cleanUrl = window.location.pathname + cleanSearch + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    const res = await fetch('/api/auth/me', {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     const json = await res.json();
     const loginBtn = document.getElementById('btnHeaderLogin');
     const userDropdown = document.getElementById('headerUserDropdown');
     const emailText = document.getElementById('headerUserEmailText');
+    const avatarImg = document.getElementById('headerUserAvatar');
     const gateContainer = document.getElementById('authGateContainer');
     const navContainer = document.getElementById('appNavContainer');
     const mainContainer = document.getElementById('appMainContainer');
@@ -2071,6 +2161,20 @@ async function checkAuthStatus() {
       if (loginBtn) loginBtn.classList.add('hidden');
       if (userDropdown) userDropdown.classList.remove('hidden');
       if (emailText) emailText.textContent = currentUser.email;
+
+      if (avatarImg) {
+        if (currentUser.avatar_url) {
+          avatarImg.src = currentUser.avatar_url;
+          avatarImg.classList.remove('hidden');
+        } else {
+          avatarImg.classList.add('hidden');
+        }
+      }
+
+      // Automatically prefill scanner form from profile
+      if (currentUser.prefill) {
+        prefillScannerWithProfile(currentUser.prefill);
+      }
 
       const btnSettings = document.getElementById('btnHeaderSettings');
       if (btnSettings) {
@@ -2090,6 +2194,7 @@ async function checkAuthStatus() {
 
       if (loginBtn) loginBtn.classList.remove('hidden');
       if (userDropdown) userDropdown.classList.add('hidden');
+      if (avatarImg) avatarImg.classList.add('hidden');
 
       const btnSettings = document.getElementById('btnHeaderSettings');
       if (btnSettings) btnSettings.classList.add('hidden');
@@ -2163,6 +2268,9 @@ async function handleAuthSubmit(e) {
     const json = await res.json();
 
     if (json.success) {
+      if (json.token) {
+        localStorage.setItem('session_token', json.token);
+      }
       closeAuthModal();
       pwdInput.value = '';
       await checkAuthStatus();
@@ -2185,10 +2293,15 @@ async function handleAuthSubmit(e) {
 
 async function performLogout() {
   try {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { 
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
   } catch (e) {
     // quiet
   }
+  localStorage.removeItem('session_token');
   currentUser = null;
   await checkAuthStatus();
 }
@@ -2215,7 +2328,10 @@ async function refreshUserScans() {
   if (tabContainer) tabContainer.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono text-xs">Lade gespeicherte Scans...</div>`;
 
   try {
-    const res = await fetch('/api/user/scans');
+    const res = await fetch('/api/user/scans', {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     const json = await res.json();
 
     const scans = (json.success && json.scans) ? json.scans : [];
@@ -2297,7 +2413,10 @@ async function refreshUserScans() {
 
 async function loadSavedScan(scanId) {
   try {
-    const res = await fetch(`/api/user/scans/${scanId}`);
+    const res = await fetch(`/api/user/scans/${scanId}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     const json = await res.json();
     if (!json.success || !json.scan) {
       alert(currentLang === 'de' ? 'Scan konnte nicht geladen werden.' : 'Could not load scan.');
@@ -2327,32 +2446,6 @@ async function loadSavedScan(scanId) {
     alert('Fehler beim Öffnen des Scans: ' + err.message);
   }
 }
-    const json = await res.json();
-    if (!json.success || !json.scan) {
-      alert(currentLang === 'de' ? 'Scan konnte nicht geladen werden.' : 'Could not load scan.');
-      return;
-    }
-
-    closeUserScansModal();
-    switchTab('fullscan');
-
-    const results = json.scan.results;
-    const payload = json.scan.payload;
-
-    renderFullReport(results, payload);
-
-    // Smooth scroll to the report
-    setTimeout(() => {
-      const dossier = document.getElementById('dossierSheet');
-      if (dossier) {
-        dossier.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 200);
-
-  } catch (err) {
-    alert('Fehler beim Öffnen des Scans: ' + err.message);
-  }
-}
 
 async function deleteSavedScan(scanId) {
   const confirmMsg = currentLang === 'de' 
@@ -2362,7 +2455,11 @@ async function deleteSavedScan(scanId) {
   if (!confirm(confirmMsg)) return;
 
   try {
-    const res = await fetch(`/api/user/scans/${scanId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/user/scans/${scanId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
     const json = await res.json();
     if (json.success) {
       await refreshUserScans();

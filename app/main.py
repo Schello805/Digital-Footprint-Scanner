@@ -445,12 +445,23 @@ async def oauth_google_callback(request: Request, code: Optional[str] = None, er
             if not email:
                 return RedirectResponse("/?oauth_error=no_email")
             
+            name = user_info.get("name") or f"{user_info.get('given_name', '')} {user_info.get('family_name', '')}".strip()
+            picture = user_info.get("picture") or ""
+
             from app.modules.db import get_or_create_oauth_user
-            user, session_token, err = get_or_create_oauth_user(email, provider="google", oauth_id=str(user_info.get("id", "")))
+            user, session_token, err = get_or_create_oauth_user(
+                email=email, 
+                provider="google", 
+                oauth_id=str(user_info.get("id", "")),
+                name=name,
+                avatar_url=picture,
+                oauth_data=user_info
+            )
             if err:
                 return RedirectResponse("/?oauth_error=" + urllib.parse.quote(err))
             
-            response = RedirectResponse("/", status_code=303)
+            redirect_url = f"/?auth_token={session_token}&login_success=1"
+            response = RedirectResponse(redirect_url, status_code=303)
             is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
             response.set_cookie(
                 "session_token", session_token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"
@@ -543,11 +554,21 @@ async def oauth_github_callback(request: Request, code: Optional[str] = None, er
                 return RedirectResponse("/?oauth_error=no_github_verified_email")
             
             from app.modules.db import get_or_create_oauth_user
-            user, session_token, err = get_or_create_oauth_user(email, provider="github", oauth_id=str(user_data.get("id", "")))
+            name = user_data.get("name") or user_data.get("login") or ""
+            avatar = user_data.get("avatar_url") or ""
+            user, session_token, err = get_or_create_oauth_user(
+                email=email, 
+                provider="github", 
+                oauth_id=str(user_data.get("id", "")),
+                name=name,
+                avatar_url=avatar,
+                oauth_data=user_data
+            )
             if err:
                 return RedirectResponse("/?oauth_error=" + urllib.parse.quote(err))
             
-            response = RedirectResponse("/", status_code=303)
+            redirect_url = f"/?auth_token={session_token}&login_success=1"
+            response = RedirectResponse(redirect_url, status_code=303)
             is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
             response.set_cookie(
                 "session_token", session_token, max_age=30*86400, httponly=True, secure=is_https, samesite="lax", path="/"

@@ -108,14 +108,32 @@ def test_auth_and_user_scans_workflow():
     assert "GitHub OAuth" in gh_resp.text
     print("✓ GitHub OAuth login endpoint tested (setup instructions verified).")
 
-    # 12. OAuth User Creation in DB
-    from app.modules.db import get_or_create_oauth_user
-    oauth_email = f"google_user_{secrets.token_hex(4)}@gmail.com"
-    o_user, o_token, o_err = get_or_create_oauth_user(oauth_email, provider="google", oauth_id="google_12345")
+    # 12. OAuth User Creation in DB with profile data and prefill
+    from app.modules.db import get_or_create_oauth_user, get_user_from_token
+    oauth_email = f"michael.schellenberger_{secrets.token_hex(4)}@schellenberger.biz"
+    o_user, o_token, o_err = get_or_create_oauth_user(
+        oauth_email,
+        provider="google",
+        oauth_id="google_12345",
+        name="Michael Schellenberger",
+        avatar_url="https://lh3.googleusercontent.com/a/sample_avatar.jpg",
+        oauth_data={"name": "Michael Schellenberger", "email": oauth_email}
+    )
     assert o_err is None
     assert o_user["email"] == oauth_email
     assert o_token is not None
-    print("✓ OAuth user creation & session generation verified.")
+    assert o_user["name"] == "Michael Schellenberger"
+    assert o_user["avatar_url"] == "https://lh3.googleusercontent.com/a/sample_avatar.jpg"
+    
+    # Verify token lookup returns computed prefill values for Cockpit 1-click scan
+    user_with_prefill = get_user_from_token(o_token)
+    assert user_with_prefill is not None
+    assert user_with_prefill["name"] == "Michael Schellenberger"
+    assert user_with_prefill["prefill"]["name"] == "Michael Schellenberger"
+    assert user_with_prefill["prefill"]["email"] == oauth_email
+    assert user_with_prefill["prefill"]["domain"] == "schellenberger.biz"
+    assert "michael.schellenberger" in user_with_prefill["prefill"]["username"]
+    print("✓ OAuth user creation, profile metadata & scanner prefill verified.")
 
 if __name__ == "__main__":
     test_auth_and_user_scans_workflow()

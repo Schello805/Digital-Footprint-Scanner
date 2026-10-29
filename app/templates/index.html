@@ -68,6 +68,7 @@
           </button>
           
           <div id="headerUserDropdown" class="hidden flex items-center space-x-2">
+            <img id="headerUserAvatar" class="w-7 h-7 rounded-full border border-indigo-500 object-cover hidden shadow-sm" alt="Avatar" />
             <button onclick="openUserScansModal()" class="px-3 py-1.5 rounded-lg bg-indigo-950/80 border border-indigo-700 hover:bg-indigo-900 text-indigo-300 font-medium transition flex items-center space-x-1.5 shadow-sm cursor-pointer">
               <span>📁</span>
               <span id="headerUserEmailText" class="max-w-[120px] sm:max-w-[180px] truncate">user@...</span>
@@ -262,6 +263,17 @@
           <div class="text-xs text-slate-500 font-mono" data-i18n="no_mandatory">
             No mandatory fields except Name or Username
           </div>
+        </div>
+
+        <!-- Prefill Profile Banner (Appears when Google/GitHub data was loaded) -->
+        <div id="prefillProfileBanner" class="hidden mb-4 p-3.5 rounded-xl bg-indigo-950/70 border border-indigo-700/80 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-lg">✨</span>
+            <span id="prefillProfileText" class="text-indigo-200">Mit deinen Profildaten vorausgefüllt.</span>
+          </div>
+          <button type="button" onclick="clearFullScanForm()" class="text-indigo-400 hover:text-indigo-200 underline text-[11px] self-end sm:self-auto cursor-pointer">
+            Felder leeren
+          </button>
         </div>
 
         <form id="fullScanForm" onsubmit="runFullScan(event)" class="space-y-4">
