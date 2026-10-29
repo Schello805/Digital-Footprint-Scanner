@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Git hook: Automatically increment VERSION file on every commit
+CURRENT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "19")
+NEXT_COUNT=$((CURRENT_COUNT + 1))
+echo "r${NEXT_COUNT}" > VERSION
+git add VERSION

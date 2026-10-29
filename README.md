@@ -69,6 +69,23 @@
 
 ## 🛠️ Quickstart
 
+### ⚡ Linux 1-Liner Installation (Debian, Ubuntu, Fedora, CentOS, Arch)
+Installs dependencies, clones the repository, sets up Python virtualenv, and registers a systemd service running on port 8000:
+```bash
+curl -sSL https://raw.githubusercontent.com/Schello805/Digital-Footprint-Scanner/main/install.sh | bash
+```
+*(Or with sudo if installing globally to `/opt/digital-footprint-scanner`: `curl -sSL https://raw.githubusercontent.com/Schello805/Digital-Footprint-Scanner/main/install.sh | sudo bash`)*
+
+### 🔄 Linux 1-Liner Update
+Performs a zero-downtime update from GitHub, updates dependencies, and restarts the service:
+```bash
+curl -sSL https://raw.githubusercontent.com/Schello805/Digital-Footprint-Scanner/main/update.sh | bash
+```
+
+---
+
+### Manual Setup (macOS / Linux / Windows)
+
 ### Prerequisites
 - Python 3.10 or newer
 

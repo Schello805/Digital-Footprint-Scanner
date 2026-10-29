@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Git hook: Ensure VERSION is synchronized before pushing
+CURRENT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "19")
+echo "r${CURRENT_COUNT}" > VERSION

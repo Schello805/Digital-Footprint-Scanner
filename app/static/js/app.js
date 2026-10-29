@@ -1827,6 +1827,90 @@ async function fetchAndRenderMarketingBrokers() {
   }
 }
 
+// ==================== 7. SYSTEM VERSION & 1-CLICK UPDATE ====================
+let currentVersionData = null;
+
+async function initVersionTracker() {
+  const revEl = document.getElementById('footerRevNumber');
+  const badgeEl = document.getElementById('footerUpdateBadge');
+  const dotEl = document.getElementById('updateDot');
+  const textEl = document.getElementById('updateStatusText');
+
+  try {
+    const res = await fetch('/api/system/version');
+    const json = await res.json();
+    if (!json.success || !json.data) return;
+
+    const data = json.data;
+    currentVersionData = data;
+
+    const localRev = data.local ? data.local.version_str : 'Rev. ?';
+    if (revEl) revEl.textContent = localRev;
+
+    const modalRev = document.getElementById('modalInstalledRev');
+    if (modalRev) modalRev.textContent = localRev;
+
+    if (badgeEl && textEl && dotEl) {
+      if (data.update_available) {
+        badgeEl.className = 'px-3 py-1 rounded-lg text-[11px] font-semibold border transition flex items-center space-x-1.5 cursor-pointer bg-amber-950/80 border-amber-600 text-amber-300 hover:bg-amber-900';
+        dotEl.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        textEl.textContent = currentLang === 'de' ? `⚠️ Update verfügbar! (${data.remote_commit || 'Neu'})` : `⚠️ Update available! (${data.remote_commit || 'New'})`;
+
+        const modalStatus = document.getElementById('modalUpdateBadgeStatus');
+        if (modalStatus) {
+          modalStatus.className = 'px-2.5 py-1 rounded text-xs font-bold bg-amber-950 text-amber-300 border border-amber-700 animate-pulse';
+          modalStatus.textContent = currentLang === 'de' ? `Update verfügbar (${data.remote_commit})` : `Update available (${data.remote_commit})`;
+        }
+      } else {
+        badgeEl.className = 'px-3 py-1 rounded-lg text-[11px] font-semibold border transition flex items-center space-x-1.5 cursor-pointer bg-emerald-950/60 border-emerald-800 text-emerald-400 hover:bg-emerald-900/50';
+        dotEl.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        textEl.textContent = currentLang === 'de' ? '✓ Auf neuestem Stand' : '✓ Up to date';
+
+        const modalStatus = document.getElementById('modalUpdateBadgeStatus');
+        if (modalStatus) {
+          modalStatus.className = 'px-2.5 py-1 rounded text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
+          modalStatus.textContent = currentLang === 'de' ? '✓ Auf neuestem Stand' : '✓ Up to date';
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Version check failed:', err);
+    if (textEl) textEl.textContent = currentLang === 'de' ? 'Offline' : 'Offline';
+  }
+}
+
+function openUpdateModal() {
+  const modal = document.getElementById('updateModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeUpdateModal() {
+  const modal = document.getElementById('updateModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyUpdateCommand(btn) {
+  const cmd = "curl -sSL https://raw.githubusercontent.com/Schello805/Digital-Footprint-Scanner/main/update.sh | bash";
+  navigator.clipboard.writeText(cmd).then(() => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Kopiert!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  });
+}
+
+function copyInstallCommand(btn) {
+  const cmd = "curl -sSL https://raw.githubusercontent.com/Schello805/Digital-Footprint-Scanner/main/install.sh | bash";
+  navigator.clipboard.writeText(cmd).then(() => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Kopiert!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   setLanguage(currentLang);
@@ -1834,4 +1918,5 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDisclaimerContent();
   fetchAndRenderMarketingBrokers();
   loadSettings();
+  initVersionTracker();
 });

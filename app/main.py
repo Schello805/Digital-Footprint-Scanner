@@ -256,3 +256,15 @@ async def update_settings(update: SettingsUpdate):
     if update.google_search_cx is not None:
         settings.google_search_cx = update.google_search_cx.strip()
     return {"success": True, "message": "Einstellungen erfolgreich aktualisiert."}
+
+# --- 10. System Version & Update Check ---
+from app.modules.version_tracker import check_for_updates
+
+@app.get("/api/system/version")
+async def get_system_version():
+    """
+    Returns current local git revision, commit hash, and checks GitHub for upstream updates.
+    """
+    version_info = await check_for_updates()
+    return {"success": True, "data": version_info}
+

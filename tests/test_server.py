@@ -51,6 +51,15 @@ def test_static_files():
     assert len(res_ico.content) > 500
     print(f"✓ /favicon.ico served directly ({len(res_ico.content)} bytes)")
 
+    # Test /api/system/version route
+    res_ver = client.get("/api/system/version")
+    assert res_ver.status_code == 200
+    vdata = res_ver.json()
+    assert vdata["success"] is True
+    assert "local" in vdata["data"]
+    assert "update_available" in vdata["data"]
+    print(f"✓ /api/system/version verified: {vdata['data']['local']['version_str']}")
+
 if __name__ == "__main__":
     test_static_files()
     print("🎉 All static assets verified successfully!")
