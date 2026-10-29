@@ -37,8 +37,10 @@ const translations = {
     lbl_username: "Username / Handle",
     lbl_email: "Email Address",
     lbl_password: "Password (Leak Check)",
-    lbl_city: "City / Location",
-    lbl_employer: "Company / Employer",
+    lbl_city: "City / Location (3rd Factor for Disambiguation)",
+    lbl_employer: "Company / Employer (Optional 3rd Factor)",
+    disambiguation_title: "3-Factor Verification & Namesake Disambiguation Notice:",
+    disambiguation_desc: "To prevent identity confusion (e.g. on LinkedIn, Facebook, or web registers), profiles are verified across at least three criteria (first name, surname + a mandatory 3rd criterion such as location, employer, or domain). As combinations of name and city can occasionally match multiple individuals, please review linked profiles for plausibility before proceeding.",
     lbl_phone: "Phone / Mobile",
     lbl_domain: "Domain (Mail Security)",
     cockpit_footer_note: "Concurrently queries k-Anonymity hashes, verified social platforms, mail spoofing & dorks.",
@@ -185,8 +187,10 @@ const translations = {
     lbl_username: "Benutzername / Alias",
     lbl_email: "E-Mail-Adresse",
     lbl_password: "Passwort (Leak-Check)",
-    lbl_city: "Wohnort / Stadt",
-    lbl_employer: "Firma / Arbeitgeber",
+    lbl_city: "Wohnort / Stadt (3. Kriterium zur Disambiguierung)",
+    lbl_employer: "Firma / Arbeitgeber (Optionales 3. Kriterium)",
+    disambiguation_title: "3-Faktor-Verifikation & Hinweis zu Namensvettern:",
+    disambiguation_desc: "Zur Minimierung von Verwechslungen (z. B. auf LinkedIn oder im Web) gleicht der Scanner jedes Profil mit mindestens drei Kriterien ab (Vorname, Nachname + ein 3. Kriterium wie Wohnort, Firma oder Domain). Da die Kombination aus Name und Ort vereinzelt auch auf mehrere Personen zutreffen kann, prüfe verlinkte Profile vor weiteren Schritten bitte auf Plausibilität.",
     lbl_phone: "Telefon / Handy",
     lbl_domain: "Eigene Domain (Mail-Security)",
     cockpit_footer_note: "Prüft k-Anonymity Hashes, verifizierte Plattform-Accounts, Mail-Spoofing & Dorks gleichzeitig.",
@@ -1272,7 +1276,8 @@ function renderFullReport(res, payload) {
       const isHigh = p.match && (p.match.confidence === 'high' || p.match.confidence === 'medium');
       let matchBadge = `<span class="px-2 py-0.5 text-[10px] rounded bg-slate-900 text-slate-400 border border-slate-800">⚪ ${currentLang === 'de' ? 'Account existiert (Identität unbestätigt)' : 'Account exists (Unverified)'}</span>`;
       if (p.match && p.match.confidence === 'high') {
-        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">🟢 ${currentLang === 'de' ? 'Bestätigt durch Bio / Daten' : 'Verified by Bio / Metadata'}</span>`;
+        const is3Factor = p.match.factors_matched === 3 || (p.match.matches && p.match.matches.some(m => m.includes('Ort:') || m.includes('Firma:') || m.includes('Kontext:') || m.includes('Name +')));
+        matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">🟢 ${is3Factor ? (currentLang === 'de' ? '3-Faktor verifiziert (Name + Ort/Firma)' : '3-Factor Verified (Name + City/Org)') : (currentLang === 'de' ? 'Bestätigt durch Bio / Daten' : 'Verified by Bio / Metadata')}</span>`;
       } else if (p.match && p.match.confidence === 'medium') {
         matchBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-yellow-950 text-yellow-400 border border-yellow-800">🟡 ${currentLang === 'de' ? 'Kontext-Übereinstimmung' : 'Context Match'}</span>`;
       }

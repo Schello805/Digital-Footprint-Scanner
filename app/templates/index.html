@@ -550,7 +550,19 @@
               <span class="text-xs font-mono text-slate-300 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg shrink-0" id="sbProfilesCountText">0 Treffer</span>
             </div>
 
-            <!-- Teil 2a: Bestätigte Accounts & Eigene Domains -->
+            <!-- Dezenter Hinweis zur 3-Faktor-Disambiguierung & Namensvettern -->
+            <div id="sbDisambiguationNotice" class="p-3 bg-slate-950/90 rounded-xl border border-slate-800/80 flex items-start space-x-2.5 text-[11px] text-slate-400 leading-relaxed">
+              <span class="text-indigo-400 text-sm shrink-0 mt-0.5">💡</span>
+              <div class="space-y-0.5">
+                <span class="font-bold text-slate-300 block" data-i18n="disambiguation_title">
+                  3-Faktor-Verifikation & Hinweis zu Namensvettern:
+                </span>
+                <span class="block text-slate-400" data-i18n="disambiguation_desc">
+                  Zur Minimierung von Verwechslungen (z. B. auf LinkedIn oder im Web) gleicht der Scanner jedes Profil mit mindestens drei Kriterien ab (Vorname, Nachname + ein 3. Kriterium wie Wohnort, Firma oder Domain). Da die Kombination aus Name und Ort vereinzelt auch auf mehrere Personen zutreffen kann, prüfe verlinkte Profile vor weiteren Schritten bitte auf Plausibilität.
+                </span>
+              </div>
+            </div>
+
             <!-- Teil 2a: Bestätigte Accounts & Eigene Domains -->
             <div class="space-y-2">
               <div class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">

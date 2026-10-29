@@ -61,28 +61,37 @@ def filter_search_results(
         if is_negative:
             continue
 
-        # 2. Name check: Must contain at least the surname
+        # 2. Strict Name check: Both first name and surname must be present if provided
+        if first_name and first_name not in combined:
+            continue
         if last_name and last_name not in combined:
             continue
 
-        # 3. Context Signal Matching
+        # 3. Mandatory 3rd Criterion (Entity Disambiguation):
+        # A combination of First Name + Last Name is not rare (e.g. on LinkedIn, Facebook, Xing).
+        # Therefore, at least one 3rd criterion (Ort/City, Arbeitgeber/Employer, Domain, or specific Keyword)
+        # MUST match if context signals were provided.
         matches = []
         for sig in cleaned_signals:
             sig_lower = sig.lower()
             if sig_lower in combined:
                 matches.append(sig)
 
-        # High confidence match: Matches name AND at least one context signal
-        if matches:
-            seen_urls.add(url)
-            verified.append({
-                "title": clean_snippet(title),
-                "url": url,
-                "snippet": clean_snippet(snippet),
-                "matched_signals": list(set(matches)),
-                "confidence": "high",
-                "verified": True
-            })
+        # Enforce 3rd criterion if context signals exist (Zero-False-Positive Filter)
+        if cleaned_signals and not matches:
+            continue
+
+        confidence = "high" if matches else "medium"
+
+        seen_urls.add(url)
+        verified.append({
+            "title": clean_snippet(title),
+            "url": url,
+            "snippet": clean_snippet(snippet),
+            "matched_signals": list(set(matches)),
+            "confidence": confidence,
+            "verified": True
+        })
 
     return verified
 

@@ -99,13 +99,18 @@ async def test_full_scan_pipeline():
             "title": "Michael Schellenberger, Bechhofen - North Data",
             "href": "https://www.northdata.de/Schellenberger,+Michael,+Bechhofen/vhh",
             "body": "Firmenbekanntmachungen und Netzwerk zu Michael Schellenberger in Bechhofen."
+        },
+        {
+            "title": "Michael Schellenberger - LinkedIn",
+            "href": "https://de.linkedin.com/in/michael-schellenberger-berlin",
+            "body": "Senior Consultant mit Sitz in Berlin und Brandenburg."
         }
     ]
     filtered_hits = filter_search_results(mock_raw, "Michael Schellenberger", ["Bechhofen", "Digitalcoach"])
     assert len(filtered_hits) == 1
     assert "northdata.de" in filtered_hits[0]["url"]
     assert "Bechhofen" in filtered_hits[0]["matched_signals"]
-    print("✓ Smart Entity Disambiguation verified: Namesake CMS lawyer filtered out, genuine Bechhofen hit retained!")
+    print("✓ Smart Entity Disambiguation verified: Namesakes (CMS lawyer & Berlin LinkedIn profile) strictly filtered out, genuine 3-factor hit retained!")
 
     # Test Email Account Checker
     print("Testing Email Account Recon...")

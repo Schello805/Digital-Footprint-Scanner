@@ -332,17 +332,19 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
                     cat = "Betriebene Web-Präsenz (Impressum)"
 
                 matched_sig_str = ", ".join(hit.get("matched_signals", []))
+                has_3rd_factor = bool(matched_sig_str)
                 found_profiles.append({
                     "platform": plat,
                     "category": cat,
                     "url": hit_url,
                     "exists": True,
                     "status": "found",
-                    "snippet": f"{hit['title']} (Verifiziert: {matched_sig_str})",
+                    "snippet": f"{hit['title']} (3-Faktor-Match: {matched_sig_str})" if has_3rd_factor else hit['title'],
                     "match": {
-                        "score": 95,
-                        "matches": [f"Kontext: {matched_sig_str}"],
-                        "confidence": "high"
+                        "score": 95 if has_3rd_factor else 70,
+                        "matches": [f"Name + {matched_sig_str}"] if has_3rd_factor else ["Name-Übereinstimmung"],
+                        "confidence": hit.get("confidence", "high"),
+                        "factors_matched": 3 if has_3rd_factor else 2
                     }
                 })
                 existing_profile_urls.add(hit_url)
