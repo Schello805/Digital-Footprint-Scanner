@@ -9,7 +9,7 @@ ENC_PREFIX = "enc:v1:"
 
 def _get_or_create_key() -> bytes:
     """Retrieves or creates a 256-bit encryption key for database at-rest protection."""
-    env_key = os.getenv("DATABASE_ENCRYPTION_KEY")
+    env_key = os.getenv("DATABASE_ENCRYPTION_KEY") or os.getenv("ENCRYPTION_KEY")
     if env_key:
         digest = hashlib.sha256(env_key.encode("utf-8")).digest()
         return base64.urlsafe_b64encode(digest)
