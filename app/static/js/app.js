@@ -73,7 +73,7 @@ const translations = {
     sec_dorks_sub: "Click links below to open direct search queries across registries (North Data, Bundesanzeiger) and public document dumps without bot blocks:",
     sec_cleanup_title: "🛡️ 6. Footprint Remediation & Account Deletion (Action Plan)",
     sec_cleanup_sub: "Direct account deactivation links",
-    broker_title: "People Search Engines & Data Broker Opt-Out:",
+    broker_title: "Preventative Directory & Phone Book Opt-Out (Precautionary):",
     sec_gdpr_title: "7. Legal Remediation: Art. 17 GDPR Erasure Request ('Right to be Forgotten')",
     gdpr_desc: "Use this legally binding letter to request immediate erasure of your personal data from platform operators, databases, and search engines.",
     btn_copy_text: "Copy Text",
@@ -221,7 +221,7 @@ const translations = {
     sec_dorks_sub: "Klicke auf die Links, um Suchergebnisse in Registern (North Data, Bundesanzeiger) und Foren ohne Bot-Sperren direkt zu prüfen:",
     sec_cleanup_title: "🛡️ 6. Footprint-Bereinigung & Account-Löschung (Action Plan)",
     sec_cleanup_sub: "Direkt-Links zur Kontodeaktivierung",
-    broker_title: "Personensuchmaschinen & Datenbroker Opt-Out:",
+    broker_title: "Vorsorgliche Austragung aus Telefon- & Auskunftsverzeichnissen (Opt-Out):",
     sec_gdpr_title: "7. Rechtliche Sofortmaßnahme: Art. 17 DSGVO Löschanforderung („Recht auf Vergessenwerden“)",
     gdpr_desc: "Nutze diesen vorgefertigten Rechtstext, um Plattformen, Register und Suchmaschinen zur vollständigen Löschung deiner personenbezogenen Daten nach Art. 17 DSGVO aufzufordern.",
     btn_copy_text: "Text kopieren",
@@ -1481,9 +1481,9 @@ function renderFullReport(res, payload) {
           <span class="text-[10px] text-slate-500 block truncate">${descText}</span>
         </div>
         <div class="flex items-center space-x-1.5 shrink-0">
-          <a href="${b.search_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">${currentLang === 'de' ? 'Suchen ↗' : 'Search ↗'}</a>
+          <a href="${b.search_url}" target="_blank" class="text-[10px] text-cyan-400 hover:underline">${currentLang === 'de' ? 'Eintrag prüfen ↗' : 'Check entry ↗'}</a>
           <span class="text-slate-600">|</span>
-          <a href="${b.opt_out_url}" target="_blank" class="text-[10px] text-rose-400 hover:underline font-semibold">Opt-Out ↗</a>
+          <a href="${b.opt_out_url}" target="_blank" class="text-[10px] text-rose-400 hover:underline font-semibold">${currentLang === 'de' ? 'Austragen ↗' : 'Opt-Out ↗'}</a>
         </div>
       `;
       brokerBox.appendChild(d);

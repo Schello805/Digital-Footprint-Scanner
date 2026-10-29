@@ -81,8 +81,24 @@ async def full_scan(req: FullScanRequest, request: Request):
             detail="Zugriff verweigert: Bitte registriere dich oder melde dich an, um deinen digitalen Fußabdruck zu scannen."
         )
     scan_data = req.dict()
+    # Only attach the logged-in user's avatar if the scan target matches the logged-in user
     if user.get("avatar_url"):
-        scan_data["session_avatar"] = user["avatar_url"]
+        target_email = (req.email or "").strip().lower()
+        user_email = (user.get("email") or "").strip().lower()
+        target_name = (req.name or req.first_name or "").strip().lower()
+        user_name = (user.get("name") or "").strip().lower()
+        
+        is_same_target = True
+        if target_email and user_email and target_email != user_email:
+            is_same_target = False
+        if target_name and user_name:
+            t_first = target_name.split()[0]
+            u_first = user_name.split()[0]
+            if t_first != u_first:
+                is_same_target = False
+
+        if is_same_target:
+            scan_data["session_avatar"] = user["avatar_url"]
     result = await execute_full_scan(scan_data)
     from app.modules.db import save_user_scan
     scan_id = save_user_scan(user["id"], scan_data, result)

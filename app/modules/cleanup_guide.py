@@ -90,38 +90,20 @@ PLATFORM_CLEANUP_DIRECTORIES: Dict[str, Dict[str, str]] = {
 
 DATA_BROKERS: List[Dict[str, str]] = [
     {
-        "name": "Yasni (People Search Directory)",
-        "search_url_template": "https://www.yasni.com/index.php?action=websearch&query={}",
-        "opt_out_url": "https://www.yasni.de/kontakt",
-        "desc": "Aggregates web pages, profiles, and directories under real names.",
-        "desc_de": "Aggregiert Webseiten, Foren und Profile unter deinem Klarnamen.",
-        "action": "Submit profile deletion request to support (info@yasni.de / contact form).",
-        "action_de": "Löschanfrage mit Profil-Link an den Support (info@yasni.de oder Kontaktformular) senden."
-    },
-    {
-        "name": "Radaris (Public Records & People Search)",
-        "search_url_template": "https://radaris.com/p/{}/",
-        "opt_out_url": "https://radaris.com/control-privacy",
-        "desc": "Public data broker indexing personal records, locations, and phones.",
-        "desc_de": "Öffentlicher Datenaggregator für Kontaktdaten und Telefonnummern.",
-        "action": "Open Control-Privacy, paste your profile URL and confirm removal via email.",
-        "action_de": "Control-Privacy aufrufen, Profil-URL einfügen und Löschung per E-Mail bestätigen."
-    },
-    {
         "name": "Das Örtliche & Das Telefonbuch (DTM Portal)",
         "search_url_template": "https://www.dasoertliche.de/?kw={}",
         "opt_out_url": "https://www.dtme.de/ihr-eintrag/ihr-privater-eintrag/",
-        "desc": "German directory containing landlines, mobile numbers, and addresses.",
-        "desc_de": "Öffentliche Festnetz- und Mobilfunkverzeichnisse mit Anschriften.",
+        "desc": "Official German directory for phone numbers, mobile and residential addresses.",
+        "desc_de": "Offizielle deutsche Telefon- und Teilnehmerverzeichnisse (Festnetz, Mobilfunk, Anschrift).",
         "action": "Submit official deletion form via Deutsche Tele Medien portal.",
-        "action_de": "Offizielles Online-Austragungsformular der Deutschen Tele Medien (DTM) absenden."
+        "action_de": "Kostenloses Online-Austragungsformular der Deutschen Tele Medien (DTM) zur Sperrung einreichen."
     },
     {
         "name": "11880.com (DACH Directory Services)",
         "search_url_template": "https://www.11880.com/suche/{}",
         "opt_out_url": "https://unternehmen.11880.com/kontakt",
         "desc": "Public directory with personal and company addresses.",
-        "desc_de": "Telefon- und Branchenverzeichnis mit Adressdaten.",
+        "desc_de": "Öffentliches Teilnehmer- und Branchenverzeichnis mit Kontaktdaten.",
         "action": "Submit entry deletion notice via official customer contact form.",
         "action_de": "Löschungsantrag für Verzeichniseintrag über das 11880-Kontaktformular einreichen."
     }
