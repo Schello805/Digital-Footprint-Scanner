@@ -105,4 +105,18 @@ class AppSettings:
         load_dotenv()
         return os.getenv("ADMIN_EMAIL", os.getenv("ADMIN_EMAIL_ADDRESS", ""))
 
+    @property
+    def rate_limit_scans_per_hour(self) -> int:
+        load_dotenv()
+        try:
+            return int(os.getenv("RATE_LIMIT_SCANS_PER_HOUR", "3"))
+        except ValueError:
+            return 3
+
+    @property
+    def rate_limit_whitelist(self) -> list:
+        load_dotenv()
+        raw = os.getenv("RATE_LIMIT_WHITELIST", "24.134.128.233,10.10.50.115")
+        return [ip.strip() for ip in raw.split(",") if ip.strip()]
+
 settings = AppSettings()

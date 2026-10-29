@@ -126,6 +126,34 @@ def test_rate_limiter_brute_force_protection():
     assert hit_429 is True
     print("✓ In-Memory Rate Limiter triggered HTTP 429 Too Many Requests against brute-force attacks.")
 
+def test_scan_rate_limiter_and_whitelist():
+    # 1. Untrusted client IP: max 3 scan requests per hour
+    untrusted_headers = {"X-Forwarded-For": "198.51.100.42"}
+    hit_scan_429 = False
+    for i in range(5):
+        res = client.post("/api/scan/full", json={"name": f"Target {i}"}, headers=untrusted_headers)
+        if res.status_code == 429:
+            hit_scan_429 = True
+            assert "Scann-Limit erreicht" in res.json()["error"]
+            break
+    assert hit_scan_429 is True
+    print("✓ Max 3 scans per hour enforced for untrusted IP (HTTP 429).")
+
+    # 2. User Whitelisted IP (24.134.128.233): Exceeds 3 requests without 429
+    whitelisted_user_headers = {"X-Forwarded-For": "24.134.128.233"}
+    for i in range(6):
+        res = client.post("/api/scan/full", json={"name": f"User Target {i}"}, headers=whitelisted_user_headers)
+        # Should NOT be 429
+        assert res.status_code != 429
+    print("✓ User IP 24.134.128.233 successfully whitelisted (unlimited scans).")
+
+    # 3. Reverse Proxy Whitelisted IP (10.10.50.115): Exceeds 3 requests without 429
+    proxy_headers = {"X-Forwarded-For": "10.10.50.115"}
+    for i in range(6):
+        res = client.post("/api/scan/full", json={"name": f"Proxy Target {i}"}, headers=proxy_headers)
+        assert res.status_code != 429
+    print("✓ Reverse Proxy IP 10.10.50.115 successfully whitelisted (unlimited scans).")
+
 if __name__ == "__main__":
     test_http_security_headers()
     test_ssrf_protection()
@@ -135,4 +163,5 @@ if __name__ == "__main__":
     test_database_encryption_at_rest()
     test_image_security_and_decompression_bomb()
     test_rate_limiter_brute_force_protection()
+    test_scan_rate_limiter_and_whitelist()
     print("🎉 All Cybersecurity Hardening Tests Passed Successfully!")

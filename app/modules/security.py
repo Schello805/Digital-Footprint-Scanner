@@ -93,10 +93,51 @@ rate_limiter = InMemoryRateLimiter()
 
 def get_client_ip(request: Request) -> str:
     """Extracts client IP, respecting trusted proxy headers if present."""
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip.strip()
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
         return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
     return request.client.host if request.client else "127.0.0.1"
+
+
+def is_ip_whitelisted(request: Request, client_ip: str) -> bool:
+    """
+    Checks if client IP or upstream reverse proxy IP is in the rate limit whitelist.
+    Whitelisted IPs are exempt from scan rate limits.
+    """
+    from app.config import settings
+    whitelist = set(settings.rate_limit_whitelist)
+    whitelist.add("24.134.128.233")
+    whitelist.add("10.10.50.115")
+
+    # 1. Direct extracted client IP
+    if client_ip in whitelist:
+        return True
+
+    # 2. Remote peer host (immediate reverse proxy connecting to FastAPI)
+    peer_ip = request.client.host if request.client else ""
+    if peer_ip in whitelist:
+        return True
+
+    # 3. Check any IP in X-Forwarded-For chain
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    for part in forwarded.split(","):
+        p = part.strip()
+        if p and p in whitelist:
+            return True
+
+    # 4. Check X-Real-IP
+    real_ip = request.headers.get("X-Real-IP", "").strip()
+    if real_ip and real_ip in whitelist:
+        return True
+
+    return False
+
 
 # ==================== 3. SECURITY HEADERS & RATE LIMITING MIDDLEWARE ====================
 
@@ -107,13 +148,14 @@ class SecurityAndRateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
         client_ip = get_client_ip(request)
+        whitelisted = is_ip_whitelisted(request, client_ip)
 
         # 1. Rate Limiting Rules
         if path.startswith("/api/auth/"):
             # Strict rate limit for login / registration: 8 attempts per 60 seconds
             key = f"auth:{client_ip}"
             allowed, retry_after = rate_limiter.check_rate_limit(key, max_requests=8, window_seconds=60)
-            if not allowed:
+            if not allowed and not whitelisted:
                 return JSONResponse(
                     status_code=429,
                     content={
@@ -124,15 +166,21 @@ class SecurityAndRateLimitMiddleware(BaseHTTPMiddleware):
                 )
 
         elif path.startswith("/api/scan/"):
-            # Scan limit: max 20 requests per 60 seconds per IP
+            # Scan limit: max 3 requests per 3600 seconds (1 hour) per IP (unless whitelisted)
+            from app.config import settings
+            max_scans = settings.rate_limit_scans_per_hour
+            window = 3600  # 1 hour
             key = f"scan:{client_ip}"
-            allowed, retry_after = rate_limiter.check_rate_limit(key, max_requests=20, window_seconds=60)
-            if not allowed:
+            allowed, retry_after = rate_limiter.check_rate_limit(key, max_requests=max_scans, window_seconds=window)
+            if not allowed and not whitelisted:
+                minutes_remaining = max(1, (retry_after + 59) // 60)
                 return JSONResponse(
                     status_code=429,
                     content={
                         "success": False,
-                        "error": f"Scann-Limit erreicht. Bitte warte {retry_after} Sekunden vor dem nächsten Audit."
+                        "error": f"Scann-Limit erreicht: Aus Sicherheitsgründen sind maximal {max_scans} Scans pro Stunde erlaubt. Bitte warte noch ca. {minutes_remaining} Minuten.",
+                        "error_en": f"Rate limit reached: Maximum {max_scans} scans per hour allowed. Please retry in approximately {minutes_remaining} minutes.",
+                        "retry_after_seconds": retry_after
                     },
                     headers={"Retry-After": str(retry_after)}
                 )
