@@ -71,6 +71,31 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             );
             """)
+
+            conn.execute("""
+            CREATE TABLE IF NOT EXISTS login_attempts (
+                email TEXT PRIMARY KEY,
+                failed_count INTEGER DEFAULT 0,
+                locked_until INTEGER DEFAULT 0,
+                last_attempt INTEGER DEFAULT 0
+            );
+            """)
+
+            # Migration: Encrypt any existing plaintext scans
+            try:
+                from app.modules.crypto import encrypt_payload
+                plain_rows = conn.execute(
+                    "SELECT id, raw_payload_json, raw_results_json FROM scans WHERE raw_payload_json NOT LIKE 'enc:v1:%'"
+                ).fetchall()
+                for r in plain_rows:
+                    enc_payload = encrypt_payload(r["raw_payload_json"])
+                    enc_results = encrypt_payload(r["raw_results_json"])
+                    conn.execute(
+                        "UPDATE scans SET raw_payload_json = ?, raw_results_json = ? WHERE id = ?",
+                        (enc_payload, enc_results, r["id"])
+                    )
+            except Exception:
+                pass
     finally:
         conn.close()
 
@@ -167,28 +192,80 @@ def get_or_create_oauth_user(email: str, provider: str, oauth_id: str = "") -> T
 # Static dummy salt for timing attack resistance
 _DUMMY_SALT = b"dummy_salt_timing_safe_16b"
 
+def _record_failed_attempt(conn: sqlite3.Connection, email: str, now: int):
+    """Records failed login attempt and triggers temporary 15-minute account lock after 5 failures."""
+    try:
+        row = conn.execute("SELECT failed_count, locked_until FROM login_attempts WHERE email = ?", (email,)).fetchone()
+        if not row:
+            with conn:
+                conn.execute(
+                    "INSERT INTO login_attempts (email, failed_count, locked_until, last_attempt) VALUES (?, 1, 0, ?)",
+                    (email, now)
+                )
+        else:
+            new_count = 1 if (row["locked_until"] > 0 and row["locked_until"] <= now) else row["failed_count"] + 1
+            locked_until = now + (15 * 60) if new_count >= 5 else 0
+            with conn:
+                conn.execute(
+                    "UPDATE login_attempts SET failed_count = ?, locked_until = ?, last_attempt = ? WHERE email = ?",
+                    (new_count, locked_until, now, email)
+                )
+    except Exception:
+        pass
+
+def _get_remaining_attempts(conn: sqlite3.Connection, email: str) -> int:
+    try:
+        row = conn.execute("SELECT failed_count, locked_until FROM login_attempts WHERE email = ?", (email,)).fetchone()
+        if not row:
+            return 5
+        if row["locked_until"] > int(time.time()):
+            return 0
+        return max(0, 5 - row["failed_count"])
+    except Exception:
+        return 5
+
 def login_user(email: str, password: str) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
     """
-    Authenticates an existing user with timing side-channel attack protection.
+    Authenticates user with timing side-channel attack protection and 5-attempt brute-force lockout.
     Returns: (user_dict, session_token, error_message)
     """
     email_clean = email.strip().lower()
+    now = int(time.time())
     conn = get_db_connection()
     try:
+        # Check brute force lockout
+        attempt = conn.execute("SELECT * FROM login_attempts WHERE email = ?", (email_clean,)).fetchone()
+        if attempt and attempt["locked_until"] > now:
+            mins_left = int((attempt["locked_until"] - now) / 60) + 1
+            _hash_password(password, _DUMMY_SALT) # preserve timing
+            return None, None, f"Konto temporär geschützt. Bitte warte noch {mins_left} Minute(n) vor dem nächsten Versuch."
+
         user = conn.execute("SELECT * FROM users WHERE email = ?", (email_clean,)).fetchone()
         if not user:
             # Perform dummy scrypt computation to match execution time and prevent user enumeration
             _hash_password(password, _DUMMY_SALT)
-            return None, None, "E-Mail oder Passwort ungültig."
+            _record_failed_attempt(conn, email_clean, now)
+            left = _get_remaining_attempts(conn, email_clean)
+            if left <= 0:
+                return None, None, "Zu viele Fehlversuche. Dieses Konto wurde für 15 Minuten gesperrt."
+            return None, None, f"E-Mail oder Passwort ungültig. (Noch {left} Versuche bis zur Kontosperre)"
 
         salt_bytes = bytes.fromhex(user["salt"])
         expected_hash = _hash_password(password, salt_bytes)
         if not secrets.compare_digest(user["password_hash"], expected_hash):
-            return None, None, "E-Mail oder Passwort ungültig."
+            _record_failed_attempt(conn, email_clean, now)
+            left = _get_remaining_attempts(conn, email_clean)
+            if left <= 0:
+                return None, None, "Zu viele Fehlversuche. Dieses Konto wurde für 15 Minuten gesperrt."
+            return None, None, f"E-Mail oder Passwort ungültig. (Noch {left} Versuche bis zur Kontosperre)"
+
+        # Successful login: reset failed attempts
+        with conn:
+            conn.execute("DELETE FROM login_attempts WHERE email = ?", (email_clean,))
 
         # Create session
         token = secrets.token_urlsafe(32)
-        expires_at = int(time.time()) + (30 * 86400) # 30 days
+        expires_at = now + (30 * 86400) # 30 days
         with conn:
             conn.execute(
                 "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
@@ -239,7 +316,7 @@ def logout_token(token: str):
 # ==================== SCANS MANAGEMENT ====================
 
 def save_user_scan(user_id: int, payload: Dict[str, Any], results: Dict[str, Any]) -> int:
-    """Saves a completed full scan into the user's private audit archive."""
+    """Saves a completed full scan into the user's private audit archive with AES at-rest encryption."""
     target_name = payload.get("name") or results.get("resolved_name") or ""
     target_handle = payload.get("username") or results.get("resolved_username") or results.get("discovered_handle") or ""
     target_email = payload.get("email") or ""
@@ -250,8 +327,9 @@ def save_user_scan(user_id: int, payload: Dict[str, Any], results: Dict[str, Any
     profiles_found = summary.get("profiles_found", len(results.get("found_profiles", [])))
     high_matches = summary.get("high_confidence_matches", 0)
 
-    payload_json = json.dumps(payload, ensure_ascii=False)
-    results_json = json.dumps(results, ensure_ascii=False)
+    from app.modules.crypto import encrypt_payload
+    payload_json = encrypt_payload(json.dumps(payload, ensure_ascii=False))
+    results_json = encrypt_payload(json.dumps(results, ensure_ascii=False))
 
     conn = get_db_connection()
     try:
@@ -299,9 +377,12 @@ def get_scan_by_id(user_id: int, scan_id: int) -> Optional[Dict[str, Any]]:
         if not row:
             return None
 
+        from app.modules.crypto import decrypt_payload
         data = dict(row)
-        data["payload"] = json.loads(data["raw_payload_json"]) if data["raw_payload_json"] else {}
-        data["results"] = json.loads(data["raw_results_json"]) if data["raw_results_json"] else {}
+        raw_payload = decrypt_payload(data["raw_payload_json"]) if data["raw_payload_json"] else "{}"
+        raw_results = decrypt_payload(data["raw_results_json"]) if data["raw_results_json"] else "{}"
+        data["payload"] = json.loads(raw_payload) if raw_payload else {}
+        data["results"] = json.loads(raw_results) if raw_results else {}
         del data["raw_payload_json"]
         del data["raw_results_json"]
         return data

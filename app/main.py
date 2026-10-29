@@ -53,7 +53,11 @@ def get_current_user(request: Request) -> Optional[Dict[str, Any]]:
         token = request.cookies.get("session_token")
     if token:
         from app.modules.db import get_user_from_token
-        return get_user_from_token(token)
+        user = get_user_from_token(token)
+        if user:
+            admin_target = settings.admin_email.strip().lower()
+            user["is_admin"] = bool((admin_target and user["email"].lower() == admin_target) or user["id"] == 1)
+            return user
     return None
 
 # --- 0. Full Footprint 1-Click Scan ---
@@ -280,17 +284,22 @@ class SettingsUpdate(BaseModel):
     google_search_cx: Optional[str] = None
 
 @app.get("/api/settings")
-async def get_settings():
+async def get_settings(request: Request):
+    user = get_current_user(request)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Zugriff verweigert: Nur der Administrator kann API-Keys und Server-Einstellungen einsehen.")
     return {
         "hibp_api_key_configured": bool(settings.hibp_api_key),
-        "google_search_configured": bool(settings.google_search_api_key and settings.google_search_cx)
+        "google_search_configured": bool(settings.google_search_api_key and settings.google_search_cx),
+        "google_oauth_configured": bool(settings.google_client_id),
+        "github_oauth_configured": bool(settings.github_client_id)
     }
 
 @app.post("/api/settings")
 async def update_settings(update: SettingsUpdate, request: Request):
     user = get_current_user(request)
-    if not user:
-        raise HTTPException(status_code=401, detail="Zugriff verweigert: Bitte zuerst anmelden, um Einstellungen zu bearbeiten.")
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Zugriff verweigert: Nur der Administrator kann Systemeinstellungen ändern.")
     if update.hibp_api_key is not None:
         settings.hibp_api_key = update.hibp_api_key.strip()
     if update.google_search_api_key is not None:

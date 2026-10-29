@@ -16,6 +16,9 @@ class AppSettings(BaseModel):
     google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
     github_client_id: str = os.getenv("GITHUB_CLIENT_ID", "")
     github_client_secret: str = os.getenv("GITHUB_CLIENT_SECRET", "")
-    app_base_url: str = os.getenv("APP_BASE_URL", "") # e.g. http://192.168.1.80:8000
+    app_base_url: str = os.getenv("APP_BASE_URL", "") # e.g. https://footprint.schellenberger.biz
+
+    # Administration
+    admin_email: str = os.getenv("ADMIN_EMAIL", "michael@schellenberger.biz")
 
 settings = AppSettings()

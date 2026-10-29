@@ -40,10 +40,66 @@ def test_password_policy():
     print("✓ Strong password policy (min 8 chars) enforced.")
 
 def test_settings_unauthorized_protection():
-    # Anonymous POST /api/settings must return 401
+    # Anonymous POST /api/settings must return 401 or 403 Forbidden
     res = client.post("/api/settings", json={"hibp_api_key": "malicious_key"})
-    assert res.status_code == 401
-    print("✓ Settings API endpoint protected against unauthorized mutation.")
+    assert res.status_code in (401, 403)
+    # Anonymous GET /api/settings must also return 403
+    res_get = client.get("/api/settings")
+    assert res_get.status_code == 403
+    print("✓ Settings API endpoint strictly protected against unauthorized access (Admin only / 403).")
+
+def test_account_lockout_after_failed_attempts():
+    import secrets
+    from app.modules.db import login_user, register_user
+    victim_email = f"victim_{secrets.token_hex(4)}@example.com"
+    register_user(victim_email, "CorrectPassword123!")
+
+    # 4 consecutive failed attempts
+    for _ in range(4):
+        u, tok, err = login_user(victim_email, "WrongPassword!")
+        assert u is None
+        assert "Versuche" in err
+
+    # 5th failed attempt triggers lockout
+    u, tok, err = login_user(victim_email, "WrongPassword!")
+    assert u is None
+    assert "gesperrt" in err.lower() or "geschützt" in err.lower()
+
+    # 6th attempt while locked is blocked immediately
+    u, tok, err = login_user(victim_email, "CorrectPassword123!")
+    assert u is None
+    assert "geschützt" in err.lower() or "gesperrt" in err.lower()
+    print("✓ 5-Attempt Account Lockout (15-min protection) verified.")
+
+def test_database_encryption_at_rest():
+    import secrets
+    from app.modules.db import register_user, save_user_scan, get_scan_by_id, get_db_connection
+    user_email = f"crypto_{secrets.token_hex(4)}@example.com"
+    user, tok, err = register_user(user_email, "SecretPassword123!")
+    
+    payload = {"name": "Sensitive Persona", "email": "classified@corp.com"}
+    results = {"summary": {"exposure_score": 42}, "found_profiles": [{"site": "github"}]}
+    scan_id = save_user_scan(user["id"], payload, results)
+
+    # 1. Inspect raw SQLite table directly
+    conn = get_db_connection()
+    row = conn.execute("SELECT raw_payload_json, raw_results_json FROM scans WHERE id = ?", (scan_id,)).fetchone()
+    raw_payload_in_db = row["raw_payload_json"]
+    raw_results_in_db = row["raw_results_json"]
+    conn.close()
+
+    # Raw DB columns MUST be encrypted with enc:v1: and NOT contain plaintext
+    assert raw_payload_in_db.startswith("enc:v1:")
+    assert "Sensitive Persona" not in raw_payload_in_db
+    assert raw_results_in_db.startswith("enc:v1:")
+    assert "classified@corp.com" not in raw_results_in_db
+
+    # 2. Transparent decryption via application layer
+    retrieved = get_scan_by_id(user["id"], scan_id)
+    assert retrieved is not None
+    assert retrieved["payload"]["name"] == "Sensitive Persona"
+    assert retrieved["results"]["summary"]["exposure_score"] == 42
+    print("✓ AES Database Encryption at Rest verified (zero plaintext in SQLite).")
 
 def test_image_security_and_decompression_bomb():
     # 1. Non-image binary rejected by magic byte inspection
@@ -75,6 +131,8 @@ if __name__ == "__main__":
     test_ssrf_protection()
     test_password_policy()
     test_settings_unauthorized_protection()
+    test_account_lockout_after_failed_attempts()
+    test_database_encryption_at_rest()
     test_image_security_and_decompression_bomb()
     test_rate_limiter_brute_force_protection()
     print("🎉 All Cybersecurity Hardening Tests Passed Successfully!")

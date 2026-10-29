@@ -479,6 +479,11 @@ function setLanguage(lang) {
 
 // --- Tab Navigation ---
 function switchTab(tabId) {
+  if (tabId === 'settings' && (!currentUser || !currentUser.is_admin)) {
+    alert(currentLang === 'de' ? 'Zugriff verweigert: Diese Einstellungen sind nur für den Administrator zugänglich.' : 'Access denied: Administrator only.');
+    return;
+  }
+
   currentTab = tabId;
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
   const targetPane = document.getElementById(`tab-content-${tabId}`);
@@ -2067,6 +2072,15 @@ async function checkAuthStatus() {
       if (userDropdown) userDropdown.classList.remove('hidden');
       if (emailText) emailText.textContent = currentUser.email;
 
+      const btnSettings = document.getElementById('btnHeaderSettings');
+      if (btnSettings) {
+        if (currentUser.is_admin) {
+          btnSettings.classList.remove('hidden');
+        } else {
+          btnSettings.classList.add('hidden');
+        }
+      }
+
       await refreshUserScans();
     } else {
       currentUser = null;
@@ -2076,6 +2090,9 @@ async function checkAuthStatus() {
 
       if (loginBtn) loginBtn.classList.remove('hidden');
       if (userDropdown) userDropdown.classList.add('hidden');
+
+      const btnSettings = document.getElementById('btnHeaderSettings');
+      if (btnSettings) btnSettings.classList.add('hidden');
     }
   } catch (err) {
     console.warn('Auth status check failed:', err);
