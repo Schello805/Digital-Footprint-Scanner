@@ -28,55 +28,50 @@
 
   <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900 sticky top-0 z-40 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-      <a href="/" class="flex items-center space-x-4 cursor-pointer group text-left no-underline" title="Zur Startseite">
-        <img src="/static/img/logo.png" alt="Digital Footprint Scanner Logo" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-2xl border-2 border-indigo-500/50 group-hover:scale-105 group-hover:border-indigo-400 transition-all duration-200" />
-        <div>
-          <div class="flex items-center space-x-2.5">
-            <span class="text-xl sm:text-2xl font-black tracking-tight text-white group-hover:text-indigo-300 transition-colors" data-i18n="app_title">Digital Footprint Scanner</span>
-            <span class="hidden sm:inline-block px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full" data-i18n="app_subtitle">All-in-One OSINT Suite</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-4">
+      <!-- Left: Logo & Branding -->
+      <a href="/" class="flex items-center space-x-3 sm:space-x-3.5 cursor-pointer group text-left no-underline shrink-0" title="Zur Startseite">
+        <img src="/static/img/logo.png" alt="Digital Footprint Scanner Logo" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover shadow-lg border border-indigo-500/50 group-hover:scale-105 group-hover:border-indigo-400 transition-all duration-200" />
+        <div class="min-w-0">
+          <div class="flex items-center space-x-2">
+            <span class="text-base sm:text-xl font-black tracking-tight text-white group-hover:text-indigo-300 transition-colors whitespace-nowrap" data-i18n="app_title">Digital Footprint Scanner</span>
+            <span class="hidden xl:inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full shrink-0" data-i18n="app_subtitle">OSINT Suite</span>
           </div>
-          <p class="text-xs sm:text-sm text-slate-400 mt-0.5" data-i18n="tagline">Holistic digital footprint reconnaissance without detours</p>
+          <p class="hidden md:block text-[11px] text-slate-400 mt-0.5 truncate max-w-sm" data-i18n="tagline">Holistic digital footprint reconnaissance without detours</p>
         </div>
       </a>
 
-      <div class="flex items-center space-x-3 text-xs">
+      <!-- Right: Utility Controls (Theme, Language, User Session) -->
+      <div class="flex items-center space-x-2 sm:space-x-3 text-xs shrink-0">
         <!-- Language Switcher (EN / DE) -->
-        <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-700">
-          <button onclick="setLanguage('en')" id="lang-btn-en" class="px-2 py-0.5 rounded text-xs font-bold bg-indigo-600 text-white transition">EN</button>
-          <button onclick="setLanguage('de')" id="lang-btn-de" class="px-2 py-0.5 rounded text-xs font-medium text-slate-400 hover:text-white transition">DE</button>
+        <div class="flex items-center space-x-0.5 bg-slate-950 p-0.5 rounded-lg border border-slate-700/80">
+          <button onclick="setLanguage('en')" id="lang-btn-en" class="px-2 py-1 rounded text-xs font-bold bg-indigo-600 text-white transition cursor-pointer">EN</button>
+          <button onclick="setLanguage('de')" id="lang-btn-de" class="px-2 py-1 rounded text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">DE</button>
         </div>
 
         <!-- Theme Toggle (Light / Dark) -->
-        <button onclick="toggleTheme()" id="btnThemeToggle" class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white transition flex items-center space-x-1 cursor-pointer" title="Design wechseln (Hell / Dunkel)">
+        <button onclick="toggleTheme()" id="btnThemeToggle" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white transition flex items-center space-x-1.5 cursor-pointer shadow-sm" title="Design wechseln (Hell / Dunkel)">
           <span id="themeIcon">☀️</span>
-          <span id="themeText" class="hidden sm:inline">Hell</span>
-        </button>
-
-        <button onclick="switchTab('fullscan')" id="btnHeaderCockpit" class="hidden px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow flex items-center space-x-1.5 cursor-pointer">
-          <span data-i18n="fullscan_cockpit">🚀 Full Scan Cockpit</span>
-        </button>
-        <button onclick="switchTab('settings')" id="btnHeaderSettings" class="hidden px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 hover:bg-slate-800 transition flex items-center space-x-1 text-slate-300 cursor-pointer">
-          <span data-i18n="api_keys">⚙️ API Keys</span>
+          <span id="themeText" class="hidden sm:inline text-xs font-medium">Hell</span>
         </button>
 
         <!-- User Authentication & Personal Scans Header Widget -->
         <div id="headerAuthContainer" class="flex items-center">
           <button onclick="handleHeaderLoginClick()" id="btnHeaderLogin" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-indigo-500 hover:text-white transition flex items-center space-x-1.5 text-slate-300 cursor-pointer shadow-sm">
             <span>👤</span>
-            <span id="lblLoginBtn">Anmelden</span>
+            <span id="lblLoginBtn" class="font-medium">Anmelden</span>
           </button>
           
           <div id="headerUserDropdown" class="hidden flex items-center space-x-2">
             <img id="headerUserAvatar" class="w-7 h-7 rounded-full border border-indigo-500 object-cover hidden shadow-sm" alt="Avatar" />
             <button onclick="openUserScansModal()" class="px-3 py-1.5 rounded-lg bg-indigo-950/80 border border-indigo-700 hover:bg-indigo-900 text-indigo-300 font-medium transition flex items-center space-x-1.5 shadow-sm cursor-pointer">
               <span>📁</span>
-              <span id="headerUserEmailText" class="max-w-[120px] sm:max-w-[180px] truncate">user@...</span>
+              <span id="headerUserEmailText" class="max-w-[110px] sm:max-w-[160px] truncate">user@...</span>
               <span id="headerUserScansBadge" class="px-1.5 py-0.2 text-[10px] bg-indigo-600 text-white rounded-full font-bold">0</span>
             </button>
             <button onclick="performLogout()" title="Abmelden" class="px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-rose-800 hover:bg-rose-950/50 text-slate-300 hover:text-rose-300 transition cursor-pointer flex items-center space-x-1 text-xs">
               <span>🚪</span>
-              <span class="font-medium">Abmelden</span>
+              <span class="hidden sm:inline font-medium">Abmelden</span>
             </button>
           </div>
         </div>
@@ -86,31 +81,31 @@
 
   <!-- Navigation Bar (Visible only when authenticated) -->
   <nav id="appNavContainer" class="hidden border-b border-slate-800 bg-slate-950 px-4">
-    <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5">
-      <button onclick="switchTab('fullscan')" id="tab-btn-fullscan" class="tab-btn active px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md">
+    <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2.5 scrollbar-none">
+      <button onclick="switchTab('fullscan')" id="tab-btn-fullscan" class="tab-btn active px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-2 bg-indigo-600 text-white shadow-md whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_fullscan">🚀 Full Scan (All-in-One)</span>
       </button>
-      <button onclick="switchTab('scans')" id="tab-btn-scans" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('scans')" id="tab-btn-scans" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span>📁</span>
         <span data-i18n="tab_scans">Meine Scans</span>
         <span id="tabNavScansBadge" class="px-1.5 py-0.2 text-[10px] bg-indigo-600 text-white rounded-full font-bold">0</span>
       </button>
-      <button onclick="switchTab('exif')" id="tab-btn-exif" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('exif')" id="tab-btn-exif" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_exif">📸 EXIF Photo Inspector</span>
       </button>
-      <button onclick="switchTab('username')" id="tab-btn-username" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('username')" id="tab-btn-username" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_username">👤 Username Recon</span>
       </button>
-      <button onclick="switchTab('domain')" id="tab-btn-domain" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('domain')" id="tab-btn-domain" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_domain">🌐 Domain & DNS Security</span>
       </button>
-      <button onclick="switchTab('breach')" id="tab-btn-breach" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('breach')" id="tab-btn-breach" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_breach">🛡️ Password & Breach Check</span>
       </button>
-      <button onclick="switchTab('dorks')" id="tab-btn-dorks" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('dorks')" id="tab-btn-dorks" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_dorks">🔎 Google Dorking</span>
       </button>
-      <button onclick="switchTab('unsubscribe')" id="tab-btn-unsubscribe" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+      <button onclick="switchTab('unsubscribe')" id="tab-btn-unsubscribe" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer">
         <span data-i18n="tab_unsubscribe">📬 Unsubscribe Hub (Incogni-Style)</span>
       </button>
     </div>
@@ -879,98 +874,6 @@ Sincerely,
         </form>
       </div>
       <div id="dorksContainer" class="space-y-6"></div>
-    </div>
-
-    <!-- ==================== TAB 6: SETTINGS ==================== -->
-    <div id="tab-content-settings" class="tab-pane hidden space-y-6">
-      <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
-          <div>
-            <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded bg-indigo-950 text-indigo-300 text-[10px] font-bold border border-indigo-800 mb-1.5">
-              <span>CONFIG & CREDENTIALS</span>
-            </div>
-            <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
-              <span data-i18n="settings_title">⚙️ Optionale API-Keys & Konfiguration</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed" data-i18n="settings_desc">
-              Alle Kernfunktionen (Vollscan, Sherlock, EXIF, k-Anonymity PW-Check, Opt-Out Hub) laufen standardmäßig 100% kostenlos und ohne API-Keys. Falls du eigene Schlüssel besitzt, kannst du sie hier hinterlegen.
-            </p>
-          </div>
-          <button onclick="switchTab('fullscan')" class="text-xs px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition flex items-center space-x-1.5 self-start sm:self-auto cursor-pointer border border-slate-700">
-            <span>🚀</span>
-            <span data-i18n="btn_back_to_cockpit">Zum Vollscan Cockpit</span>
-          </button>
-        </div>
-
-        <form onsubmit="saveSettings(event)" class="space-y-6 text-xs">
-          
-          <!-- Card 1: HaveIBeenPwned API Key -->
-          <div class="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="font-bold text-white text-sm flex items-center space-x-2">
-                <span>🛡️</span>
-                <span>HaveIBeenPwned API Key</span>
-              </label>
-              <span id="badgeHibpStatus" class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                Wird geladen...
-              </span>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-              Erlaubt die detaillierte Identifizierung betroffener Datenpannen (z. B. Adobe, LinkedIn, Canva) bei E-Mail-Adressen. Der Passwort-Leak-Check funktioniert über das k-Anonymity-Verfahren immer 100% kostenlos ohne Key.
-            </p>
-            <div class="space-y-1">
-              <input type="password" id="hibpApiKeyInput" placeholder="HIBP API Key eintragen..." class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
-              <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-                <span>Offiziell erhältlich bei <a href="https://haveibeenpwned.com/API/Key" target="_blank" class="text-indigo-400 hover:underline">haveibeenpwned.com ↗</a></span>
-                <span class="text-slate-400">Leer lassen, um kostenlosen Modus zu nutzen</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Google Programmable Custom Search -->
-          <div class="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-              <label class="font-bold text-white text-sm flex items-center space-x-2">
-                <span>🔎</span>
-                <span>Google Programmable Search (Custom Search JSON API)</span>
-              </label>
-              <span id="badgeGoogleStatus" class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                Wird geladen...
-              </span>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-              Ermöglicht das automatisierte Ausführen von OSINT-Dorking-Abfragen direkt in der Anwendung. Ohne Key werden alle Dork-Suchanfragen per 1-Klick direkt und sicher im Browser geöffnet.
-            </p>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div class="space-y-1">
-                <label class="text-slate-300 font-semibold text-[11px]">Google Search API Key</label>
-                <input type="password" id="googleApiKeyInput" placeholder="AIzaSy..." class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
-                <span class="text-[10px] text-slate-500 block">Aus der Google Cloud Console</span>
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-slate-300 font-semibold text-[11px]">Search Engine ID (CX)</label>
-                <input type="text" id="googleCxInput" placeholder="0123456789...:abcdef" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
-                <span class="text-[10px] text-slate-500 block">Aus der Custom Search Engine Console</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Save Button & Feedback Banner -->
-          <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button type="submit" id="btnSaveSettings" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/20 cursor-pointer">
-              <span>💾</span>
-              <span data-i18n="btn_save">Einstellungen speichern</span>
-            </button>
-            <div id="settingsFeedbackBanner" class="text-xs text-emerald-400 font-medium hidden">
-              ✓ Einstellungen erfolgreich im Server gespeichert!
-            </div>
-          </div>
-
-        </form>
-      </div>
     </div>
 
     <!-- ==================== TAB 7: UNSUBSCRIBE & OPT-OUT HUB (INCOGNI-STYLE) ==================== -->
