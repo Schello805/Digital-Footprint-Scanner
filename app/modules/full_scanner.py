@@ -325,6 +325,11 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
                 elif "northdata.de" in hit_url or "companyhouse.de" in hit_url:
                     plat = "Handelsregister / Wirtschaft"
                     cat = "Wirtschaft & Firmenregister"
+                elif "impressum" in hit_url.lower() or "impressum" in hit.get("title", "").lower():
+                    from urllib.parse import urlparse
+                    netloc = urlparse(hit_url).netloc.replace("www.", "")
+                    plat = f"Webseite ({netloc})"
+                    cat = "Betriebene Web-Präsenz (Impressum)"
 
                 matched_sig_str = ", ".join(hit.get("matched_signals", []))
                 found_profiles.append({

@@ -161,6 +161,8 @@ async def search_web_with_entity_filter(
             queries.append(f'"{clean_name}" {primary_context}')
         if city:
             queries.append(f'"{clean_name}" {city}')
+            queries.append(f'"{clean_name}" {city} impressum')
+        queries.append(f'"{clean_name}" impressum')
         queries.append(f'"{clean_name}"')
 
     if username and len(username) > 3 and not any(sig in username for sig in ["test", "admin"]):
