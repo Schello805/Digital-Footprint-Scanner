@@ -100,7 +100,10 @@ const translations = {
     confidential_tag: "CONFIDENTIAL // PRIVATE SECURITY AUDIT USE ONLY",
     file_ref_prefix: "FILE REFERENCE: AZ-OSINT-2026-",
     audit_result_label: "AUDIT RESULT",
-    risk_label_prefix: "RISK: "
+    risk_label_prefix: "RISK: ",
+    link_legal_disclaimer: "⚖️ Legal Disclaimer & Terms of Use",
+    modal_disclaimer_title: "Legal Notice, Ethical Use & Terms of Service",
+    btn_close_disclaimer: "Understood & Acknowledge"
   },
   de: {
     app_title: "Digital Footprint Scanner",
@@ -190,7 +193,10 @@ const translations = {
     confidential_tag: "VERTRAULICH // NUR ZUR PRIVATEN SICHERHEITSAUDITIERUNG",
     file_ref_prefix: "AKTENZEICHEN: AZ-OSINT-2026-",
     audit_result_label: "AUDIT RESULTAT",
-    risk_label_prefix: "RISIKO: "
+    risk_label_prefix: "RISIKO: ",
+    link_legal_disclaimer: "⚖️ Rechtlicher Hinweis & Nutzungsbedingungen",
+    modal_disclaimer_title: "Rechtlicher Hinweis, Ethische Nutzung & Haftungsausschluss",
+    btn_close_disclaimer: "Verstanden & Schließen"
   }
 };
 
@@ -234,6 +240,88 @@ function updateGdprLetter(targetName) {
   }
 }
 
+function updateDisclaimerContent() {
+  const container = document.getElementById('disclaimerModalBody');
+  if (!container) return;
+  
+  if (currentLang === 'de') {
+    container.innerHTML = `
+      <div class="space-y-3">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">1. Ausschließliche Zweckbestimmung (Selbstauskunft & Verteidigung)</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Der <strong>Digital Footprint Scanner</strong> ist ausschließlich als technisches Hilfsmittel zur defensiven Selbstüberprüfung (Wahrnehmung des Auskunftsrechts gemäß <strong>Art. 15 DSGVO</strong>) sowie für autorisierte Sicherheitsaudits bestimmt. Die Nutzung zur Überwachung, Nachstellung (Stalking), Bloßstellung oder Profilerstellung dritter Personen ohne deren ausdrückliche vorherige schriftliche Einwilligung ist strikt untersagt und kann strafrechtlich verfolgt werden (u.&nbsp;a. <strong>§ 126a StGB</strong>: <em>Gefährdendes Verbreiten personenbezogener Daten</em>).
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">2. Strafrechtliche Unbedenklichkeit (§§ 202a, 202d StGB)</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Die Software greift ausschließlich auf frei zugängliche, öffentlich erreichbare Quellen und Indizes zu. Es werden keine Zugangsschranken umgangen (kein Hacking gemäß § 202a StGB) und keine gestohlenen Datensätze gehandelt oder gespeichert (§ 202d StGB). Passwortprüfungen erfolgen strikt über den mathematischen <em>k-Anonymity-Standard</em> (Pwned Passwords), bei dem Passwörter niemals im Klartext übertragen werden.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">3. Haftungsausschluss</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Die Bereitstellung dieser Open-Source-Software erfolgt unter der MIT-Lizenz ohne Mängelgewähr. Die Autoren und Entwickler übernehmen keinerlei Haftung für direkte oder indirekte Schäden, rechtliche Auseinandersetzungen oder Rechtsverstöße, die durch die missbräuchliche Nutzung durch Anwender entstehen.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">4. Keine Rechtsberatung</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Die bereitgestellten Art. 17 DSGVO Musterschreiben und Handlungsanleitungen stellen automatisierte Entwürfe dar und ersetzen keine professionelle Rechtsberatung durch einen zugelassenen Rechtsanwalt oder Datenschutzbeauftragten.
+          </p>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="space-y-3">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">1. Intended Purpose (Self-Assessment & Privacy Defense)</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            <strong>Digital Footprint Scanner</strong> is engineered exclusively for defensive personal reconnaissance (exercising the fundamental right of access pursuant to <strong>Art. 15 GDPR</strong>) and authorized security audits. Using this tool for unauthorized surveillance, stalking, harassment, doxing (§ 126a German Criminal Code - StGB), or profiling unconsenting individuals is strictly prohibited by law.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">2. Criminal Law Compliance & Anti-Hacking Safe Harbor</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            This tool queries only public HTTP status codes, authoritative DNS records, and legitimate open OSINT APIs. No access control mechanisms or firewalls are bypassed (§ 202a StGB). No stolen databases or password dumps are downloaded, stored, or distributed (§ 202d StGB). Passwords are tested purely via cryptographic <em>k-Anonymity</em>.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">3. Limitation of Liability</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            This software is provided "as is" under the MIT License without warranty of any kind. Under no circumstances shall the authors, maintainers, or copyright holders be held liable for damages, regulatory penalties, or legal claims resulting from improper or illegal utilization by third parties.
+          </p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-white text-xs mb-1">4. No Legal Advice</h4>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            The provided Article 17 GDPR erasure templates and guidance are convenience templates and do not constitute formal legal counsel. For specific legal issues, consult a certified attorney or data protection officer.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function toggleDisclaimerModal(show) {
+  const modal = document.getElementById('disclaimerModal');
+  if (!modal) return;
+  if (show) {
+    updateDisclaimerContent();
+    modal.classList.remove('hidden');
+  } else {
+    modal.classList.add('hidden');
+  }
+}
+
 function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('selfscanner_lang', lang);
@@ -264,6 +352,7 @@ function setLanguage(lang) {
 
   // Always keep GDPR letter localized
   updateGdprLetter(lastScanPayload ? lastScanPayload.name : '');
+  updateDisclaimerContent();
 
   // Re-render report if already generated
   if (lastScanResult && lastScanPayload) {
@@ -892,4 +981,5 @@ async function saveSettings(e) {
 document.addEventListener('DOMContentLoaded', () => {
   setLanguage(currentLang);
   updateGdprLetter();
+  updateDisclaimerContent();
 });

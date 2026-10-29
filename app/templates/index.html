@@ -592,9 +592,40 @@ Sincerely,
         <img src="/static/img/logo.png" alt="Logo" class="w-5 h-5 rounded object-cover" />
         <span>Digital Footprint Scanner • 1-Click All-in-One OSINT Suite</span>
       </span>
-      <span>100% Local & Privacy-Preserving • No External Telemetry</span>
+      <div class="flex items-center space-x-4">
+        <span>100% Local & Privacy-Preserving</span>
+        <span class="text-slate-700">•</span>
+        <button onclick="toggleDisclaimerModal(true)" class="text-indigo-400 hover:text-indigo-300 underline font-medium transition cursor-pointer" data-i18n="link_legal_disclaimer">
+          ⚖️ Legal Disclaimer & Terms of Use
+        </button>
+      </div>
     </div>
   </footer>
+
+  <!-- ==================== LEGAL DISCLAIMER MODAL ==================== -->
+  <div id="disclaimerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl text-slate-300 text-xs leading-relaxed max-h-[85vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xl">⚖️</span>
+          <h3 class="text-base font-bold text-white" data-i18n="modal_disclaimer_title">Legal Notice & Terms of Use</h3>
+        </div>
+        <button onclick="toggleDisclaimerModal(false)" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-4" id="disclaimerModalBody">
+        <!-- Localized content injected dynamically -->
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button onclick="toggleDisclaimerModal(false)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition cursor-pointer" data-i18n="btn_close_disclaimer">
+          Understood & Acknowledge
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="/static/js/leaflet.js"></script>
   <script src="/static/js/app.js"></script>

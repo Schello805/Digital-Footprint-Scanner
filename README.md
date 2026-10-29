@@ -132,3 +132,21 @@ Digital Footprint Scanner operates strictly on the principle of **Ethical OSINT*
 - All analyses query publicly accessible metadata and open records.
 - No logins are bypassed, no credentials are stolen, and no private data is collected or transmitted to third parties.
 - All password checks utilize mathematically proven **k-Anonymity** where plaintext passwords are never transmitted.
+
+---
+
+## ⚖️ Legal Disclaimer & Terms of Use
+
+### 1. Intended Purpose & Authorization
+**Digital Footprint Scanner** is developed strictly for **defensive self-auditing** (exercising the fundamental right of access pursuant to **Art. 15 GDPR** / international privacy regulations) and authorized security awareness audits.
+- Conducting OSINT reconnaissance or building intelligence dossiers on unconsenting third parties without explicit authorization is strictly prohibited and may violate applicable privacy laws (e.g. Art. 6 GDPR, German Criminal Code § 126a - *Doxing / Endangering Dissemination of Personal Data*).
+- Users are solely responsible for ensuring that their use conforms to all local, national, and international laws.
+
+### 2. Limitation of Liability
+This project is open-source software distributed under the MIT License on an "as is" and "as available" basis. Under no circumstances shall the author(s), developers, or contributors be liable for any direct, indirect, incidental, or consequential damages resulting from the misuse or unauthorized operation of this tool.
+
+### 3. No Legal Advice
+The provided **Article 17 GDPR erasure request templates** and data remediation resources are automated drafts provided for educational and convenience purposes. They do not constitute certified legal advice. Consult a licensed legal professional or data protection authority for binding counsel.
+
+### 4. Zero Data Collection
+This application operates **100% locally**. No scanned targets, personal identifiers, network payloads, or user credentials are ever stored in a central database or transmitted to any external telemetry server.
