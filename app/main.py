@@ -80,9 +80,12 @@ async def full_scan(req: FullScanRequest, request: Request):
             status_code=401,
             detail="Zugriff verweigert: Bitte registriere dich oder melde dich an, um deinen digitalen Fußabdruck zu scannen."
         )
-    result = await execute_full_scan(req.dict())
+    scan_data = req.dict()
+    if user.get("avatar_url"):
+        scan_data["session_avatar"] = user["avatar_url"]
+    result = await execute_full_scan(scan_data)
     from app.modules.db import save_user_scan
-    scan_id = save_user_scan(user["id"], req.dict(), result)
+    scan_id = save_user_scan(user["id"], scan_data, result)
     result["saved_scan_id"] = scan_id
     result["user_email"] = user["email"]
     return result

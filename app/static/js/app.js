@@ -773,6 +773,183 @@ function filterWebDirectories() {
   }).join('');
 }
 
+// ==================== VISUELLE MEDIATHEK & BILD-WOLKE ====================
+let currentMediaImages = [];
+
+function renderMediaCloud(images = []) {
+  currentMediaImages = images;
+  const cloudContainer = document.getElementById('sbMediaCloudContainer');
+  const countBadge = document.getElementById('sbMediaCloudCountBadge');
+  const sourcesAccordion = document.getElementById('sbMediaSourcesAccordion');
+  const sourcesContent = document.getElementById('sbMediaSourcesContent');
+  const sourcesTotalBadge = document.getElementById('sbMediaSourcesTotalBadge');
+  
+  if (!cloudContainer) return;
+
+  const totalSources = images.reduce((acc, img) => acc + (img.sources ? img.sources.length : 0), 0);
+
+  if (countBadge) {
+    countBadge.textContent = currentLang === 'de'
+      ? `${images.length} ${images.length === 1 ? 'Bild' : 'Bilder'} (${totalSources} Quellen)`
+      : `${images.length} ${images.length === 1 ? 'Image' : 'Images'} (${totalSources} Sources)`;
+  }
+  if (sourcesTotalBadge) {
+    sourcesTotalBadge.textContent = currentLang === 'de'
+      ? `${totalSources} Fundstellen`
+      : `${totalSources} Sources`;
+  }
+
+  if (images.length === 0) {
+    cloudContainer.innerHTML = `
+      <div class="p-6 text-center text-slate-500 font-mono text-xs space-y-1 w-full">
+        <span class="text-2xl block">🛡️</span>
+        <div class="text-slate-300 font-bold">${currentLang === 'de' ? 'Keine öffentlichen Profilbilder im Web gefunden' : 'No public profile photos indexed'}</div>
+        <div class="text-slate-500 text-[11px]">${currentLang === 'de' ? 'Hervorragender Schutz deiner visuellen Identität: Auf den geprüften Diensten wurden keine öffentlich zugänglichen Avatare hinterlegt.' : 'High visual privacy: No public avatars or photos were discovered on scanned platforms.'}</div>
+      </div>
+    `;
+    if (sourcesAccordion) sourcesAccordion.classList.add('hidden');
+    return;
+  }
+
+  if (sourcesAccordion) sourcesAccordion.classList.remove('hidden');
+
+  // Render the Word-Cloud of images (larger if count is higher)
+  cloudContainer.innerHTML = images.map((img, idx) => {
+    const cnt = img.count || 1;
+    let sizeClasses = 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-xl ring-1 ring-slate-700 shadow-md';
+    let badgeHtml = `<span class="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 rounded-full text-[8px] font-semibold bg-slate-800 text-slate-300 border border-slate-600 shadow">1x</span>`;
+    let glowEffect = '';
+
+    if (img.size_tier === 'xl' || cnt >= 3) {
+      sizeClasses = 'w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 rounded-2xl ring-4 ring-indigo-500/80 shadow-2xl shadow-indigo-500/25';
+      badgeHtml = `
+        <span class="absolute -top-2.5 -right-2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white shadow-lg border border-indigo-400 flex items-center space-x-1 animate-pulse">
+          <span>🔥</span>
+          <span>${cnt}x ${currentLang === 'de' ? 'gefunden' : 'found'}</span>
+        </span>
+      `;
+      glowEffect = 'scale-105';
+    } else if (img.size_tier === 'lg' || cnt === 2) {
+      sizeClasses = 'w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-2xl ring-2 ring-cyan-500/70 shadow-xl shadow-cyan-500/20';
+      badgeHtml = `
+        <span class="absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-cyan-700 text-white shadow-md border border-cyan-400">
+          ${cnt}x ${currentLang === 'de' ? 'gefunden' : 'found'}
+        </span>
+      `;
+    }
+
+    const sourcesSummary = (img.sources || []).map(s => s.platform).join(', ');
+
+    return `
+      <div class="relative group cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-20 ${glowEffect}" onclick="openMediaLightbox(${idx})">
+        <div class="${sizeClasses} overflow-hidden bg-slate-900 flex items-center justify-center relative">
+          <img src="${escapeHtml(img.url)}" alt="Gefundenes Foto" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.closest('.group').style.display='none'">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2.5 flex flex-col justify-end">
+            <span class="text-[11px] font-bold text-white leading-tight truncate">${escapeHtml(sourcesSummary)}</span>
+            <span class="text-[9px] text-indigo-300 font-mono mt-0.5">${currentLang === 'de' ? 'Klicken für Details ↗' : 'Click for details ↗'}</span>
+          </div>
+        </div>
+        ${badgeHtml}
+      </div>
+    `;
+  }).join('');
+
+  // Render the expandable sources list underneath
+  if (sourcesContent) {
+    sourcesContent.innerHTML = images.map((img, idx) => {
+      const cnt = img.count || 1;
+      const badgeClass = cnt >= 3 
+        ? 'bg-indigo-950 text-indigo-300 border-indigo-800' 
+        : (cnt === 2 ? 'bg-cyan-950 text-cyan-300 border-cyan-800' : 'bg-slate-900 text-slate-400 border-slate-800');
+
+      return `
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-700 transition">
+          <div class="flex items-start sm:items-center space-x-3 flex-1 min-w-0">
+            <img src="${escapeHtml(img.url)}" onclick="openMediaLightbox(${idx})" class="w-12 h-12 rounded-lg object-cover border border-slate-700 shrink-0 cursor-pointer hover:opacity-80 transition" onerror="this.style.display='none'" />
+            <div class="flex-1 min-w-0 space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-white">Bild #${idx + 1}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeClass} font-mono font-bold">
+                  ${cnt}x ${currentLang === 'de' ? 'im Web verwendet' : 'used online'}
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                ${(img.sources || []).map(s => `
+                  <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-slate-950 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-[11px] text-slate-300 hover:text-white transition group/link">
+                    <span class="font-bold text-indigo-400">${escapeHtml(s.platform)}:</span>
+                    <span class="truncate max-w-[180px] text-slate-400">${escapeHtml(s.title || s.url)}</span>
+                    <span class="text-[9px] text-slate-500 group-hover/link:text-indigo-300">↗</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1.5 shrink-0 self-end sm:self-center">
+            <a href="${escapeHtml(img.google_lens_url)}" target="_blank" rel="noopener noreferrer" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded text-[10px] font-semibold border border-slate-700 transition">
+              Google Lens ↗
+            </a>
+            <a href="${escapeHtml(img.url)}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-bold transition">
+              ${currentLang === 'de' ? 'Bild öffnen' : 'Open Image'} ↗
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function toggleMediaSources() {
+  const content = document.getElementById('sbMediaSourcesContent');
+  const chevron = document.getElementById('sbMediaSourcesChevron');
+  if (!content) return;
+  const isHidden = content.classList.contains('hidden');
+  if (isHidden) {
+    content.classList.remove('hidden');
+    if (chevron) chevron.textContent = '▲';
+  } else {
+    content.classList.add('hidden');
+    if (chevron) chevron.textContent = '▼';
+  }
+}
+
+function openMediaLightbox(index) {
+  const img = currentMediaImages[index];
+  if (!img) return;
+  const modal = document.getElementById('mediaLightboxModal');
+  const lbImg = document.getElementById('lightboxImg');
+  const lbTitle = document.getElementById('lightboxTitle');
+  const lbSources = document.getElementById('lightboxSources');
+  const lbLens = document.getElementById('lightboxGoogleLens');
+  const lbTinEye = document.getElementById('lightboxTinEye');
+  const lbYandex = document.getElementById('lightboxYandex');
+  const lbDirect = document.getElementById('lightboxDirect');
+
+  if (lbImg) lbImg.src = img.url;
+  if (lbTitle) {
+    lbTitle.textContent = currentLang === 'de'
+      ? `Gefundenes Foto (Auf ${img.count || 1} Plattformen identifiziert)`
+      : `Discovered Photo (Identified on ${img.count || 1} platforms)`;
+  }
+  if (lbSources) {
+    lbSources.innerHTML = (img.sources || []).map(s => `
+      <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">
+        <strong class="text-indigo-400">${escapeHtml(s.platform)}</strong>: ${escapeHtml(s.title || s.url)}
+      </span>
+    `).join('');
+  }
+  if (lbLens) lbLens.href = img.google_lens_url;
+  if (lbTinEye) lbTinEye.href = img.tineye_url;
+  if (lbYandex) lbYandex.href = img.yandex_url;
+  if (lbDirect) lbDirect.href = img.url;
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeMediaLightbox() {
+  const modal = document.getElementById('mediaLightboxModal');
+  if (modal) modal.classList.add('hidden');
+}
+
 function renderFullReport(res, payload) {
   const data = res;
   const s = data.summary;
@@ -960,6 +1137,9 @@ function renderFullReport(res, payload) {
 
   // 3b. Filterbare Liste öffentlicher Webseiten & Verzeichnisse
   renderWebDirectories(webDirs);
+
+  // 3c. Visuelle Mediathek & Bild-Wolke (Word-Cloud skaliert mit Häufigkeit)
+  renderMediaCloud(data.discovered_images || []);
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
   const threatsBox = document.getElementById('sbThreatsContainer');

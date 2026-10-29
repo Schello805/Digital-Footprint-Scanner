@@ -10,6 +10,7 @@ from app.modules.email_account_checker import check_email_accounts
 from app.modules.dork_builder import generate_dorks
 from app.modules.identity_auditor import audit_identity_profile
 from app.modules.cleanup_guide import get_remediation_guide
+from app.modules.image_recon import collect_discovered_images
 from app.config import settings
 
 FREEMAIL_DOMAINS = {
@@ -359,12 +360,27 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "badge_color": audit_data.get("badge_color", "emerald")
     }
 
+    # Collect and aggregate all discovered images & avatars
+    session_avatar = data.get("session_avatar") or data.get("avatar_url")
+    discovered_images = collect_discovered_images(
+        email_recon_res=email_recon_res,
+        found_profiles=found_profiles,
+        session_avatar=session_avatar,
+        email=email,
+        username=username or discovered_handle
+    )
+    
+    primary_avatar = email_recon_res.get("avatar_url") if (email_recon_res and email_recon_res.get("avatar_url")) else None
+    if not primary_avatar and discovered_images:
+        primary_avatar = discovered_images[0]["url"]
+
     return {
         "success": True,
         "summary": summary,
         "identity_audit": audit_data,
         "found_profiles": found_profiles,
-        "avatar_url": email_recon_res.get("avatar_url") if email_recon_res else None,
+        "avatar_url": primary_avatar,
+        "discovered_images": discovered_images,
         "email_accounts": email_recon_res.get("registered_accounts", []) if email_recon_res else [],
         "discovered_handle": discovered_handle,
         "resolved_username": username,

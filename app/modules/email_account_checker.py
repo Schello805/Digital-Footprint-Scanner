@@ -38,6 +38,14 @@ async def lookup_gravatar(email: str, client: Optional[httpx.AsyncClient] = None
                 avatar_url = entry.get("thumbnailUrl")
                 about = entry.get("aboutMe")
 
+                # Parse photos gallery
+                photos = []
+                for p in entry.get("photos", []) or []:
+                    if isinstance(p, dict) and p.get("value"):
+                        photos.append(p["value"])
+                if avatar_url and avatar_url not in photos:
+                    photos.insert(0, avatar_url)
+
                 # Parse linked external accounts if disclosed
                 linked_accounts = []
                 for acc in entry.get("accounts", []) or []:
@@ -58,6 +66,7 @@ async def lookup_gravatar(email: str, client: Optional[httpx.AsyncClient] = None
                     "location": location,
                     "profile_url": profile_url,
                     "avatar_url": avatar_url,
+                    "photos": photos,
                     "about": about,
                     "linked_accounts": linked_accounts,
                     "evidence": f"Kryptografisch verifizierter MD5-Hash ({email_hash[:8]}...)"
@@ -107,6 +116,12 @@ async def lookup_duolingo(email: str, client: Optional[httpx.AsyncClient] = None
 
                 username = user.get("username") or ""
                 profile_url = f"https://www.duolingo.com/profile/{username}" if username else "https://www.duolingo.com"
+                
+                # Extract Duolingo avatar picture
+                duo_picture = user.get("picture")
+                if duo_picture and isinstance(duo_picture, str):
+                    if duo_picture.startswith("//"):
+                        duo_picture = "https:" + duo_picture
 
                 return {
                     "service": "Duolingo",
@@ -115,6 +130,7 @@ async def lookup_duolingo(email: str, client: Optional[httpx.AsyncClient] = None
                     "exists": True,
                     "username": username if username else None,
                     "profile_url": profile_url,
+                    "avatar_url": duo_picture,
                     "evidence": f"Aktiver Account bestätigt{auth_str}"
                 }
         return None
@@ -151,10 +167,14 @@ async def lookup_github_email(email: str, client: Optional[httpx.AsyncClient] = 
             if total > 0:
                 items = data.get("items", [])
                 author_login = None
+                avatar_url = None
                 if items:
                     first = items[0]
                     author_obj = first.get("author") or {}
                     author_login = author_obj.get("login")
+                    avatar_url = author_obj.get("avatar_url")
+                if not avatar_url and author_login:
+                    avatar_url = f"https://github.com/{author_login}.png"
 
                 return {
                     "service": "GitHub",
@@ -163,6 +183,7 @@ async def lookup_github_email(email: str, client: Optional[httpx.AsyncClient] = 
                     "exists": True,
                     "username": author_login,
                     "profile_url": f"https://github.com/{author_login}" if author_login else f"https://github.com/search?q=author-email:{email_clean}&type=commits",
+                    "avatar_url": avatar_url,
                     "evidence": f"{total} öffentliche Git-Commits gefunden"
                 }
         return None

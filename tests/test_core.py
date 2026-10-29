@@ -82,6 +82,36 @@ async def test_full_scan_pipeline():
     assert invalid_res["success"] is False
     print("✓ Email Account Recon handles invalid input gracefully.")
 
+    # Test Discovered Images Word Cloud Aggregator
+    print("Testing Visual Media Cloud & Image Sizing...")
+    from app.modules.image_recon import collect_discovered_images
+    mock_email_recon = {
+        "avatar_url": "https://2.gravatar.com/avatar/abc12345?s=400",
+        "registered_accounts": [
+            {
+                "service": "Duolingo",
+                "avatar_url": "https://0.gravatar.com/avatar/abc12345?s=200",
+                "profile_url": "https://duolingo.com/profile/testuser"
+            }
+        ]
+    }
+    mock_profiles = [
+        {"platform": "GitHub", "url": "https://github.com/testuser", "exists": True}
+    ]
+    imgs = collect_discovered_images(
+        email_recon_res=mock_email_recon,
+        found_profiles=mock_profiles,
+        session_avatar="https://lh3.googleusercontent.com/a/userphoto"
+    )
+    assert len(imgs) == 3
+    # Gravatar image was found on 2 platforms -> scaled to medium/large
+    grav_img = next(i for i in imgs if "gravatar" in i["id"])
+    assert grav_img["count"] == 2
+    assert grav_img["size_tier"] == "lg"
+    assert len(grav_img["sources"]) == 2
+    assert "google_lens_url" in grav_img
+    print(f"✓ Visual Media Cloud verified! {len(imgs)} distinct images correctly grouped, weighted and tiered.")
+
 if __name__ == "__main__":
     test_sync_modules()
     asyncio.run(test_full_scan_pipeline())
