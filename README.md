@@ -1,4 +1,8 @@
-# 🔍 Digital Footprint Scanner (Selfscanner)
+<p align="center">
+  <img src="app/static/img/logo.png" width="180" alt="Digital Footprint Scanner Logo" style="border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);" />
+</p>
+
+# 🔍 Digital Footprint Scanner
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -124,7 +128,7 @@ Digital-Footprint-Scanner/
 ---
 
 ## 🔐 Privacy & Ethical Boundaries
-Selfscanner operates strictly on the principle of **Ethical OSINT**:
+Digital Footprint Scanner operates strictly on the principle of **Ethical OSINT**:
 - All analyses query publicly accessible metadata and open records.
 - No logins are bypassed, no credentials are stolen, and no private data is collected or transmitted to third parties.
 - All password checks utilize mathematically proven **k-Anonymity** where plaintext passwords are never transmitted.

@@ -35,6 +35,16 @@ def test_static_files():
     assert res_app_js.status_code == 200
     print("✓ app.js served")
 
+    # Test logo and favicon images
+    res_logo = client.get("/static/img/logo.png")
+    assert res_logo.status_code == 200
+    assert len(res_logo.content) > 1000
+    print(f"✓ logo.png served ({len(res_logo.content)} bytes)")
+
+    res_favicon = client.get("/static/img/favicon.png")
+    assert res_favicon.status_code == 200
+    print(f"✓ favicon.png served ({len(res_favicon.content)} bytes)")
+
 if __name__ == "__main__":
     test_static_files()
     print("🎉 All static assets verified successfully!")

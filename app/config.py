@@ -2,7 +2,7 @@ import os
 from pydantic import BaseModel
 
 class AppSettings(BaseModel):
-    app_name: str = "Selfscanner - Digital Footprint & OSINT Auditor"
+    app_name: str = "Digital Footprint Scanner - All-in-One OSINT Suite"
     version: str = "1.0.0"
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     

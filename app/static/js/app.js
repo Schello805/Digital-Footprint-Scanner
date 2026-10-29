@@ -13,7 +13,7 @@ let currentSelectedFile = null;
 // ==================== I18N DICTIONARY ====================
 const translations = {
   en: {
-    app_title: "Selfscanner",
+    app_title: "Digital Footprint Scanner",
     app_subtitle: "All-in-One OSINT Suite",
     tagline: "Holistic digital footprint reconnaissance without detours",
     fullscan_cockpit: "🚀 Full Scan Cockpit",
@@ -103,7 +103,7 @@ const translations = {
     risk_label_prefix: "RISK: "
   },
   de: {
-    app_title: "Selfscanner",
+    app_title: "Digital Footprint Scanner",
     app_subtitle: "All-in-One OSINT Suite",
     tagline: "Ganzheitlicher digitaler Fußabdruck-Scan ohne Umwege",
     fullscan_cockpit: "🚀 Vollscan Cockpit",
