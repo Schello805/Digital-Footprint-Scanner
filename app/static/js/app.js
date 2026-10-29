@@ -129,6 +129,7 @@ const translations = {
     step3_sub: "Opt-out & Log Status",
     unsub_step1_manual_title: "Option A: Custom List or Sender",
     unsub_step1_manual_sub: "Enter the address of the unwanted mailing list or newsletter.",
+    unsub_found_from_scan: "Mailing lists detected in scan:",
     btn_use_scan_email: "Use email from scan",
     btn_next_step2: "🔍 Proceed to Step 2: Info & Analysis ➔",
     unsub_step1_broker_title: "Option B: Quick-Select Top Data Brokers",
@@ -270,6 +271,7 @@ const translations = {
     step3_sub: "Austragen & Protokollieren",
     unsub_step1_manual_title: "Option A: Eigene Liste oder Absender",
     unsub_step1_manual_sub: "Gib die Adresse der unerwünschten Mailingliste oder des Newsletters ein.",
+    unsub_found_from_scan: "Im Scan gefundene Mailinglisten:",
     btn_use_scan_email: "Aus Vollscan übernehmen",
     btn_next_step2: "🔍 Weiter zu Schritt 2: Info & Analyse ➔",
     unsub_step1_broker_title: "Option B: Schnellauswahl Top-Datenbroker",
@@ -477,6 +479,23 @@ function switchTab(tabId) {
 
   if (tabId === 'exif' && leafletMap) {
     setTimeout(() => leafletMap.invalidateSize(), 200);
+  }
+
+  if (tabId === 'unsubscribe') {
+    // Populate user email and name from scan if empty
+    if (lastScanPayload) {
+      const emailInput = document.getElementById('unsubUserEmail');
+      const nameInput = document.getElementById('unsubUserName');
+      if (emailInput && !emailInput.value.trim() && lastScanPayload.email) emailInput.value = lastScanPayload.email;
+      if (nameInput && !nameInput.value.trim() && lastScanPayload.name) nameInput.value = lastScanPayload.name;
+    }
+    renderFoundListsInUnsubTab();
+    // Auto-fill target field if currently empty and found lists exist
+    const targetInput = document.getElementById('unsubTargetInput');
+    if (targetInput && !targetInput.value.trim() && lastScanResult && lastScanResult.mailing_list_result && lastScanResult.mailing_list_result.found_lists && lastScanResult.mailing_list_result.found_lists.length > 0) {
+      const firstList = lastScanResult.mailing_list_result.found_lists[0];
+      targetInput.value = firstList.identifier || firstList.name;
+    }
   }
 }
 
@@ -741,15 +760,47 @@ function renderFullReport(res, payload) {
   const mlBox = document.getElementById('sbMailingListBox');
   if (data.mailing_list_result) {
     const ml = data.mailing_list_result;
-    mlBox.innerHTML = `
-      <div class="text-slate-300 font-medium mb-1">${currentLang === 'de' ? 'Verifikationsabfragen:' : 'Archive Search Queries:'}</div>
-      <div class="flex flex-wrap gap-1.5 pt-0.5">
-        ${ml.specialized_searches.map(s => `<a href="${s.url}" target="_blank" class="text-[10px] text-indigo-400 hover:underline bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${s.title} ↗</a>`).join('')}
-      </div>
-      <button onclick="openUnsubscribeForEmail()" class="mt-2.5 w-full py-1.5 px-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800 rounded-lg text-[10px] font-semibold transition flex items-center justify-center space-x-1 cursor-pointer">
-        <span>📬 ${currentLang === 'de' ? 'Aus Verteilerlisten austragen (Incogni-Style) ↗' : 'Opt-out of Mailing Lists (Incogni-Style) ↗'}</span>
-      </button>
-    `;
+    const foundLists = ml.found_lists || [];
+    if (foundLists.length > 0) {
+      mlBox.innerHTML = `
+        <div class="text-emerald-400 font-bold mb-1.5 flex items-center justify-between text-xs">
+          <span>📬 ${currentLang === 'de' ? `${foundLists.length} Mailinglisten gefunden` : `${foundLists.length} mailing lists found`}:</span>
+        </div>
+        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+          ${foundLists.map(l => {
+            const listId = l.identifier || l.name;
+            return `
+              <div class="p-2 rounded bg-slate-900 border border-indigo-950 flex items-center justify-between gap-2">
+                <div class="truncate">
+                  <div class="font-mono text-white text-[11px] font-semibold truncate">${l.name}</div>
+                  <div class="text-[9px] text-slate-400 font-mono truncate">${listId}</div>
+                </div>
+                <button onclick="openUnsubscribeForEmail('${listId}')" class="shrink-0 px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-bold cursor-pointer transition flex items-center space-x-1 shadow">
+                  <span>⚡</span>
+                  <span>${currentLang === 'de' ? 'Austragen ➔' : 'Opt-out ➔'}</span>
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <button onclick="openUnsubscribeForEmail()" class="mt-2.5 w-full py-1.5 px-2 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-700 rounded-lg text-[10px] font-semibold transition flex items-center justify-center space-x-1 cursor-pointer">
+          <span>📬 ${currentLang === 'de' ? 'Alle Verteiler im Opt-Out Hub verwalten ↗' : 'Manage all lists in Opt-Out Hub ↗'}</span>
+        </button>
+      `;
+    } else {
+      mlBox.innerHTML = `
+        <div class="text-slate-300 font-medium mb-1 flex items-center space-x-1">
+          <span class="text-emerald-400">✓</span>
+          <span>${currentLang === 'de' ? '0 öffentliche Mailinglisten-Einträge' : '0 public mailing list entries found'}</span>
+        </div>
+        <div class="text-[10px] text-slate-400 mb-2">
+          ${currentLang === 'de' ? 'Keine Erwähnungen in öffentlichen Diskussions- und Software-Archiven.' : 'No posts indexed in public discussion archives.'}
+        </div>
+        <button onclick="openUnsubscribeForEmail()" class="mt-1 w-full py-1.5 px-2 bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700 rounded-lg text-[10px] font-semibold transition flex items-center justify-center space-x-1 cursor-pointer">
+          <span>✉️ ${currentLang === 'de' ? 'Manuelle Liste/Newsletter austragen ↗' : 'Unsubscribe manual list/newsletter ↗'}</span>
+        </button>
+      `;
+    }
   } else {
     mlBox.textContent = currentLang === 'de' ? 'Keine E-Mail angegeben.' : 'No email provided.';
   }
@@ -1101,17 +1152,82 @@ let currentUnsubData = null;
 let cachedMarketingBrokers = null;
 let removalStatusStore = JSON.parse(localStorage.getItem('selfscanner_unsub_statuses') || '{}');
 
-function openUnsubscribeForEmail() {
+function openUnsubscribeForEmail(targetList = null) {
   if (lastScanPayload) {
     const emailInput = document.getElementById('unsubUserEmail');
     const nameInput = document.getElementById('unsubUserName');
     if (emailInput && lastScanPayload.email) emailInput.value = lastScanPayload.email;
     if (nameInput && lastScanPayload.name) nameInput.value = lastScanPayload.name;
   }
+
+  const targetInput = document.getElementById('unsubTargetInput');
+  if (targetList) {
+    if (targetInput) targetInput.value = targetList;
+  } else if (lastScanResult && lastScanResult.mailing_list_result && lastScanResult.mailing_list_result.found_lists && lastScanResult.mailing_list_result.found_lists.length > 0) {
+    // Automatically pre-fill with the first detected mailing list from scan
+    const first = lastScanResult.mailing_list_result.found_lists[0];
+    if (targetInput) targetInput.value = first.identifier || first.name;
+  }
+
   switchTab('unsubscribe');
   goToUnsubStep(1);
+  renderFoundListsInUnsubTab();
+
+  // If both target input and email are pre-filled, immediately run Step 1 analysis!
+  if (targetInput && targetInput.value.trim() && lastScanPayload && lastScanPayload.email) {
+    handleStep1Submit(null, 2);
+  } else if (targetInput) {
+    targetInput.focus();
+  }
+}
+
+function renderFoundListsInUnsubTab() {
+  const box = document.getElementById('unsubFoundListsBox');
+  const pills = document.getElementById('unsubFoundListsPills');
+  if (!box || !pills) return;
+
+  const foundLists = (lastScanResult && lastScanResult.mailing_list_result && lastScanResult.mailing_list_result.found_lists)
+    ? lastScanResult.mailing_list_result.found_lists
+    : [];
+
+  if (foundLists.length > 0) {
+    box.classList.remove('hidden');
+    pills.innerHTML = foundLists.map(l => {
+      const targetVal = l.identifier || l.name;
+      return `
+        <button type="button" onclick="selectFoundListQuick('${targetVal}')" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-indigo-900 border border-indigo-700 hover:border-indigo-500 text-white font-mono text-xs flex items-center space-x-1.5 transition cursor-pointer shadow-sm">
+          <span>📬</span>
+          <span class="font-bold">${l.name}</span>
+          <span class="text-[10px] text-indigo-300">(${targetVal})</span>
+          <span class="text-[10px] text-emerald-400 font-sans font-semibold">➔ Ausfüllen</span>
+        </button>
+      `;
+    }).join('');
+  } else {
+    box.classList.add('hidden');
+    pills.innerHTML = '';
+  }
+}
+
+function selectFoundListQuick(targetList) {
   const targetInput = document.getElementById('unsubTargetInput');
-  if (targetInput) targetInput.focus();
+  const userEmailInput = document.getElementById('unsubUserEmail');
+  const userNameInput = document.getElementById('unsubUserName');
+
+  if (targetInput) targetInput.value = targetList;
+  if (userEmailInput && (!userEmailInput.value || !userEmailInput.value.trim()) && lastScanPayload && lastScanPayload.email) {
+    userEmailInput.value = lastScanPayload.email;
+  }
+  if (userNameInput && (!userNameInput.value || !userNameInput.value.trim()) && lastScanPayload && lastScanPayload.name) {
+    userNameInput.value = lastScanPayload.name;
+  }
+
+  if (userEmailInput && userEmailInput.value.trim()) {
+    handleStep1Submit(null, 2);
+  } else {
+    alert(currentLang === 'de' ? `Mailingliste "${targetList}" im Feld eingefügt. Bitte gib noch deine E-Mail an.` : `Mailing list "${targetList}" filled. Please provide your email.`);
+    if (userEmailInput) userEmailInput.focus();
+  }
 }
 
 function populateUserEmailFromScan() {

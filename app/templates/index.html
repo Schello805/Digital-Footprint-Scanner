@@ -723,11 +723,28 @@ Sincerely,
               <span class="text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-mono">Manuell</span>
             </div>
 
+            <!-- Gefundene Mailinglisten aus dem Scan (Auto-Fill) -->
+            <div id="unsubFoundListsBox" class="hidden p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-700/60 space-y-2">
+              <div class="flex items-center justify-between text-xs font-bold text-white">
+                <span class="flex items-center space-x-1.5">
+                  <span>📬</span>
+                  <span data-i18n="unsub_found_from_scan">Gefundene Mailinglisten aus dem Scan:</span>
+                </span>
+                <span class="text-[10px] bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700 font-semibold">1-Klick Autofill</span>
+              </div>
+              <p class="text-[11px] text-slate-300">
+                Klicke auf eine gefundene Liste, um das Zielfeld automatisch auszufüllen:
+              </p>
+              <div id="unsubFoundListsPills" class="flex flex-wrap gap-2 pt-1">
+                <!-- Dynamically rendered pills -->
+              </div>
+            </div>
+
             <form onsubmit="handleStep1Submit(event)" class="space-y-3.5 text-xs">
               <div>
                 <label class="block text-slate-300 font-semibold mb-1" data-i18n="lbl_unsub_target">Mailingliste oder Absenderadresse</label>
                 <input type="text" id="unsubTargetInput" placeholder="z. B. newsletter@firma.de oder dev-list@domain.org" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:border-indigo-500 focus:outline-none" />
-                <span class="text-[10px] text-slate-500 mt-1 block">Erkennt GNU Mailman Listen, Sympa, Ezmlm oder kommerzielle Werbeabsender.</span>
+                <span class="text-[10px] text-slate-500 mt-1 block">Wird bei Klick auf gefundene Mailinglisten automatisch vorausgefüllt.</span>
               </div>
 
               <div>

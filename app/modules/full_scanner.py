@@ -60,12 +60,11 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return await loop.run_in_executor(None, check_domain_dns, domain)
     tasks.append(do_domain_check())
 
-    # Mailing list task (sync function, run in executor)
+    # Mailing list task
     async def do_mailing_list_check():
         if not email:
             return None
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, check_mailing_lists, email)
+        return await check_mailing_lists(email)
     tasks.append(do_mailing_list_check())
 
     # Execute all concurrently

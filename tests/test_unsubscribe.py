@@ -97,5 +97,15 @@ class TestUnsubscribeHub(unittest.TestCase):
         self.assertIn("batch_mailto", res_json["data"])
         self.assertIn("test.user@company.de", res_json["data"]["body"])
 
+    def test_api_recon_mailinglists_endpoint(self):
+        response = self.client.get("/api/recon/mailinglists?email=test.user@python.org")
+        self.assertEqual(response.status_code, 200)
+        res_json = response.json()
+        self.assertTrue(res_json["success"])
+        self.assertIn("found_lists", res_json["data"])
+        self.assertIn("found_count", res_json["data"])
+        self.assertIn("has_valid_mx", res_json["data"])
+        self.assertEqual(res_json["data"]["email"], "test.user@python.org")
+
 if __name__ == "__main__":
     unittest.main()
