@@ -914,6 +914,87 @@ function toggleMediaSources() {
   }
 }
 
+function toggleSubdomains() {
+  const content = document.getElementById('sbSubdomainsContent');
+  const chevron = document.getElementById('sbSubdomainsChevron');
+  if (!content) return;
+  const isHidden = content.classList.contains('hidden');
+  if (isHidden) {
+    content.classList.remove('hidden');
+    if (chevron) chevron.textContent = '▲';
+  } else {
+    content.classList.add('hidden');
+    if (chevron) chevron.textContent = '▼';
+  }
+}
+
+function renderInfraProjects(infra) {
+  const section = document.getElementById('sbInfraSection');
+  if (!section) return;
+
+  if (!infra || !infra.checked || (!infra.cohosted_domains || infra.cohosted_domains.length === 0)) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  const ipBadge = document.getElementById('sbInfraIpBadge');
+  const countBadge = document.getElementById('sbInfraCountBadge');
+  if (ipBadge) ipBadge.textContent = `Server-IP: ${infra.server_ip}`;
+  if (countBadge) {
+    const total = infra.cohosted_domains.length;
+    countBadge.textContent = currentLang === 'de' 
+      ? `${total} ${total === 1 ? 'Web-Projekt' : 'Web-Projekte'}`
+      : `${total} ${total === 1 ? 'project' : 'projects'}`;
+  }
+
+  const tbody = document.getElementById('sbInfraTableBody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    infra.cohosted_domains.forEach(d => {
+      const tr = document.createElement('tr');
+      const isOnline = d.online;
+      const statusBadge = isOnline
+        ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">🟢 ${d.status} OK</span>`
+        : `<span class="px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 text-[10px]">${d.status ? `⚠️ ${d.status}` : '⚪ Offline'}</span>`;
+
+      tr.innerHTML = `
+        <td class="py-2 px-3 font-bold text-white flex items-center space-x-1.5">
+          <span>🌐</span>
+          <span>${d.domain}</span>
+        </td>
+        <td class="py-2 px-3">${statusBadge}</td>
+        <td class="py-2 px-3 text-slate-300 italic max-w-sm truncate" title="${d.title || ''}">${d.title || '-'}</td>
+        <td class="py-2 px-3 text-right">
+          <a href="${d.url}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">${currentLang === 'de' ? 'Öffnen ↗' : 'Visit ↗'}</a>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Subdomains Accordion
+  const subAccordion = document.getElementById('sbSubdomainsAccordion');
+  const subContent = document.getElementById('sbSubdomainsContent');
+  const subBadge = document.getElementById('sbSubdomainsTotalBadge');
+  if (subAccordion && subContent) {
+    const subs = infra.subdomains || [];
+    if (subs.length > 0) {
+      subAccordion.classList.remove('hidden');
+      if (subBadge) {
+        subBadge.textContent = currentLang === 'de' ? `${subs.length} Subdomains` : `${subs.length} subdomains`;
+      }
+      subContent.innerHTML = subs.map(s => `
+        <a href="https://${s}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-indigo-500 font-mono text-[11px] transition">
+          ${s} ↗
+        </a>
+      `).join('');
+    } else {
+      subAccordion.classList.add('hidden');
+    }
+  }
+}
+
 function openMediaLightbox(index) {
   const img = currentMediaImages[index];
   if (!img) return;
@@ -1157,6 +1238,9 @@ function renderFullReport(res, payload) {
 
   // 3. Visuelle Mediathek & Bild-Wolke (Word-Cloud skaliert mit Häufigkeit)
   renderMediaCloud(data.discovered_images || []);
+
+  // 3b. Server-Infrastruktur & Verbundene Web-Projekte (Co-Hosted Domains & Subdomains)
+  renderInfraProjects(data.infra_result);
 
   // 4. Bedrohungsvektoren (Section 3 - Strictly verified facts)
   const threatsBox = document.getElementById('sbThreatsContainer');

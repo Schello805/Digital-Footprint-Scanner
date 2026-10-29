@@ -3,7 +3,12 @@ import urllib.parse
 from typing import Dict, Any, Optional, List
 from app.modules.username_checker import scan_usernames_fast
 from app.modules.breach_checker import check_password_pwned, check_email_breach
-from app.modules.domain_recon import check_domain_dns
+from app.modules.domain_recon import (
+    check_domain_dns,
+    probe_personal_websites,
+    discover_infrastructure_and_projects,
+    parse_domain_target
+)
 from app.modules.phone_recon import analyze_phone_number
 from app.modules.mailing_list_checker import check_mailing_lists
 from app.modules.email_account_checker import check_email_accounts
@@ -131,12 +136,16 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     If an email is provided without a username, automatically performs cryptographic Gravatar OSINT
     to discover connected online handles (@schello805), verified locations, and linked accounts (Duolingo, etc.).
     """
+    first_name = data.get("first_name", "").strip()
+    last_name = data.get("last_name", "").strip()
     name = data.get("name", "").strip()
     if not name:
-        first_name = data.get("first_name", "").strip()
-        last_name = data.get("last_name", "").strip()
         if first_name or last_name:
             name = f"{first_name} {last_name}".strip()
+    elif not first_name:
+        parts = name.split()
+        first_name = parts[0]
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
     username = data.get("username", "").strip()
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
@@ -147,6 +156,13 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     raw_keywords = data.get("keywords", "")
     
     keywords = [k.strip() for k in raw_keywords.split(",") if k.strip()] if isinstance(raw_keywords, str) else (raw_keywords or [])
+
+    # Determine effective target domain / URL
+    target_domain_input = domain
+    if not target_domain_input and email and "@" in email:
+        email_dom = email.split("@")[1].strip().lower()
+        if email_dom not in FREEMAIL_DOMAINS:
+            target_domain_input = email_dom
 
     # Early Email-to-Identity Resolution (Gravatar, Duolingo, etc.)
     email_recon_res = None
@@ -204,11 +220,31 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Domain task (sync function, run in executor)
     async def do_domain_check():
-        if not domain:
+        if not target_domain_input:
             return None
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, check_domain_dns, domain)
+        parsed = parse_domain_target(target_domain_input)
+        return await loop.run_in_executor(None, check_domain_dns, parsed["apex"])
     tasks.append(do_domain_check())
+
+    # Personal Website & Subdomain Probe task
+    async def do_personal_probe():
+        if not target_domain_input:
+            return []
+        return await probe_personal_websites(
+            target_domain_input,
+            first_name=first_name,
+            last_name=last_name,
+            username=username
+        )
+    tasks.append(do_personal_probe())
+
+    # Infrastructure & Co-Hosted Web Projects task
+    async def do_infra_recon():
+        if not target_domain_input:
+            return None
+        return await discover_infrastructure_and_projects(target_domain_input)
+    tasks.append(do_infra_recon())
 
     # Mailing list task
     async def do_mailing_list_check():
@@ -232,7 +268,7 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
     tasks.append(do_pgp_check())
 
     # Execute all concurrently
-    username_results, password_res, email_res, domain_res, mailing_res, infostealer_res, pgp_res = await asyncio.gather(*tasks)
+    username_results, password_res, email_res, domain_res, personal_sites_res, infra_res, mailing_res, infostealer_res, pgp_res = await asyncio.gather(*tasks)
 
     # Filter & sort username results
     found_profiles = [p for p in username_results if p.get("exists")]
@@ -264,21 +300,34 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         return 2
     found_profiles.sort(key=sort_key)
 
-    # Insert own website/domain as active verified web presence if provided and not freemail
-    if domain:
-        clean_dom = domain.strip().lower()
-        if clean_dom.startswith("http://"): clean_dom = clean_dom[7:]
-        if clean_dom.startswith("https://"): clean_dom = clean_dom[8:]
-        clean_dom = clean_dom.split("/")[0]
-        if clean_dom and clean_dom not in FREEMAIL_DOMAINS:
-            dom_url = f"https://{clean_dom}"
+    # Insert verified personal website(s) or provided domain into found_profiles
+    if personal_sites_res:
+        for site in reversed(personal_sites_res):
             found_profiles.insert(0, {
-                "platform": f"Website ({clean_dom})",
+                "platform": f"Website ({site.get('host') or site.get('domain')})",
+                "category": "Eigene Web-Präsenz",
+                "url": site["url"],
+                "exists": True,
+                "status": "found",
+                "snippet": site["title"],
+                "match": {
+                    "score": 100,
+                    "matches": ["Verifizierte persönliche Website", f"HTTP {site.get('status', 200)} OK"],
+                    "confidence": "high"
+                }
+            })
+    elif target_domain_input:
+        parsed = parse_domain_target(target_domain_input)
+        clean_dom = parsed["apex"]
+        if clean_dom and clean_dom not in FREEMAIL_DOMAINS:
+            dom_url = parsed["exact_url"] or f"https://{clean_dom}"
+            found_profiles.insert(0, {
+                "platform": f"Website ({parsed['host'] or clean_dom})",
                 "category": "Eigene Web-Präsenz",
                 "url": dom_url,
                 "exists": True,
                 "status": "found",
-                "snippet": f"Offizielle Domain / Web-Auftritt ({name or clean_dom})",
+                "snippet": f"Offizielle Domain ({name or clean_dom})",
                 "match": {
                     "score": 100,
                     "matches": ["Eigene Domain / DNS"],
@@ -349,6 +398,8 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "infostealer_infected": infostealer_res.get("infected", False) if infostealer_res else False,
         "infostealer_count": infostealer_res.get("stealers_count", 0) if infostealer_res else 0,
         "pgp_has_key": pgp_res.get("has_pgp", False) if pgp_res else False,
+        "cohosted_count": len(infra_res.get("cohosted_domains", [])) if infra_res and infra_res.get("checked") else 0,
+        "server_ip": infra_res.get("server_ip") if infra_res else None,
         "domain_spf_status": domain_res.get("data", {}).get("email_security", {}).get("spf", {}).get("status") if domain_res and domain_res.get("success") else None,
         "domain_dmarc_status": domain_res.get("data", {}).get("email_security", {}).get("dmarc", {}).get("status") if domain_res and domain_res.get("success") else None,
         "exposure_score": audit_data.get("exposure_score", 0),
@@ -424,6 +475,8 @@ async def execute_full_scan(data: Dict[str, Any]) -> Dict[str, Any]:
         "pgp_result": pgp_res,
         "mailing_list_result": mailing_res.get("data") if mailing_res and mailing_res.get("success") else None,
         "domain_result": domain_res.get("data") if domain_res and domain_res.get("success") else None,
+        "infra_result": infra_res,
+        "personal_sites": personal_sites_res,
         "phone_result": phone_res,
         "dorks": dorks,
         "web_directories": web_directories,
