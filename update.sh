@@ -26,10 +26,23 @@ SERVICE_NAME="digital-footprint-scanner"
 INSTALL_DIR=""
 if [ -d "./.git" ] && [ -f "./run.py" ]; then
     INSTALL_DIR="$(pwd)"
-elif [ -d "/opt/digital-footprint-scanner/.git" ]; then
-    INSTALL_DIR="/opt/digital-footprint-scanner"
-elif [ -d "$HOME/digital-footprint-scanner/.git" ]; then
-    INSTALL_DIR="$HOME/digital-footprint-scanner"
+fi
+
+if [ -z "$INSTALL_DIR" ]; then
+    for candidate in \
+        "/opt/digital-footprint-scanner" \
+        "/opt/Digital-Footprint-Scanner" \
+        "/opt/selfscanner" \
+        "/opt/Selfscanner" \
+        "$HOME/digital-footprint-scanner" \
+        "$HOME/Digital-Footprint-Scanner" \
+        "$HOME/selfscanner" \
+        "$HOME/Selfscanner"; do
+        if [ -d "$candidate/.git" ] && [ -f "$candidate/run.py" ]; then
+            INSTALL_DIR="$candidate"
+            break
+        fi
+    done
 fi
 
 if [ -z "$INSTALL_DIR" ]; then
