@@ -479,11 +479,6 @@ function setLanguage(lang) {
 
 // --- Tab Navigation ---
 function switchTab(tabId) {
-  if (tabId === 'settings' && (!currentUser || !currentUser.is_admin)) {
-    alert(currentLang === 'de' ? 'Zugriff verweigert: Diese Einstellungen sind nur für den Administrator zugänglich.' : 'Access denied: Administrator only.');
-    return;
-  }
-
   currentTab = tabId;
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
   const targetPane = document.getElementById(`tab-content-${tabId}`);

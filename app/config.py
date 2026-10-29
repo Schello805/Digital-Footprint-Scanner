@@ -103,6 +103,6 @@ class AppSettings:
     @property
     def admin_email(self) -> str:
         load_dotenv()
-        return os.getenv("ADMIN_EMAIL", "michael@schellenberger.biz")
+        return os.getenv("ADMIN_EMAIL", os.getenv("ADMIN_EMAIL_ADDRESS", ""))
 
 settings = AppSettings()
