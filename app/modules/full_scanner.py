@@ -116,15 +116,20 @@ def generate_web_directories(
             "url": f"https://www.yasni.de/{urllib.parse.quote(clean_name)}/person+information"
         })
 
-    # 8. Google News
+    # 8. Google News (mit Kontext-Eingrenzung zur Vermeidung von Namensvettern)
     if clean_name:
+        news_q = target_q
+        if employer.strip():
+            news_q += f' "{employer.strip()}"'
+        elif city.strip():
+            news_q += f' "{city.strip()}"'
         dirs.append({
             "site": "Google News",
             "icon": "📰",
             "category": "Presse & Medien",
-            "query": target_q,
-            "desc": "Pressemitteilungen, redaktionelle Berichte und Veröffentlichungen",
-            "url": f"https://news.google.com/search?q={urllib.parse.quote(target_q)}"
+            "query": news_q,
+            "desc": "Live-Prüfung auf Pressemitteilungen, Medienberichte oder Namensvetter",
+            "url": f"https://news.google.com/search?q={urllib.parse.quote(news_q)}"
         })
 
     # 9. Eigene Website (nur wenn keine allgemeine Freemail-Domain)
